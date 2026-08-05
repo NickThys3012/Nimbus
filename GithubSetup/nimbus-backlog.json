@@ -1,0 +1,1525 @@
+{
+  "project": {
+    "title": "Nimbus Delivery",
+    "repo": "NickThys3012/Nimbus",
+    "description": "Product backlog and sprint board for Nimbus — the proper implementation of the FlightPrep POC."
+  },
+  "labels": [
+    {
+      "name": "type:epic",
+      "color": "5319E7",
+      "description": "Container issue grouping related stories"
+    },
+    {
+      "name": "type:story",
+      "color": "1D76DB",
+      "description": "User story"
+    },
+    {
+      "name": "type:task",
+      "color": "0E8A16",
+      "description": "Technical task, no direct user value"
+    },
+    {
+      "name": "type:spike",
+      "color": "FBCA04",
+      "description": "Timeboxed investigation"
+    },
+    {
+      "name": "type:bug",
+      "color": "D73A4A",
+      "description": "Defect"
+    },
+    {
+      "name": "epic:foundation",
+      "color": "C5DEF5",
+      "description": "Solution scaffolding & architecture"
+    },
+    {
+      "name": "epic:auth",
+      "color": "C5DEF5",
+      "description": "Accounts, authentication, admin"
+    },
+    {
+      "name": "epic:reference-data",
+      "color": "C5DEF5",
+      "description": "Balloons, pilots, locations, settings"
+    },
+    {
+      "name": "epic:flight-prep",
+      "color": "C5DEF5",
+      "description": "The flight preparation dossier"
+    },
+    {
+      "name": "epic:weather",
+      "color": "C5DEF5",
+      "description": "METAR/TAF, forecast, wind data"
+    },
+    {
+      "name": "epic:calculations",
+      "color": "C5DEF5",
+      "description": "Lift, weight, Go/No-Go, sunrise"
+    },
+    {
+      "name": "epic:trajectory",
+      "color": "C5DEF5",
+      "description": "Trajectory simulation & maps"
+    },
+    {
+      "name": "epic:ofp",
+      "color": "C5DEF5",
+      "description": "Operational Flight Plan layer"
+    },
+    {
+      "name": "epic:pdf",
+      "color": "C5DEF5",
+      "description": "PDF dossier export"
+    },
+    {
+      "name": "epic:sharing",
+      "color": "C5DEF5",
+      "description": "Sharing & access control"
+    },
+    {
+      "name": "epic:post-flight",
+      "color": "C5DEF5",
+      "description": "Mark as flown, KML track, analytics"
+    },
+    {
+      "name": "epic:platform",
+      "color": "C5DEF5",
+      "description": "PWA, manual, release notes, telemetry"
+    },
+    {
+      "name": "epic:cicd",
+      "color": "C5DEF5",
+      "description": "CI/CD pipelines & infrastructure"
+    },
+    {
+      "name": "epic:quality",
+      "color": "C5DEF5",
+      "description": "Testing, accessibility, performance"
+    },
+    {
+      "name": "P0",
+      "color": "B60205",
+      "description": "Must have — blocks the release"
+    },
+    {
+      "name": "P1",
+      "color": "D93F0B",
+      "description": "Should have"
+    },
+    {
+      "name": "P2",
+      "color": "FEF2C0",
+      "description": "Could have"
+    },
+    {
+      "name": "area:frontend",
+      "color": "BFD4F2",
+      "description": "Angular SPA / UI"
+    },
+    {
+      "name": "area:backend",
+      "color": "BFD4F2",
+      "description": "Domain / services / EF Core / Web API"
+    },
+    {
+      "name": "area:infra",
+      "color": "BFD4F2",
+      "description": "Azure, Docker, pipelines"
+    },
+    {
+      "name": "feature",
+      "color": "0052CC",
+      "description": "Release-notes automation: major version bump"
+    },
+    {
+      "name": "refactor",
+      "color": "0052CC",
+      "description": "Release-notes automation: minor version bump"
+    },
+    {
+      "name": "BUG",
+      "color": "0052CC",
+      "description": "Release-notes automation: patch version bump"
+    },
+    {
+      "name": "good first issue",
+      "color": "7057FF",
+      "description": "Small, well-scoped starter task"
+    },
+    {
+      "name": "blocked",
+      "color": "000000",
+      "description": "Waiting on something external"
+    },
+    {
+      "name": "epic:storage",
+      "color": "C5DEF5",
+      "description": "Blob storage & media handling"
+    }
+  ],
+  "milestones": [
+    {
+      "key": "S0",
+      "title": "Sprint 0 — Foundation",
+      "description": "Walking skeleton: solution structure, database, containerisation, CI/CD and a deployed hello-world.",
+      "sprint_index": 0
+    },
+    {
+      "key": "S1",
+      "title": "Sprint 1 — Accounts & Admin",
+      "description": "Registration, approval-gated login, audit trail, admin console, owner-scoping foundations.",
+      "sprint_index": 1
+    },
+    {
+      "key": "S2",
+      "title": "Sprint 2 — Reference Data",
+      "description": "Balloons, pilots, locations, Go/No-Go thresholds, OFP settings and user profile.",
+      "sprint_index": 2
+    },
+    {
+      "key": "S3",
+      "title": "Sprint 3 — Flight Preparation Core",
+      "description": "The 9-section dossier, load/lift calculation, Go/No-Go engine, flight list and detail.",
+      "sprint_index": 3
+    },
+    {
+      "key": "S4",
+      "title": "Sprint 4 — Weather & Sun",
+      "description": "METAR/TAF, Open-Meteo forecast and wind profiles, NOAA sunrise/sunset, meteo section.",
+      "sprint_index": 4
+    },
+    {
+      "key": "S5",
+      "title": "Sprint 5 — Trajectory & Maps",
+      "description": "Time-varying trajectory simulator, multi-altitude comparison, Leaflet maps, power-line overlay.",
+      "sprint_index": 5
+    },
+    {
+      "key": "S6",
+      "title": "Sprint 6 — OFP, Export & Sharing",
+      "description": "Operational Flight Plan, print-ready PDF dossier, sharing and viewer access control.",
+      "sprint_index": 6
+    },
+    {
+      "key": "BL",
+      "title": "Backlog",
+      "description": "Valuable but not yet scheduled into a sprint.",
+      "sprint_index": null
+    }
+  ],
+  "sprint_options": [
+    "Sprint 0",
+    "Sprint 1",
+    "Sprint 2",
+    "Sprint 3",
+    "Sprint 4",
+    "Sprint 5",
+    "Sprint 6",
+    "Backlog"
+  ],
+  "epics": [
+    {
+      "key": "EP-FOUNDATION",
+      "title": "Epic: Foundation & architecture",
+      "label": "epic:foundation",
+      "milestone": "S0",
+      "body": "Everything needed before feature work can start: a layered .NET 10 solution with an Angular frontend, Azure SQL persistence, blob storage, containerised local development and an automated path to production.\n\n**Definition of done for this epic**\n- A developer can clone the repo and run the full stack with one command.\n- A commit on `main` reaches Azure without manual steps.\n- The layering rules and the frontend/backend boundary are documented and enforced.",
+      "short": "Foundation"
+    },
+    {
+      "key": "EP-AUTH",
+      "title": "Epic: Accounts, authentication & admin",
+      "label": "epic:auth",
+      "milestone": "S1",
+      "body": "Approval-gated accounts with an auditable login trail and an admin console.\n\n**Definition of done for this epic**\n- No unapproved account can reach an authenticated page.\n- Every login attempt is recorded with its outcome.\n- An admin can approve, inspect and delete users.",
+      "short": "Auth & Admin"
+    },
+    {
+      "key": "EP-REFDATA",
+      "title": "Epic: Reference data & settings",
+      "label": "epic:reference-data",
+      "milestone": "S2",
+      "body": "Per-user reference data (balloons, pilots, locations) and personal configuration (Go/No-Go thresholds, OFP settings, profile) that the flight dossier draws on.\n\n**Definition of done for this epic**\n- Every reference entity is owner-scoped and re-checked server side.\n- A new user can complete first-run setup without touching the database.",
+      "short": "Reference Data"
+    },
+    {
+      "key": "EP-FLIGHTPREP",
+      "title": "Epic: Flight preparation dossier",
+      "label": "epic:flight-prep",
+      "milestone": "S3",
+      "body": "The core domain: a single flight preparation record covering the nine sections a pilot works through before flying, plus the list and detail surfaces around it.\n\n**Definition of done for this epic**\n- A pilot can create, save, reopen, edit and delete a complete dossier.\n- Saves are transactional and never corrupt the in-memory model on failure.",
+      "short": "Flight Prep"
+    },
+    {
+      "key": "EP-WEATHER",
+      "title": "Epic: Weather integration",
+      "label": "epic:weather",
+      "milestone": "S4",
+      "body": "External weather data feeding the meteo section and the trajectory simulator, with graceful degradation when providers are unavailable.\n\n**Definition of done for this epic**\n- Every external call has its own HTTP client, timeout and failure path.\n- A provider outage never blocks dossier entry.",
+      "short": "Weather"
+    },
+    {
+      "key": "EP-CALC",
+      "title": "Epic: Calculations & decision support",
+      "label": "epic:calculations",
+      "milestone": "S3",
+      "body": "Aeronautically correct maths: total lift, weight balance, Go/No-Go assessment and sunrise/sunset — all computed in one place and reused by every surface.\n\n**Definition of done for this epic**\n- Form, list, detail view and PDF can never disagree on an assessment.\n- Each formula is covered by unit tests against its published reference.",
+      "short": "Calculations"
+    },
+    {
+      "key": "EP-TRAJECTORY",
+      "title": "Epic: Trajectory simulation & maps",
+      "label": "epic:trajectory",
+      "milestone": "S5",
+      "body": "Predicting where the balloon will go, and drawing it — interactively in the browser and as a static image for the PDF.\n\n**Definition of done for this epic**\n- A pilot can compare up to five cruise altitudes on one map.\n- High-tension power lines along the track are visible.\n- The same trajectory renders identically in the export.",
+      "short": "Trajectory"
+    },
+    {
+      "key": "EP-OFP",
+      "title": "Epic: Operational Flight Plan",
+      "label": "epic:ofp",
+      "milestone": "S6",
+      "body": "The formal, EASA-style operational layer on top of the informal dossier: snapshotted reference weights, passenger manifest, fuel planning and airworthiness declaration.\n\n**Definition of done for this epic**\n- A past flight's OFP figures never change when reference data is later edited.\n- The OFP prints as its own page with a signature block.",
+      "short": "OFP"
+    },
+    {
+      "key": "EP-PDF",
+      "title": "Epic: PDF dossier export",
+      "label": "epic:pdf",
+      "milestone": "S6",
+      "body": "A print-ready A4 dossier a pilot can take into the basket or hand to an inspector.\n\n**Definition of done for this epic**\n- Every dossier section, image and computed value appears in the export.\n- The printed Go/No-Go badge is produced by the same service as the on-screen one.",
+      "short": "PDF Export"
+    },
+    {
+      "key": "EP-SHARING",
+      "title": "Epic: Sharing & access control",
+      "label": "epic:sharing",
+      "milestone": "S6",
+      "body": "Letting a pilot share a dossier with a co-pilot or instructor, with authorisation re-verified server side on every operation.\n\n**Definition of done for this epic**\n- Owner, admin and shared viewers each see exactly what they should.\n- Anyone else is redirected away, not merely hidden from the link.",
+      "short": "Sharing"
+    },
+    {
+      "key": "EP-POSTFLIGHT",
+      "title": "Epic: Post-flight record & analytics",
+      "label": "epic:post-flight",
+      "milestone": "BL",
+      "body": "Closing the loop after the flight: what actually happened, the recorded track, and the pilot's long-term statistics.\n\n**Definition of done for this epic**\n- A flown flight carries actual duration, landing notes, fuel used and defects.\n- A pilot can see their flying history at a glance.",
+      "short": "Post-flight"
+    },
+    {
+      "key": "EP-STORAGE",
+      "short": "Storage",
+      "title": "Epic: Blob storage & media",
+      "label": "epic:storage",
+      "milestone": "S0",
+      "body": "All binary content — uploaded meteo and trajectory images, KML tracks, generated PDF dossiers and rendered map images — lives in an Azure Storage account rather than in the database.\n\n**Definition of done for this epic**\n- No binary payload is stored in a database column.\n- Local development runs entirely against Azurite, with no cloud dependency.\n- Every blob has an owner, a container, a naming convention and a deletion path."
+    },
+    {
+      "key": "EP-PLATFORM",
+      "title": "Epic: Platform & product polish",
+      "label": "epic:platform",
+      "milestone": "BL",
+      "body": "The things that make Nimbus feel like a product rather than a project: installable PWA, in-app manual, honest release notes and end-to-end telemetry.",
+      "short": "Platform"
+    },
+    {
+      "key": "EP-CICD",
+      "title": "Epic: CI/CD & infrastructure",
+      "label": "epic:cicd",
+      "milestone": "S0",
+      "body": "Build, test, release-note, deploy — automated, with infrastructure described as code.\n\n**Definition of done for this epic**\n- A merged PR is live within minutes with no human in the loop.\n- The environment can be recreated from scratch from the repo.",
+      "short": "CI/CD"
+    },
+    {
+      "key": "EP-QUALITY",
+      "title": "Epic: Quality, accessibility & performance",
+      "label": "epic:quality",
+      "milestone": "BL",
+      "body": "Automated confidence: unit, integration and browser tests, plus deliberate passes on accessibility and query performance.",
+      "short": "Quality"
+    }
+  ],
+  "issues": [
+    {
+      "key": "NB-001",
+      "epic": "EP-FOUNDATION",
+      "milestone": "S0",
+      "points": 5,
+      "priority": "P0",
+      "labels": [
+        "type:task",
+        "epic:foundation",
+        "area:backend",
+        "feature"
+      ],
+      "title": "Scaffold the solution: .NET Web API, Angular workspace and clean-architecture layers",
+      "body": "**As a** developer\n**I want** a solution split into Domain, Infrastructure and Api projects with an Angular workspace alongside\n**so that** business rules stay testable and the frontend and backend can evolve independently while shipping as one deployable.\n\n**Acceptance criteria**\n- [ ] Solution contains `Nimbus.Domain`, `Nimbus.Infrastructure` and `Nimbus.Api` (ASP.NET Core Web API, .NET 10).\n- [ ] An Angular workspace lives at `src/web`, generated with the Angular CLI, using standalone components and strict TypeScript.\n- [ ] `Nimbus.Domain` has no package or project references to EF Core, ASP.NET or any HTTP client — it holds models and service *interfaces* only.\n- [ ] `Nimbus.Infrastructure` references Domain; `Nimbus.Api` references both; there are no reverse references.\n- [ ] Test projects exist for Domain, Infrastructure and Api and run green from `dotnet test`; `ng test` runs green for the Angular workspace.\n- [ ] `.editorconfig`, nullable reference types and `TreatWarningsAsErrors` on the .NET side; ESLint and Prettier on the Angular side.\n- [ ] `docs/architecture.md` states the layering rules, the frontend/backend boundary, and why they exist.\n\n**Notes**\nThe FlightPrep POC let business services live in the web project because they needed `DbContext`. With an API boundary there is no excuse for that here — those services belong in Infrastructure behind Domain interfaces."
+    },
+    {
+      "key": "NB-002",
+      "epic": "EP-FOUNDATION",
+      "milestone": "S0",
+      "points": 5,
+      "priority": "P0",
+      "labels": [
+        "type:task",
+        "epic:foundation",
+        "area:backend",
+        "feature"
+      ],
+      "title": "Set up Azure SQL persistence with EF Core and migrations",
+      "body": "**As a** developer\n**I want** an EF Core `AppDbContext` on Azure SQL with a controlled migration path\n**so that** the schema is always in step with the code.\n\n**Acceptance criteria**\n- [ ] `AppDbContext` extends `IdentityDbContext<ApplicationUser>` and is registered with the SQL Server provider.\n- [ ] Connection string comes from configuration; in Azure it is resolved through managed identity rather than a password in app settings.\n- [ ] Migrations are applied automatically in development, and by an explicit pipeline step in production — never silently at production startup.\n- [ ] An initial migration exists and applies cleanly to an empty database.\n- [ ] Retry-on-failure is enabled for transient Azure SQL faults.\n- [ ] Integration tests run against a real SQL Server instance (Testcontainers or the compose-provided container), not an in-memory provider."
+    },
+    {
+      "key": "NB-003",
+      "epic": "EP-FOUNDATION",
+      "milestone": "S0",
+      "points": 3,
+      "priority": "P0",
+      "labels": [
+        "type:task",
+        "epic:foundation",
+        "area:infra",
+        "feature"
+      ],
+      "title": "One-command local development with Docker Compose",
+      "body": "**As a** developer joining the project\n**I want** to run `docker compose up --build` and get the API, the Angular app, a SQL Server and a blob emulator\n**so that** onboarding takes minutes rather than an afternoon.\n\n**Acceptance criteria**\n- [ ] Compose starts the ASP.NET Core app, a SQL Server container (Azure SQL Edge, so it works on Apple Silicon) and Azurite for blob storage.\n- [ ] The app is reachable on a documented port with the Angular frontend served from it.\n- [ ] Database and blob volumes persist across restarts; a documented command resets them.\n- [ ] Secrets and seed values come from a committed `.env.example` copied to a git-ignored `.env`.\n- [ ] The Dockerfile is multi-stage — Node stage builds the Angular bundle, SDK stage builds .NET, runtime image contains neither.\n- [ ] `README.md` documents the command and the prerequisites, and a fresh clone was verified against it."
+    },
+    {
+      "key": "NB-004",
+      "epic": "EP-CICD",
+      "milestone": "S0",
+      "points": 3,
+      "priority": "P0",
+      "labels": [
+        "type:task",
+        "epic:cicd",
+        "area:infra",
+        "feature"
+      ],
+      "title": "CI pipeline: build and test both the API and the Angular app on every PR",
+      "body": "**As a** maintainer\n**I want** every pull request built and tested automatically on both sides of the stack\n**so that** broken code cannot reach `main`.\n\n**Acceptance criteria**\n- [ ] GitHub Actions workflow triggers on `pull_request` and on push to `main`.\n- [ ] .NET steps: restore → build (warnings as errors) → run all unit test projects.\n- [ ] Angular steps: `npm ci` → lint → `ng test` headless → `ng build --configuration production`.\n- [ ] The production Angular bundle is published into the .NET artifact, so one artifact deploys the whole app.\n- [ ] Test results and coverage from both sides are surfaced in the PR checks summary.\n- [ ] npm and NuGet caching are configured; a no-op change completes in under five minutes."
+    },
+    {
+      "key": "NB-005",
+      "epic": "EP-CICD",
+      "milestone": "S0",
+      "points": 5,
+      "priority": "P1",
+      "labels": [
+        "type:task",
+        "epic:cicd",
+        "area:infra",
+        "feature"
+      ],
+      "title": "Infrastructure as code: App Service, Azure SQL and Storage account via Bicep",
+      "body": "**As a** maintainer\n**I want** the Azure environment described in Bicep\n**so that** it can be recreated or reviewed without clicking through the portal.\n\n**Acceptance criteria**\n- [ ] `infra/main.bicep` provisions a Linux App Service Plan, an App Service running .NET 10, an Azure SQL Database and a Storage account.\n- [ ] Blob containers are created by the template: `flight-images`, `flight-tracks`, `flight-exports`, `map-cache`.\n- [ ] The App Service gets a system-assigned managed identity, granted Storage Blob Data Contributor on the account and db_datareader/db_datawriter on the database — no connection secrets in app settings.\n- [ ] Containers are private; no anonymous public blob access is possible.\n- [ ] `infra/deploy.sh` performs an idempotent deployment; running it twice changes nothing.\n- [ ] SKUs, names and region are parameters with sensible defaults, not literals.\n- [ ] No secret values appear in the template or in the repository."
+    },
+    {
+      "key": "NB-006",
+      "epic": "EP-CICD",
+      "milestone": "S0",
+      "points": 5,
+      "priority": "P0",
+      "labels": [
+        "type:task",
+        "epic:cicd",
+        "area:infra",
+        "feature"
+      ],
+      "title": "CD pipeline: deploy to Azure App Service on merge to main",
+      "body": "**As a** maintainer\n**I want** a merge to `main` to deploy automatically\n**so that** what is on `main` is what is live.\n\n**Acceptance criteria**\n- [ ] Deployment runs only after build and unit tests pass.\n- [ ] Authentication to Azure uses OIDC federated credentials, not a long-lived publish profile secret.\n- [ ] A merged PR is live within roughly three minutes.\n- [ ] Deployment is gated on a health-check endpoint returning healthy; a failed check fails the workflow.\n- [ ] A documented one-step rollback to the previous release exists and has been exercised once."
+    },
+    {
+      "key": "NB-007",
+      "epic": "EP-FOUNDATION",
+      "milestone": "S0",
+      "points": 3,
+      "priority": "P0",
+      "labels": [
+        "type:story",
+        "epic:foundation",
+        "area:frontend",
+        "feature"
+      ],
+      "title": "Angular application shell: routing, layout and aviation theme",
+      "body": "**As a** pilot\n**I want** a consistent navigation shell around every screen\n**so that** I can move between flights, settings and the logbook without getting lost.\n\n**Acceptance criteria**\n- [ ] Angular routing with lazy-loaded feature areas: flights, settings, logbook, admin.\n- [ ] A shared layout component provides the top bar and side navigation: Flights, Logbook, Settings, Manual and — for admins only — Admin.\n- [ ] A single theme file defines the aviation colour palette, spacing and typography as CSS custom properties; no component hard-codes a colour.\n- [ ] Authenticated state is visible in the shell, with a working log-out control.\n- [ ] A route guard redirects unauthenticated users to login, preserving the intended destination.\n- [ ] A global loading indicator and a global error toast are wired to the HTTP interceptor.\n- [ ] Layout is usable at 360 px width — the app is genuinely used on a phone at the launch field."
+    },
+    {
+      "key": "NB-008",
+      "epic": "EP-FOUNDATION",
+      "milestone": "S0",
+      "points": 2,
+      "priority": "P0",
+      "labels": [
+        "type:task",
+        "epic:foundation",
+        "area:infra",
+        "feature"
+      ],
+      "title": "Walking skeleton: Angular page to API to Azure SQL, deployed",
+      "body": "**As a** team\n**I want** one trivial screen that goes from the Angular app through the API to the database and back, deployed to Azure\n**so that** every architectural seam is proven before feature work starts.\n\n**Acceptance criteria**\n- [ ] A `/health` endpoint reports application, database and blob-storage connectivity.\n- [ ] An Angular route calls a typed API client and renders a value read from Azure SQL.\n- [ ] A file is uploaded to and read back from the Storage account through the same path.\n- [ ] It is reachable on the deployed Azure App Service URL, with the Angular bundle served by the API host.\n- [ ] The full path was exercised by a merge to `main`, not a manual deployment.\n\n**Notes**\nThis is the Sprint 0 exit criterion. Nothing else in Sprint 0 is done until this is."
+    },
+    {
+      "key": "NB-071",
+      "epic": "EP-FOUNDATION",
+      "milestone": "S0",
+      "points": 5,
+      "priority": "P0",
+      "labels": [
+        "type:task",
+        "epic:foundation",
+        "area:frontend",
+        "feature"
+      ],
+      "title": "Serve the Angular app from ASP.NET Core with a dev proxy and SPA fallback",
+      "body": "**As a** developer\n**I want** one host serving both the API and the Angular app, with a fast local dev loop\n**so that** we get single-origin simplicity in production without giving up hot reload while developing.\n\n**Acceptance criteria**\n- [ ] In development, `ng serve` runs with a proxy configuration forwarding `/api/*` to the ASP.NET Core host; hot module reload works.\n- [ ] In production, the built Angular bundle is served from `wwwroot` by the same host as the API.\n- [ ] A SPA fallback route returns `index.html` for unmatched client-side routes, while `/api/*` and `/health` continue to return real responses — a deep link refresh must not 404.\n- [ ] Static assets are served with content-hashed filenames and long cache headers; `index.html` is never cached.\n- [ ] Because API and app share an origin, no CORS policy is required — and this is asserted by a test so nobody adds a permissive one later.\n- [ ] One `dotnet run` after `ng build` serves a fully working app."
+    },
+    {
+      "key": "NB-072",
+      "epic": "EP-FOUNDATION",
+      "milestone": "S1",
+      "points": 3,
+      "priority": "P1",
+      "labels": [
+        "type:task",
+        "epic:foundation",
+        "area:frontend",
+        "feature"
+      ],
+      "title": "Generate a typed Angular API client from the OpenAPI document",
+      "body": "**As a** frontend developer\n**I want** the Angular HTTP layer generated from the API's OpenAPI document\n**so that** a backend contract change breaks the build instead of breaking at runtime.\n\n**Acceptance criteria**\n- [ ] The API exposes an OpenAPI document with accurate schemas, including nullability and enums.\n- [ ] An npm script regenerates typed clients and models into a git-ignored folder.\n- [ ] CI regenerates and fails if the committed contract and the generated client have drifted.\n- [ ] Angular components consume the generated client — no hand-written URL strings anywhere in the app.\n- [ ] Generated code is excluded from lint and coverage metrics."
+    },
+    {
+      "key": "NB-073",
+      "epic": "EP-STORAGE",
+      "milestone": "S0",
+      "points": 5,
+      "priority": "P0",
+      "labels": [
+        "type:task",
+        "epic:storage",
+        "area:backend",
+        "feature"
+      ],
+      "title": "Blob storage abstraction backed by Azure Storage, with Azurite locally",
+      "body": "**As a** developer\n**I want** a single storage abstraction over the Azure Storage account\n**so that** every feature that handles binary content does it the same way and can be tested without the cloud.\n\n**Acceptance criteria**\n- [ ] A Domain interface exposes upload, download, delete and existence checks, with an Infrastructure implementation using the Azure Storage SDK.\n- [ ] Containers are configured, not hard-coded: `flight-images`, `flight-tracks`, `flight-exports`, `map-cache`.\n- [ ] A documented blob naming convention scopes every blob to its owner and flight, so an orphan is identifiable.\n- [ ] Authentication uses managed identity in Azure and a connection string only against Azurite locally.\n- [ ] Containers are private; downloads are served either through the API or via short-lived user-delegation SAS URLs — never a permanent public URL.\n- [ ] Content type and content length are set on upload, so a browser renders an image inline rather than downloading it.\n- [ ] Transient failures retry with backoff; a storage outage surfaces as a handled error, not an unhandled exception.\n- [ ] Integration tests run against Azurite in CI."
+    },
+    {
+      "key": "NB-009",
+      "epic": "EP-PLATFORM",
+      "milestone": "S0",
+      "points": 3,
+      "priority": "P1",
+      "labels": [
+        "type:task",
+        "epic:platform",
+        "area:backend",
+        "feature"
+      ],
+      "title": "Structured logging and end-to-end telemetry across API and browser",
+      "body": "**As a** maintainer\n**I want** structured logs and traces from both the server and the browser flowing to Application Insights\n**so that** I can diagnose a problem a pilot reports without reproducing it.\n\n**Acceptance criteria**\n- [ ] Serilog is configured with console output in development and an Application Insights sink when a connection string is present.\n- [ ] Absence of a connection string degrades to console logging rather than failing startup.\n- [ ] The Angular app uses the Application Insights web SDK for page views and unhandled errors.\n- [ ] A correlation id flows from the browser request through the API to the database call, so one user action is a single trace.\n- [ ] Traces are enriched with the current flight id where one is in scope.\n- [ ] No personal data, passwords, tokens or SAS URLs are ever logged; this is covered by a test or an analyser rule."
+    },
+    {
+      "key": "NB-010",
+      "epic": "EP-FOUNDATION",
+      "milestone": "S0",
+      "points": 2,
+      "priority": "P1",
+      "labels": [
+        "type:task",
+        "epic:foundation",
+        "area:infra",
+        "good first issue"
+      ],
+      "title": "Repository hygiene: branch protection, PR template and contribution guide",
+      "body": "**As a** maintainer\n**I want** the repository's ground rules encoded rather than remembered\n**so that** the workflow holds up when more than one person is committing.\n\n**Acceptance criteria**\n- [ ] `main` is protected: no direct pushes, PR required, CI must pass.\n- [ ] `.github/pull_request_template.md` prompts for a description, a linked issue and one of the release-notes labels (`feature` / `refactor` / `BUG`).\n- [ ] Issue templates exist for a user story and a bug report.\n- [ ] `CONTRIBUTING.md` documents branch naming, commit conventions and the definition of done.\n- [ ] Formatting is enforced on both sides: `dotnet format` and Prettier/ESLint, checked in CI.\n- [ ] Dependabot is enabled for NuGet, npm and GitHub Actions."
+    },
+    {
+      "key": "NB-011",
+      "epic": "EP-AUTH",
+      "milestone": "S1",
+      "points": 3,
+      "priority": "P0",
+      "labels": [
+        "type:story",
+        "epic:auth",
+        "area:backend",
+        "feature"
+      ],
+      "title": "Register an account, pending administrator approval",
+      "body": "**As a** balloon pilot\n**I want** to register for an account\n**so that** I can request access to Nimbus.\n\n**Acceptance criteria**\n- [ ] A registration endpoint accepts email and password; the Angular form validates client side and the API validates again server side.\n- [ ] Password policy: minimum eight characters and at least one digit, enforced centrally in Identity options.\n- [ ] A new user is created with `IsApproved = false` and is automatically assigned the `Pilot` role.\n- [ ] After registering, the user is redirected to the login page with a clear message that an administrator must approve the account.\n- [ ] Registering with an already-registered email does not reveal that the address exists.\n- [ ] `ApplicationUser` carries the custom fields `IsApproved`, `OperatorName` and `WeightKg`."
+    },
+    {
+      "key": "NB-012",
+      "epic": "EP-AUTH",
+      "milestone": "S1",
+      "points": 3,
+      "priority": "P0",
+      "labels": [
+        "type:story",
+        "epic:auth",
+        "area:backend",
+        "feature"
+      ],
+      "title": "Log in and log out with cookie authentication and lockout",
+      "body": "**As a** registered pilot\n**I want** to log in and out securely\n**so that** only I can see my flights.\n\n**Acceptance criteria**\n- [ ] Login and logout are API endpoints issuing and clearing an HttpOnly, Secure, SameSite cookie with a seven-day sliding expiration.\n- [ ] Five failed attempts lock the account for fifteen minutes; the user is told so in plain language.\n- [ ] Every protected API endpoint rejects an unauthenticated request with 401 — the Angular route guard is a convenience, never the control.\n- [ ] Logout clears the cookie server side; a replayed old cookie is refused.\n- [ ] An endpoint reports the current user's identity, roles and approval state so the app can render the right shell.\n- [ ] An approved user can complete login → protected screen → logout, verified end to end."
+    },
+    {
+      "key": "NB-013",
+      "epic": "EP-AUTH",
+      "milestone": "S1",
+      "points": 3,
+      "priority": "P0",
+      "labels": [
+        "type:story",
+        "epic:auth",
+        "area:backend",
+        "feature"
+      ],
+      "title": "Approval gate must not leak which email addresses are registered",
+      "body": "**As a** security-conscious operator\n**I want** the approval check to happen only after the password has been verified\n**so that** an attacker cannot enumerate registered addresses.\n\n**Acceptance criteria**\n- [ ] The password is validated before the `IsApproved` check runs.\n- [ ] A wrong password on an unapproved account is indistinguishable from a wrong password on an approved one — same message, same behaviour.\n- [ ] When the password succeeds but the account is unapproved, the just-issued authentication cookie is explicitly signed out again before the rejection is returned.\n- [ ] Both paths are covered by tests that assert on the response, not just the branch taken.\n\n**Notes**\nThis was a deliberate, commented decision in the POC. Carry the reasoning across as a code comment so the next person does not \"simplify\" it away."
+    },
+    {
+      "key": "NB-074",
+      "epic": "EP-AUTH",
+      "milestone": "S1",
+      "points": 5,
+      "priority": "P0",
+      "labels": [
+        "type:story",
+        "epic:auth",
+        "area:frontend",
+        "feature"
+      ],
+      "title": "Angular auth integration: guards, interceptor and CSRF protection",
+      "body": "**As a** pilot\n**I want** the Angular app to know whether I am signed in and to handle expiry gracefully\n**so that** I am never dumped on a broken screen mid-preparation.\n\n**Acceptance criteria**\n- [ ] Login, registration and logout are API endpoints; the Angular app posts to them and never renders a server-side form.\n- [ ] Authentication remains cookie-based — the cookie is HttpOnly, Secure and `SameSite=Strict`, and is never readable from JavaScript.\n- [ ] Because cookies are used, antiforgery protection is enforced on every state-changing request, and the Angular HTTP client sends the token automatically.\n- [ ] An HTTP interceptor handles 401 by routing to login with a return URL, and 403 by showing an access-denied screen.\n- [ ] Route guards protect authenticated and admin-only routes, and the guard's decision is always re-enforced by the API.\n- [ ] Unsaved work in the flight form is preserved across a re-authentication round trip.\n- [ ] Tests cover the expired-session path, not just the happy path."
+    },
+    {
+      "key": "NB-014",
+      "epic": "EP-AUTH",
+      "milestone": "S1",
+      "points": 3,
+      "priority": "P1",
+      "labels": [
+        "type:story",
+        "epic:auth",
+        "area:backend",
+        "feature"
+      ],
+      "title": "Record every login attempt in an audit trail",
+      "body": "**As an** administrator\n**I want** every login attempt recorded\n**so that** I can review suspicious activity.\n\n**Acceptance criteria**\n- [ ] A `LoginEvent` row is written for every attempt: email, resolved user id where known, success flag, timestamp, IP address and a structured failure reason (invalid password / not approved / locked out).\n- [ ] The table is indexed on email and timestamp.\n- [ ] Writing an event never blocks or fails the login request.\n- [ ] Events are not lost on application shutdown or recycle — they are drained by a hosted background service rather than fire-and-forget.\n\n**Notes**\nThe POC used `Task.Run` and documented the loss window as a known trade-off. Nimbus should close it."
+    },
+    {
+      "key": "NB-015",
+      "epic": "EP-AUTH",
+      "milestone": "S1",
+      "points": 3,
+      "priority": "P0",
+      "labels": [
+        "type:story",
+        "epic:auth",
+        "area:frontend",
+        "feature"
+      ],
+      "title": "Admin console: approve pending users",
+      "body": "**As an** administrator\n**I want** to see and approve users awaiting approval\n**so that** genuine pilots get access and nobody else does.\n\n**Acceptance criteria**\n- [ ] The admin area is reachable only by the `Admin` role — enforced by an authorisation policy on the API endpoints, with the Angular guard merely mirroring it.\n- [ ] The list shows every user with email, approval state and assigned roles.\n- [ ] Approving a user sets `IsApproved` and takes effect on their next login attempt.\n- [ ] The approving admin's identity and the target user id are written to the log.\n- [ ] Users and their roles load in a fixed number of queries regardless of user count — no per-user role lookup."
+    },
+    {
+      "key": "NB-016",
+      "epic": "EP-AUTH",
+      "milestone": "S1",
+      "points": 2,
+      "priority": "P1",
+      "labels": [
+        "type:story",
+        "epic:auth",
+        "area:frontend",
+        "feature"
+      ],
+      "title": "Admin console: inspect roles and delete users",
+      "body": "**As an** administrator\n**I want** to remove accounts that should no longer exist\n**so that** access stays current.\n\n**Acceptance criteria**\n- [ ] Each user row shows their roles.\n- [ ] Deleting requires an explicit confirmation step.\n- [ ] An admin cannot delete their own account; the control is disabled and the server rejects the attempt regardless.\n- [ ] Deleting a user cascades their personal settings but does not silently destroy flights other people can still see — the chosen behaviour is documented and covered by a test."
+    },
+    {
+      "key": "NB-017",
+      "epic": "EP-AUTH",
+      "milestone": "S1",
+      "points": 2,
+      "priority": "P2",
+      "labels": [
+        "type:story",
+        "epic:auth",
+        "area:frontend",
+        "feature"
+      ],
+      "title": "Admin console: recent login events tab",
+      "body": "**As an** administrator\n**I want** to see recent login activity\n**so that** I can spot brute-force attempts or unexpected access.\n\n**Acceptance criteria**\n- [ ] A second tab on `/admin/users` lists the fifty most recent login events, newest first.\n- [ ] Each row shows timestamp, email, outcome, failure reason and IP address.\n- [ ] Failures are visually distinct from successes.\n- [ ] The query uses the timestamp index and is measurably fast with a hundred thousand rows present."
+    },
+    {
+      "key": "NB-018",
+      "epic": "EP-AUTH",
+      "milestone": "S1",
+      "points": 2,
+      "priority": "P0",
+      "labels": [
+        "type:task",
+        "epic:auth",
+        "area:backend",
+        "feature"
+      ],
+      "title": "Seed the Admin role and an initial administrator on startup",
+      "body": "**As a** maintainer\n**I want** a fresh deployment to always have a way in\n**so that** bootstrapping never requires manual database surgery.\n\n**Acceptance criteria**\n- [ ] On startup, the `Admin` and `Pilot` roles are created if missing.\n- [ ] When `SEED_ADMIN_USERNAME` and `SEED_ADMIN_PASSWORD` are both set, a pre-approved admin account is created if it does not already exist.\n- [ ] If the account already exists it is left untouched — the seeder never resets a password.\n- [ ] With the environment variables absent, startup succeeds and seeds nothing.\n- [ ] Covered by tests for all three cases."
+    },
+    {
+      "key": "NB-019",
+      "epic": "EP-AUTH",
+      "milestone": "S1",
+      "points": 5,
+      "priority": "P0",
+      "labels": [
+        "type:task",
+        "epic:auth",
+        "area:backend",
+        "feature"
+      ],
+      "title": "Owner-scoping foundation enforced in the service layer",
+      "body": "**As a** pilot\n**I want** my data to be mine\n**so that** no other user can read or change it by guessing an id.\n\n**Acceptance criteria**\n- [ ] A shared convention exists for owned entities (`OwnerId` / `CreatedByUserId`) and is applied consistently.\n- [ ] Every read, update and delete path takes the caller's user id and admin flag, and re-checks ownership in the service — never relying on the UI having filtered.\n- [ ] Create operations stamp the owner from the authenticated principal and ignore any owner supplied by the caller.\n- [ ] Update operations preserve the original owner even when bulk-copying values from an incoming model.\n- [ ] Unauthorised operations log a warning and no-op rather than throwing an unhandled exception.\n- [ ] A reusable test helper asserts these rules, so each new owned entity can be covered in a few lines.\n\n**Notes**\nThis is the single most repeated pattern in the POC. Building it once, properly, is much of what \"proper implementation\" means here."
+    },
+    {
+      "key": "NB-020",
+      "epic": "EP-REFDATA",
+      "milestone": "S2",
+      "points": 5,
+      "priority": "P0",
+      "labels": [
+        "type:story",
+        "epic:reference-data",
+        "area:frontend",
+        "feature"
+      ],
+      "title": "Manage my balloons",
+      "body": "**As a** pilot\n**I want** to maintain the balloons I fly\n**so that** I can pick one when preparing a flight instead of retyping its details.\n\n**Acceptance criteria**\n- [ ] Full create, read, update and delete under Settings, scoped to the logged-in user.\n- [ ] Fields: registration, type, envelope volume (m³), average internal envelope temperature (°C), and OFP reference weights for envelope, basket, burner and cylinders.\n- [ ] Empty weight is derived from the reference weights and shown read-only — never typed in twice.\n- [ ] Registration is required and unique per owner.\n- [ ] Deleting a balloon referenced by an existing flight is either blocked or handled without breaking that flight; the chosen behaviour is documented and tested."
+    },
+    {
+      "key": "NB-021",
+      "epic": "EP-REFDATA",
+      "milestone": "S2",
+      "points": 2,
+      "priority": "P0",
+      "labels": [
+        "type:story",
+        "epic:reference-data",
+        "area:frontend",
+        "feature",
+        "good first issue"
+      ],
+      "title": "Manage my pilots",
+      "body": "**As a** pilot\n**I want** to maintain a list of pilots and their weights\n**so that** weight-and-balance uses the right figure for whoever is flying.\n\n**Acceptance criteria**\n- [ ] Create, read, update and delete pilots (name, weight in kg), scoped to the logged-in user.\n- [ ] Weight must be a positive number within a plausible range, validated server side.\n- [ ] Pilots appear in the flight-preparation picker in a stable order."
+    },
+    {
+      "key": "NB-022",
+      "epic": "EP-REFDATA",
+      "milestone": "S2",
+      "points": 3,
+      "priority": "P0",
+      "labels": [
+        "type:story",
+        "epic:reference-data",
+        "area:frontend",
+        "feature"
+      ],
+      "title": "Manage my launch locations",
+      "body": "**As a** pilot\n**I want** to store the fields I launch from with their coordinates\n**so that** weather and sunrise calculations happen automatically for that spot.\n\n**Acceptance criteria**\n- [ ] Create, read, update and delete locations, scoped to the logged-in user.\n- [ ] Fields: name, ICAO code, latitude, longitude, elevation (m AMSL) and free-text airspace notes.\n- [ ] Latitude and longitude are validated to real ranges and can be entered in decimal degrees.\n- [ ] ICAO code, where present, is four characters and is what drives the METAR/TAF lookup.\n- [ ] The location shows on a small Leaflet preview map so a mistyped coordinate is obvious immediately."
+    },
+    {
+      "key": "NB-023",
+      "epic": "EP-REFDATA",
+      "milestone": "S2",
+      "points": 3,
+      "priority": "P0",
+      "labels": [
+        "type:story",
+        "epic:reference-data",
+        "area:frontend",
+        "feature"
+      ],
+      "title": "Configure my personal Go/No-Go thresholds",
+      "body": "**As a** pilot\n**I want** to set my own wind, visibility and CAPE limits\n**so that** the traffic light reflects my personal minima rather than someone else's.\n\n**Acceptance criteria**\n- [ ] `/settings/go-no-go` lets the user set yellow and red thresholds for surface wind (kt), visibility (km) and CAPE (J/kg).\n- [ ] Defaults when unset: wind 10/15, visibility 5/3, CAPE 300/500.\n- [ ] Settings are stored one row per user; a row with a null user id acts as the global default.\n- [ ] Red thresholds must be stricter than yellow ones; the form refuses inconsistent input.\n- [ ] Saving updates the existing row without attempting to overwrite its primary key.\n- [ ] A reset-to-defaults action exists."
+    },
+    {
+      "key": "NB-024",
+      "epic": "EP-REFDATA",
+      "milestone": "S2",
+      "points": 2,
+      "priority": "P1",
+      "labels": [
+        "type:story",
+        "epic:reference-data",
+        "area:frontend",
+        "feature"
+      ],
+      "title": "Configure OFP settings (per-passenger equipment weight)",
+      "body": "**As a** pilot\n**I want** to set the equipment weight counted per passenger\n**so that** my OFP weight figure matches how my operation actually loads.\n\n**Acceptance criteria**\n- [ ] Per-user setting with a default of 7 kg.\n- [ ] Used only in the OFP total-weight formula, never in the basic weight check — the two remain independently verifiable.\n- [ ] Changing the setting does not retroactively alter an already-flown flight's recorded OFP figures."
+    },
+    {
+      "key": "NB-025",
+      "epic": "EP-REFDATA",
+      "milestone": "S2",
+      "points": 2,
+      "priority": "P1",
+      "labels": [
+        "type:story",
+        "epic:reference-data",
+        "area:frontend",
+        "feature"
+      ],
+      "title": "Maintain my profile: operator name and PIC weight",
+      "body": "**As a** pilot\n**I want** my operator name and my own weight stored on my profile\n**so that** every new flight starts pre-filled with them.\n\n**Acceptance criteria**\n- [ ] Profile page lets the user edit operator name and PIC weight (kg).\n- [ ] Both values are snapshotted onto a flight preparation when it is first created.\n- [ ] Editing the profile later does not change flights already created.\n- [ ] Missing values do not break flight creation; the field is simply left empty for the pilot to fill."
+    },
+    {
+      "key": "NB-026",
+      "epic": "EP-REFDATA",
+      "milestone": "S2",
+      "points": 3,
+      "priority": "P0",
+      "labels": [
+        "type:task",
+        "epic:reference-data",
+        "epic:quality",
+        "area:backend",
+        "feature"
+      ],
+      "title": "Ownership test suite for all reference data",
+      "body": "**As a** maintainer\n**I want** ownership rules proven for every reference entity\n**so that** a future refactor cannot quietly open a data leak.\n\n**Acceptance criteria**\n- [ ] For balloons, pilots and locations: a non-owner cannot read, update or delete another user's row.\n- [ ] Create ignores an attacker-supplied owner id.\n- [ ] Update cannot reassign ownership, including through a bulk value copy.\n- [ ] An admin can act across owners, and this is asserted explicitly rather than assumed.\n- [ ] Tests are driven from the shared helper introduced in the owner-scoping foundation."
+    },
+    {
+      "key": "NB-027",
+      "epic": "EP-FLIGHTPREP",
+      "milestone": "S3",
+      "points": 5,
+      "priority": "P0",
+      "labels": [
+        "type:task",
+        "epic:flight-prep",
+        "area:backend",
+        "feature"
+      ],
+      "title": "Flight preparation domain model and schema",
+      "body": "**As a** developer\n**I want** the flight preparation entity and its children modelled and migrated\n**so that** the dossier has somewhere to live.\n\n**Acceptance criteria**\n- [ ] `FlightPreparation` covers all nine sections plus flight-outcome fields, with an owner, created and updated timestamps.\n- [ ] Child collections: `Passengers`, `Images` (blob reference, section tag, order, content type — never bytes), `WindLevels` (altitude, direction, speed, temperature, order), `Shares`.\n- [ ] The KML track is a blob reference, not a column of file content.\n- [ ] All children cascade-delete with the parent flight; deleting a flight leaves no orphaned rows, and triggers blob cleanup.\n- [ ] Composite indexes on `(FlightPreparationId, Section, Order)` for images and `(FlightPreparationId, Order)` for passengers and wind levels.\n- [ ] Column naming is consistent and documented — pick one language for the schema and stick to it.\n\n**Notes**\nThe POC mixed English property names with Dutch column names, and stored image bytes in the database. Both are things Nimbus is fixing."
+    },
+    {
+      "key": "NB-028",
+      "epic": "EP-FLIGHTPREP",
+      "milestone": "S3",
+      "points": 8,
+      "priority": "P0",
+      "labels": [
+        "type:story",
+        "epic:flight-prep",
+        "area:frontend",
+        "feature"
+      ],
+      "title": "Create and edit a flight preparation in a nine-section form",
+      "body": "**As a** pilot\n**I want** one screen that walks me through every pre-flight section\n**so that** I do not forget a step under time pressure.\n\n**Acceptance criteria**\n- [ ] A single Angular route presents the nine sections as an accordion, each independently expandable, each backed by its own child component and form group.\n- [ ] One reactive form drives the whole dossier, so validity and dirty state are known globally.\n- [ ] Section headers show a completion indicator so incomplete sections are visible while collapsed.\n- [ ] The same screen handles both a new and an existing flight.\n- [ ] A route guard prompts for confirmation when navigating away with unsaved changes.\n- [ ] Validation errors expand the offending section and focus the first invalid control.\n- [ ] Work in progress survives an accidental refresh — draft state is held client side until saved.\n- [ ] The whole form is usable one-handed on a phone."
+    },
+    {
+      "key": "NB-029",
+      "epic": "EP-FLIGHTPREP",
+      "milestone": "S3",
+      "points": 3,
+      "priority": "P0",
+      "labels": [
+        "type:story",
+        "epic:flight-prep",
+        "area:frontend",
+        "feature"
+      ],
+      "title": "Section 1 — general flight information",
+      "body": "**As a** pilot\n**I want** to record the basics of the flight\n**so that** everything else has context.\n\n**Acceptance criteria**\n- [ ] Fields: date, time, balloon, pilot, launch location, landing location and a field-owner-notified flag.\n- [ ] Balloon, pilot and location come from the user's own reference data.\n- [ ] Selecting a balloon snapshots its reference weights onto a new flight (see the OFP story).\n- [ ] Selecting a location makes its coordinates available to the weather and sunrise features.\n- [ ] Date and time default to the next sensible slot rather than empty."
+    },
+    {
+      "key": "NB-030",
+      "epic": "EP-FLIGHTPREP",
+      "milestone": "S3",
+      "points": 3,
+      "priority": "P0",
+      "labels": [
+        "type:story",
+        "epic:flight-prep",
+        "area:frontend",
+        "feature"
+      ],
+      "title": "Sections 3, 4 and 5 — airspace, safety and technical checks",
+      "body": "**As a** pilot\n**I want** the regulatory and equipment checks captured as an explicit checklist\n**so that** the dossier proves I did them.\n\n**Acceptance criteria**\n- [ ] Section 3: NOTAMs-checked state, airspace structure, restrictions and obstacles.\n- [ ] Section 4: first aid and extinguisher, passenger list filled, flight plan filed — each with a not-applicable option where that is genuinely valid.\n- [ ] Section 5: five technical checks — burner tested, gas cylinders, balloon visual inspection, moorings, instruments.\n- [ ] Three-state fields are modelled as a proper enum, not as strings such as \"JA\"/\"NEE\"/\"NVT\".\n- [ ] Defaults are the safe/unchecked state, never a pre-ticked box.\n\n**Notes**\nThe POC stored these as free strings with defaults like `\"NEE\"` and `\"NVT\"`. Replace with a typed enum and migrate the meaning across."
+    },
+    {
+      "key": "NB-031",
+      "epic": "EP-FLIGHTPREP",
+      "milestone": "S4",
+      "points": 3,
+      "priority": "P1",
+      "labels": [
+        "type:story",
+        "epic:flight-prep",
+        "area:frontend",
+        "feature"
+      ],
+      "title": "Section 6 — passenger briefing with a rich-text default template",
+      "body": "**As a** pilot\n**I want** the standard passenger safety briefing pre-filled and editable\n**so that** I can adapt it per flight without rewriting it every time.\n\n**Acceptance criteria**\n- [ ] Rich-text editing via `ngx-quill`, bound to a single HTML field in the reactive form.\n- [ ] A new flight is pre-filled with the standard briefing covering inflation, in-flight conduct, landing position and post-flight instructions.\n- [ ] Stored HTML is sanitised on the server on save, and rendered through Angular's sanitiser on display — a script tag in the editor cannot execute anywhere, including the export.\n- [ ] A reset-to-template action restores the default without discarding the rest of the form.\n- [ ] The briefing renders correctly in the PDF export."
+    },
+    {
+      "key": "NB-032",
+      "epic": "EP-FLIGHTPREP",
+      "milestone": "S3",
+      "points": 5,
+      "priority": "P0",
+      "labels": [
+        "type:story",
+        "epic:flight-prep",
+        "epic:calculations",
+        "area:frontend",
+        "feature"
+      ],
+      "title": "Section 7 — load calculation with live total weight",
+      "body": "**As a** pilot\n**I want** passenger weights totalled and compared against available lift as I type\n**so that** I know immediately whether the flight is loadable.\n\n**Acceptance criteria**\n- [ ] Fields: envelope weight, max planned altitude, lift units and total lift, plus free-text load notes.\n- [ ] A reactive form array lets passengers be added, removed and reordered, each with name, weight and the child / needs-assistance / transport flags.\n- [ ] Total weight recomputes live as envelope weight, pilot or passenger weights change.\n- [ ] A clear indicator shows whether total lift exceeds total weight.\n- [ ] Passenger order is preserved across save and reload.\n- [ ] Computed values are never stored as the source of truth where they can be derived."
+    },
+    {
+      "key": "NB-033",
+      "epic": "EP-CALC",
+      "milestone": "S3",
+      "points": 5,
+      "priority": "P0",
+      "labels": [
+        "type:task",
+        "epic:calculations",
+        "area:backend",
+        "feature"
+      ],
+      "title": "Total lift calculation from the Cameron flight manual formula",
+      "body": "**As a** pilot\n**I want** available lift computed from the published aeronautical formula\n**so that** I can rely on the number rather than a rule of thumb.\n\n**Acceptance criteria**\n- [ ] Implements the ISA-based total-lift formula from the Cameron Hot Air Balloon Flight Manual, Amendment 18, Appendix A2-1.\n- [ ] Inputs: max planned altitude AMSL (m), site elevation (m), ambient temperature at take-off (°C), average internal envelope temperature (°C), envelope volume (m³).\n- [ ] Internal envelope temperature is clamped to 0–100 °C.\n- [ ] Ambient temperature at altitude uses the ISA lapse rate; pressure uses the ISA barometric formula.\n- [ ] Unit tests check several worked examples against the manual, plus the clamping and zero-volume edge cases.\n- [ ] The source reference is cited in an XML doc comment on the method."
+    },
+    {
+      "key": "NB-034",
+      "epic": "EP-CALC",
+      "milestone": "S3",
+      "points": 5,
+      "priority": "P0",
+      "labels": [
+        "type:story",
+        "epic:calculations",
+        "area:backend",
+        "feature"
+      ],
+      "title": "Go/No-Go decision engine with per-user thresholds",
+      "body": "**As a** pilot\n**I want** a traffic-light verdict on the weather\n**so that** I get an immediate read on whether the flight is sensible.\n\n**Acceptance criteria**\n- [ ] Returns green, yellow, red or unknown from surface wind, visibility and CAPE.\n- [ ] Thresholds come from the user's settings, never from constants in the decision code.\n- [ ] Unknown is returned when no weather data at all is present — never a false green.\n- [ ] Red wins: any single red-triggering metric makes the whole verdict red.\n- [ ] Two entry points exist — one taking the full flight, one taking raw values — so the flight list can compute badges from a lightweight projection without loading whole entities.\n- [ ] Boundary conditions (exactly at a threshold) are specified in the tests, not left ambiguous."
+    },
+    {
+      "key": "NB-035",
+      "epic": "EP-CALC",
+      "milestone": "S3",
+      "points": 3,
+      "priority": "P0",
+      "labels": [
+        "type:task",
+        "epic:calculations",
+        "area:backend",
+        "refactor"
+      ],
+      "title": "Single flight-assessment service reused by every surface",
+      "body": "**As a** pilot\n**I want** the list, the form, the detail page and the PDF to always agree\n**so that** I never see two different verdicts for the same flight.\n\n**Acceptance criteria**\n- [ ] One service returns a single assessment record: total weight, lift-sufficient flag and Go/No-Go verdict.\n- [ ] The edit page, view page, flight list and PDF exporter all consume it — no surface recomputes anything itself.\n- [ ] A test asserts the same flight yields an identical assessment through every consumer.\n- [ ] No obsolete or duplicate verdict property is left on the domain model.\n\n**Notes**\nThe POC carried a deprecated `GoNoGo` property on the model alongside the service. Nimbus should ship with only one path from the start."
+    },
+    {
+      "key": "NB-036",
+      "epic": "EP-FLIGHTPREP",
+      "milestone": "S3",
+      "points": 5,
+      "priority": "P0",
+      "labels": [
+        "type:story",
+        "epic:flight-prep",
+        "area:frontend",
+        "feature"
+      ],
+      "title": "Flight list with filters, status badges and paging",
+      "body": "**As a** pilot\n**I want** an overview of my flights\n**so that** I can find and reopen one quickly.\n\n**Acceptance criteria**\n- [ ] Lists the user's own flights plus those shared with them; an admin sees all.\n- [ ] Filters: all, flown, not flown, shared with me.\n- [ ] Each row shows date, balloon, location, flown state and the Go/No-Go badge.\n- [ ] Filtering, sorting and paging happen in SQL and are driven by API query parameters, not by loading everything into the browser.\n- [ ] A lightweight projection is used — the list never loads full flight entities with their children.\n- [ ] Owner display names resolve in one batched lookup, not one query per row.\n- [ ] Performance is verified with a few hundred flights present."
+    },
+    {
+      "key": "NB-037",
+      "epic": "EP-FLIGHTPREP",
+      "milestone": "S4",
+      "points": 3,
+      "priority": "P0",
+      "labels": [
+        "type:story",
+        "epic:flight-prep",
+        "area:frontend",
+        "feature"
+      ],
+      "title": "Flight detail view",
+      "body": "**As a** pilot\n**I want** a read-oriented view of a complete dossier\n**so that** I can review a flight without risking an accidental edit.\n\n**Acceptance criteria**\n- [ ] All nine sections plus the OFP render read-only, in the same order as the form.\n- [ ] The assessment badge, computed weights and sunrise/sunset are shown.\n- [ ] Actions available from here: edit, export PDF, share, mark as flown, delete — each shown only when the viewer is permitted to use it.\n- [ ] A viewer who is neither owner, admin nor shared-with gets a 403 from the API and is routed to the flight list — the check is server side, not a hidden button.\n- [ ] Uploaded meteo and trajectory images render inline."
+    },
+    {
+      "key": "NB-038",
+      "epic": "EP-FLIGHTPREP",
+      "milestone": "S3",
+      "points": 5,
+      "priority": "P0",
+      "labels": [
+        "type:task",
+        "epic:flight-prep",
+        "area:backend",
+        "feature"
+      ],
+      "title": "Transactional save that never corrupts the in-memory model",
+      "body": "**As a** pilot\n**I want** saving to be all-or-nothing\n**so that** an error never leaves me with half a dossier.\n\n**Acceptance criteria**\n- [ ] Create and update both run inside an explicit database transaction with rollback on failure.\n- [ ] Navigation properties and child collections are detached before the EF call so reference rows are not re-inserted, and restored in a `finally` block whether or not the save succeeded.\n- [ ] Create inserts the flight first, then re-parents and inserts children with the generated id and preserved order.\n- [ ] The child-collection update strategy (replace versus diff) is chosen deliberately, documented, and consistent.\n- [ ] Lightweight patch operations exist for high-frequency partial updates — trajectory JSON and KML track — issuing a single-column update without loading the full row.\n- [ ] A test asserts the caller's object is still intact after a failed save."
+    },
+    {
+      "key": "NB-039",
+      "epic": "EP-FLIGHTPREP",
+      "milestone": "S4",
+      "points": 2,
+      "priority": "P1",
+      "labels": [
+        "type:story",
+        "epic:flight-prep",
+        "area:backend",
+        "feature"
+      ],
+      "title": "Delete a flight preparation",
+      "body": "**As a** pilot\n**I want** to delete a flight I created by mistake\n**so that** my list stays meaningful.\n\n**Acceptance criteria**\n- [ ] Deletion requires explicit confirmation naming the flight.\n- [ ] Only the owner or an admin can delete; anyone else's attempt is logged and rejected server side.\n- [ ] Passengers, images, wind levels and shares are removed with the flight.\n- [ ] Whether deletion is hard or soft is decided and documented; if hard, the confirmation says so plainly."
+    },
+    {
+      "key": "NB-040",
+      "epic": "EP-WEATHER",
+      "milestone": "S4",
+      "points": 3,
+      "priority": "P0",
+      "labels": [
+        "type:story",
+        "epic:weather",
+        "area:backend",
+        "feature"
+      ],
+      "title": "Fetch METAR and TAF for the launch location",
+      "body": "**As a** pilot\n**I want** current METAR and TAF pulled in with one click\n**so that** I do not have to copy them from another site.\n\n**Acceptance criteria**\n- [ ] METAR and TAF are fetched from aviationweather.gov in raw format using the location's ICAO code.\n- [ ] The correct station's line is selected from a multi-line METAR response by case-insensitive ICAO prefix match.\n- [ ] TAF is stored as its full multi-line text.\n- [ ] Fetching without an ICAO code is prevented in the UI with an explanatory message.\n- [ ] A provider failure logs a warning, leaves existing values untouched and tells the user the fetch failed — it never clears the field or throws."
+    },
+    {
+      "key": "NB-041",
+      "epic": "EP-WEATHER",
+      "milestone": "S4",
+      "points": 3,
+      "priority": "P1",
+      "labels": [
+        "type:story",
+        "epic:weather",
+        "area:frontend",
+        "feature"
+      ],
+      "title": "Show the hourly forecast for the flight window",
+      "body": "**As a** pilot\n**I want** an hourly forecast for my launch site\n**so that** I can pick the best slot.\n\n**Acceptance criteria**\n- [ ] Temperature, wind speed, wind direction and precipitation probability over a three-day horizon from Open-Meteo.\n- [ ] Times are presented in the launch site's local timezone, not hard-coded to one country.\n- [ ] The hour matching the planned flight time is highlighted.\n- [ ] Selecting an hour can populate the meteo fields from that forecast.\n- [ ] An unavailable provider renders an empty state, not an error page.\n\n**Notes**\nThe POC hard-coded `Europe/Brussels`. Derive the timezone from the location's coordinates instead."
+    },
+    {
+      "key": "NB-042",
+      "epic": "EP-WEATHER",
+      "milestone": "S4",
+      "points": 5,
+      "priority": "P0",
+      "labels": [
+        "type:story",
+        "epic:weather",
+        "area:backend",
+        "feature"
+      ],
+      "title": "Fetch the wind profile by altitude from pressure-level data",
+      "body": "**As a** pilot\n**I want** wind direction and speed at each altitude band\n**so that** I can plan which level to fly and where I will drift.\n\n**Acceptance criteria**\n- [ ] Open-Meteo pressure-level wind data is mapped to approximate altitudes and returned as ordered wind levels.\n- [ ] Fetched levels populate the structured wind-by-altitude table, which the pilot can then edit by hand.\n- [ ] Manual edits are never overwritten by a later fetch without confirmation.\n- [ ] The table is stored as structured rows, not only as free text.\n- [ ] The mapping from pressure level to altitude is unit-tested against known standard-atmosphere values."
+    },
+    {
+      "key": "NB-043",
+      "epic": "EP-WEATHER",
+      "milestone": "S4",
+      "points": 3,
+      "priority": "P0",
+      "labels": [
+        "type:task",
+        "epic:weather",
+        "area:backend",
+        "feature"
+      ],
+      "title": "Fetch a wind time-series across pressure levels for simulation",
+      "body": "**As a** developer\n**I want** hourly wind snapshots across multiple pressure levels over a time window\n**so that** the trajectory simulator can interpolate through a changing wind field.\n\n**Acceptance criteria**\n- [ ] Returns a grid of hourly wind snapshots between two UTC timestamps, each covering all required pressure levels.\n- [ ] The requested window is clamped to what the provider actually offers, with the shortfall reported to the caller.\n- [ ] An empty or failed response yields an empty series, never null-reference errors downstream.\n- [ ] Responses are cached for the flight's window so re-running a simulation does not refetch."
+    },
+    {
+      "key": "NB-044",
+      "epic": "EP-WEATHER",
+      "milestone": "S4",
+      "points": 3,
+      "priority": "P0",
+      "labels": [
+        "type:task",
+        "epic:weather",
+        "area:backend",
+        "feature"
+      ],
+      "title": "Isolate every external provider behind its own resilient HTTP client",
+      "body": "**As a** maintainer\n**I want** each external API to have its own client, timeout and failure policy\n**so that** one slow provider cannot take down the form.\n\n**Acceptance criteria**\n- [ ] Named clients registered per provider — aviation weather, Open-Meteo, Overpass, static map tiles — each with its own base address, timeout and user agent.\n- [ ] Timeouts are configuration values, not literals.\n- [ ] Transient failures retry with exponential backoff and jitter; a circuit breaker stops hammering a provider that is down.\n- [ ] Every provider call returns an explicit success-or-failure result rather than throwing across the layer boundary.\n- [ ] Failure paths are covered by tests using a stubbed handler."
+    },
+    {
+      "key": "NB-045",
+      "epic": "EP-CALC",
+      "milestone": "S4",
+      "points": 5,
+      "priority": "P1",
+      "labels": [
+        "type:task",
+        "epic:calculations",
+        "area:backend",
+        "feature"
+      ],
+      "title": "Sunrise and sunset from the NOAA solar-position algorithm",
+      "body": "**As a** pilot\n**I want** accurate official sunrise and sunset for my launch site\n**so that** I can stay inside legal flying hours without consulting a table.\n\n**Acceptance criteria**\n- [ ] Full NOAA Solar Calculator method: Julian date, geometric mean longitude and anomaly, eccentricity, equation of centre, obliquity, declination, equation of time, hour angle.\n- [ ] Uses the standard 90.833° horizon-plus-refraction constant.\n- [ ] The hour angle is clamped so polar day and polar night return an edge value rather than NaN.\n- [ ] Results match the NOAA reference within one minute, asserted by tests.\n- [ ] Results are cross-checked against published Belgian AIP sunrise/sunset values for at least four dates spread across the year.\n- [ ] Times are shown on the form, the detail view and the PDF."
+    },
+    {
+      "key": "NB-046",
+      "epic": "EP-FLIGHTPREP",
+      "milestone": "S4",
+      "points": 5,
+      "priority": "P0",
+      "labels": [
+        "type:story",
+        "epic:flight-prep",
+        "epic:weather",
+        "area:frontend",
+        "feature"
+      ],
+      "title": "Section 2 — meteo entry with fetch assist and image uploads",
+      "body": "**As a** pilot\n**I want** to record the weather picture for the flight, including the charts I looked at\n**so that** the dossier shows what I actually based my decision on.\n\n**Acceptance criteria**\n- [ ] Fields: surface wind speed and direction, METAR, TAF, wind by altitude, precipitation, temperature, dew point, QNH, visibility and CAPE.\n- [ ] A single action fills METAR, TAF and the wind profile from the providers.\n- [ ] Images can be uploaded and tagged to the meteo section — Stüve diagram, sounding and similar — and are stored as blobs.\n- [ ] Upload shows progress and can be cancelled; a failed upload does not lose the rest of the form.\n- [ ] Uploaded images can be reordered and removed, and appear in the PDF export.\n- [ ] Changing wind, visibility or CAPE updates the Go/No-Go badge live, computed by the API so screen and print cannot diverge."
+    },
+    {
+      "key": "NB-075",
+      "epic": "EP-STORAGE",
+      "milestone": "S4",
+      "points": 5,
+      "priority": "P0",
+      "labels": [
+        "type:story",
+        "epic:storage",
+        "area:backend",
+        "feature"
+      ],
+      "title": "Store uploaded meteo and trajectory images as blobs",
+      "body": "**As a** pilot\n**I want** the charts and images I attach stored properly\n**so that** the dossier stays fast and the database stays small.\n\n**Acceptance criteria**\n- [ ] Uploaded images go to the `flight-images` container; the database stores only metadata — blob name, section tag, order, content type, size and upload time.\n- [ ] No image bytes are ever written to a database column.\n- [ ] Upload validates content type and size, and verifies the file really is an image rather than trusting the extension.\n- [ ] Images are served through the API or a short-lived SAS URL; a URL cannot be shared to grant permanent access.\n- [ ] Deleting an image removes both the metadata row and the blob, and a failure of either is reported rather than silently half-done.\n- [ ] A thumbnail or resized variant is generated for list views so a phone does not download full-resolution charts."
+    },
+    {
+      "key": "NB-047",
+      "epic": "EP-TRAJECTORY",
+      "milestone": "S5",
+      "points": 3,
+      "priority": "P0",
+      "labels": [
+        "type:task",
+        "epic:trajectory",
+        "area:backend",
+        "feature"
+      ],
+      "title": "Shared trajectory maths: great-circle destination and wind convention",
+      "body": "**As a** developer\n**I want** one tested implementation of the geodesic maths\n**so that** every trajectory feature agrees on where a point lands.\n\n**Acceptance criteria**\n- [ ] A destination-point function takes start latitude/longitude, bearing and distance and returns the destination on a spherical Earth (R = 6,371,000 m).\n- [ ] The wind convention is stated explicitly in code: wind direction is the direction it comes *from*, so travel bearing is wind direction plus 180 degrees.\n- [ ] A single haversine distance implementation is shared by the simulator and the track analytics — not duplicated per service.\n- [ ] Unit tests cover known bearings, the 0/360 boundary, the anti-meridian and zero distance."
+    },
+    {
+      "key": "NB-048",
+      "epic": "EP-TRAJECTORY",
+      "milestone": "S5",
+      "points": 8,
+      "priority": "P0",
+      "labels": [
+        "type:story",
+        "epic:trajectory",
+        "area:backend",
+        "feature"
+      ],
+      "title": "Time-varying trajectory simulator with ascent, cruise and descent",
+      "body": "**As a** pilot\n**I want** a predicted flight path based on how the wind changes with height and over time\n**so that** I can see where I am likely to land.\n\n**Acceptance criteria**\n- [ ] Inputs: launch position and UTC time, ascent rate (m/s), cruise altitude (ft), descent rate (m/s), total duration (min) and step size (s, default 60).\n- [ ] The flight is split into ascent, cruise and descent phases from simple kinematics.\n- [ ] When ascent plus descent alone would exceed the requested duration, ascent is scaled down proportionally and cruise collapses to zero — the simulation never overruns the requested duration.\n- [ ] At each step, wind is interpolated linearly between the two bracketing hourly snapshots and between the two bracketing pressure levels.\n- [ ] Wind direction is interpolated with a shortest-arc angular interpolation that handles the 0/360 wraparound — never a naive numeric average.\n- [ ] With no wind data available, a valid trajectory with no points is returned so the UI can show an empty state rather than crash.\n- [ ] Output records altitude, ordered points with elapsed minutes, data source, timestamp, duration and the rates used.\n- [ ] Tests cover the wraparound case, the too-short-duration case and the no-data case explicitly."
+    },
+    {
+      "key": "NB-049",
+      "epic": "EP-TRAJECTORY",
+      "milestone": "S5",
+      "points": 5,
+      "priority": "P1",
+      "labels": [
+        "type:story",
+        "epic:trajectory",
+        "area:backend",
+        "feature"
+      ],
+      "title": "Compare up to five cruise altitudes on one map",
+      "body": "**As a** pilot\n**I want** to simulate several cruise altitudes at once\n**so that** I can choose the height that puts me over a good landing area.\n\n**Acceptance criteria**\n- [ ] Accepts up to five cruise altitudes, de-duplicated and sorted.\n- [ ] Simulations run in parallel and the call returns when all complete.\n- [ ] Each trajectory is assigned a distinct colour from a fixed palette, stable across re-runs.\n- [ ] A legend maps colour to altitude on the map and in the exported image.\n- [ ] More than five altitudes is rejected with a clear message rather than silently truncated.\n- [ ] One failing simulation does not discard the others."
+    },
+    {
+      "key": "NB-050",
+      "epic": "EP-TRAJECTORY",
+      "milestone": "S5",
+      "points": 5,
+      "priority": "P0",
+      "labels": [
+        "type:story",
+        "epic:trajectory",
+        "area:frontend",
+        "feature"
+      ],
+      "title": "Interactive Leaflet map with a same-origin tile proxy",
+      "body": "**As a** pilot\n**I want** to see the predicted track on a real map I can pan and zoom\n**so that** I can judge the terrain along the route.\n\n**Acceptance criteria**\n- [ ] A reusable Angular map component wraps Leaflet, cleaning up its instance on destroy so navigating away does not leak.\n- [ ] Every simulated trajectory renders as a coloured polyline with start and landing markers.\n- [ ] Map tiles are served through a same-origin proxy endpoint on the API, which caches tiles and sets an appropriate user agent, respecting the provider's usage policy.\n- [ ] The map auto-fits the bounds of all trajectories on load.\n- [ ] Hovering a trajectory shows its altitude and elapsed time at that point.\n- [ ] The map degrades to a clear empty state when there is no simulation yet."
+    },
+    {
+      "key": "NB-051",
+      "epic": "EP-TRAJECTORY",
+      "milestone": "S5",
+      "points": 5,
+      "priority": "P1",
+      "labels": [
+        "type:story",
+        "epic:trajectory",
+        "area:backend",
+        "feature"
+      ],
+      "title": "High-tension power-line hazard overlay",
+      "body": "**As a** pilot\n**I want** high-voltage power lines drawn along my projected track\n**so that** I can plan a landing well clear of them.\n\n**Acceptance criteria**\n- [ ] An endpoint takes a bounding box and returns power lines as GeoJSON line strings.\n- [ ] Invalid bounding boxes — inverted or out of range — are rejected with a 400.\n- [ ] The Overpass query filters to lines of roughly 120 kV and above, so local distribution lines do not clutter the map.\n- [ ] Bounding boxes are rounded to about a one-kilometre grid to maximise cache hits, and results are cached for 24 hours.\n- [ ] Concurrent requests are serialised so simultaneous map loads cannot trigger provider rate limiting, with a cache re-check after acquiring the lock.\n- [ ] A rate-limit response is retried once after a short delay, then degrades to a 502 the map handles gracefully — the map never breaks because the overlay failed.\n- [ ] The overlay can be toggled off."
+    },
+    {
+      "key": "NB-052",
+      "epic": "EP-TRAJECTORY",
+      "milestone": "S5",
+      "points": 8,
+      "priority": "P1",
+      "labels": [
+        "type:task",
+        "epic:trajectory",
+        "area:backend",
+        "feature"
+      ],
+      "title": "Server-side static trajectory map image for the PDF",
+      "body": "**As a** pilot\n**I want** the trajectory map to appear in my printed dossier\n**so that** the paper copy is as useful as the screen.\n\n**Acceptance criteria**\n- [ ] Renders stored trajectories to a raster image server side, with no browser involved.\n- [ ] Computes a padded bounding box across all trajectories and picks a zoom level within sane bounds.\n- [ ] The tile grid is capped so a single render cannot fetch an unbounded number of tiles.\n- [ ] A minimum landscape aspect ratio is enforced by adding tile columns symmetrically — a purely north–south flight must still fit an A4 page. The reason is recorded in a code comment.\n- [ ] Tiles are fetched in parallel with bounded concurrency.\n- [ ] Composition draws base tiles, then polylines with a shadow pass for legibility, then the colour legend, then start and landing markers.\n- [ ] The rendered image is written to blob storage rather than held only in memory.\n- [ ] Rendering failure returns no image rather than failing the whole PDF export."
+    },
+    {
+      "key": "NB-077",
+      "epic": "EP-STORAGE",
+      "milestone": "S5",
+      "points": 3,
+      "priority": "P2",
+      "labels": [
+        "type:task",
+        "epic:storage",
+        "area:backend",
+        "refactor"
+      ],
+      "title": "Cache rendered trajectory map images in blob storage",
+      "body": "**As a** pilot\n**I want** the trajectory map image reused rather than redrawn every time\n**so that** exporting a dossier is fast.\n\n**Acceptance criteria**\n- [ ] A rendered map is stored in the `map-cache` container under a key derived from the trajectory content, so identical input reuses the image.\n- [ ] Re-running a simulation produces a new key; the stale image is not served.\n- [ ] A cache miss renders and stores transparently; a storage failure falls back to rendering in memory rather than failing the export.\n- [ ] A lifecycle rule expires cached map images after a configured period.\n- [ ] Cache hit rate is visible in telemetry."
+    },
+    {
+      "key": "NB-053",
+      "epic": "EP-FLIGHTPREP",
+      "milestone": "S5",
+      "points": 3,
+      "priority": "P0",
+      "labels": [
+        "type:story",
+        "epic:flight-prep",
+        "epic:trajectory",
+        "area:frontend",
+        "feature"
+      ],
+      "title": "Section 8 — route and trajectory, with simulation autosave",
+      "body": "**As a** pilot\n**I want** to describe my route, run a simulation and attach track images in one place\n**so that** the route section tells the whole story.\n\n**Acceptance criteria**\n- [ ] Free-text route description alongside the simulation controls and the map.\n- [ ] Trajectory images can be uploaded, tagged to the route section, reordered and removed.\n- [ ] Running a simulation persists the result immediately through a dedicated API endpoint issuing a single-column update, without requiring a full form save.\n- [ ] Simulation parameters are remembered per flight so re-running does not mean re-typing.\n- [ ] A long-running simulation shows progress and can be cancelled."
+    },
+    {
+      "key": "NB-054",
+      "epic": "EP-OFP",
+      "milestone": "S6",
+      "points": 5,
+      "priority": "P0",
+      "labels": [
+        "type:story",
+        "epic:ofp",
+        "area:backend",
+        "feature"
+      ],
+      "title": "OFP data model with snapshot-on-select semantics",
+      "body": "**As a** pilot\n**I want** the reference weights used for a flight frozen at the moment I planned it\n**so that** a past flight's paperwork stays historically accurate after I change a burner.\n\n**Acceptance criteria**\n- [ ] On creating a *new* flight, operator name and PIC weight are copied from the user profile.\n- [ ] On selecting a balloon for a new flight, its envelope, basket, burner and cylinder weights are copied onto the flight record.\n- [ ] Editing a balloon later never alters an existing flight's snapshotted weights; this is asserted by a test.\n- [ ] Changing the selected balloon on a still-unsaved new flight re-snapshots; on a saved flight the pilot is asked to confirm before values are replaced.\n- [ ] The OFP total-weight formula includes the per-passenger equipment weight from the user's OFP settings.\n- [ ] The reason for snapshotting rather than joining is recorded in a code comment and in the architecture notes."
+    },
+    {
+      "key": "NB-055",
+      "epic": "EP-OFP",
+      "milestone": "S6",
+      "points": 5,
+      "priority": "P0",
+      "labels": [
+        "type:story",
+        "epic:ofp",
+        "area:frontend",
+        "feature"
+      ],
+      "title": "Section 10 — Operational Flight Plan form",
+      "body": "**As a** pilot\n**I want** to complete a formal operational flight plan alongside the informal prep\n**so that** I have the documentation an inspection would expect.\n\n**Acceptance criteria**\n- [ ] Fields: operator name, PIC weight, snapshotted equipment weights, planned landing location and time, fuel available and required (minutes), fuel consumption (L), visible-defects flag with notes.\n- [ ] Passenger flags — child, needs assistance, transport — feed the manifest.\n- [ ] Fuel required is compared against fuel available with a clear warning when the reserve is insufficient.\n- [ ] The OFP total weight is shown next to the basic total weight so the two are visibly different figures, not one silently replacing the other.\n- [ ] Every OFP field is optional at save time — the dossier is still usable for a pilot who does not need the formal layer."
+    },
+    {
+      "key": "NB-056",
+      "epic": "EP-PDF",
+      "milestone": "S6",
+      "points": 8,
+      "priority": "P0",
+      "labels": [
+        "type:story",
+        "epic:pdf",
+        "area:backend",
+        "feature"
+      ],
+      "title": "Export the dossier as a print-ready A4 PDF",
+      "body": "**As a** pilot\n**I want** to print the whole dossier\n**so that** I can take it into the basket and file it afterwards.\n\n**Acceptance criteria**\n- [ ] A4 output with consistent margins and a legible body size, generated with QuestPDF under its Community licence.\n- [ ] Header carries date and time, balloon registration and type, and pilot name.\n- [ ] All nine sections render as labelled tables, including sunrise/sunset, the wind-by-altitude table with alternating row shading, the technical checklist with real checkbox glyphs, and the load table with per-passenger rows and computed totals.\n- [ ] Uploaded meteo and trajectory images are embedded, scaled to fit without distortion.\n- [ ] The trajectory map is rendered server side and embedded when a simulation exists.\n- [ ] The Go/No-Go badge is produced by the shared assessment service, so print can never disagree with screen.\n- [ ] Page breaks never split a table row or orphan a section header.\n- [ ] Embedded images are streamed from blob storage, not loaded from the database.\n- [ ] Generation of a fully populated dossier completes in under five seconds."
+    },
+    {
+      "key": "NB-057",
+      "epic": "EP-PDF",
+      "milestone": "S6",
+      "points": 5,
+      "priority": "P1",
+      "labels": [
+        "type:story",
+        "epic:pdf",
+        "epic:ofp",
+        "area:backend",
+        "feature"
+      ],
+      "title": "Dedicated OFP page in the PDF with signature and after-flight blocks",
+      "body": "**As a** pilot\n**I want** the operational flight plan printed as its own formal page\n**so that** it can be signed and filed on its own.\n\n**Acceptance criteria**\n- [ ] A separate page containing the fuel table, the load table (take-off temperature, QNH, elevation converted to feet, max altitude, envelope volume, lift available versus lift required) and the equipment-weights table.\n- [ ] A signature block covering operating-site suitability, reserve fuel or ballast sufficiency, passengers briefed, meteorological and aeronautical information reviewed, and crew fitness.\n- [ ] A blank last-minute-updates box sized to be written in by hand.\n- [ ] An after-flight record table: actual landing, actual duration, post-flight remarks and visible defects — printing a blank ruled line where a value is not yet recorded.\n- [ ] Elevation and altitude unit conversions are unit-tested.\n- [ ] The page is covered by its own test file, separate from the main dossier tests."
+    },
+    {
+      "key": "NB-076",
+      "epic": "EP-STORAGE",
+      "milestone": "S6",
+      "points": 3,
+      "priority": "P1",
+      "labels": [
+        "type:story",
+        "epic:storage",
+        "area:backend",
+        "feature"
+      ],
+      "title": "Archive generated PDF dossiers in blob storage",
+      "body": "**As a** pilot\n**I want** an exported dossier kept\n**so that** I can download the exact document I took flying without regenerating it.\n\n**Acceptance criteria**\n- [ ] A generated PDF is written to the `flight-exports` container and recorded against the flight with its generation timestamp.\n- [ ] Re-exporting an unchanged flight returns the stored PDF instead of regenerating it.\n- [ ] Any change to the flight invalidates the stored export, so a stale document can never be served as current.\n- [ ] The export list shows generation time and file size, and previous exports remain downloadable.\n- [ ] Access is subject to the same owner/admin/shared rules as the flight itself."
+    },
+    {
+      "key": "NB-058",
+      "epic": "EP-SHARING",
+      "milestone": "S6",
+      "points": 5,
+      "priority": "P1",
+      "labels": [
+        "type:story",
+        "epic:sharing",
+        "area:frontend",
+        "feature"
+      ],
+      "title": "Share a flight preparation with another user",
+      "body": "**As a** pilot\n**I want** to share a dossier with my co-pilot or instructor\n**so that** they can review it before we fly.\n\n**Acceptance criteria**\n- [ ] Only the owner can share; ownership is re-verified server side on every sharing operation, independent of what the UI allowed.\n- [ ] The picker lists all users except the owner and anyone already shared with, so a duplicate cannot be chosen.\n- [ ] Sharing with someone already shared with is a silent no-op, not an error or a duplicate row.\n- [ ] A share row records the flight, the recipient and the timestamp, with a unique index on flight and recipient.\n- [ ] An unauthorised sharing attempt logs a warning and changes nothing."
+    },
+    {
+      "key": "NB-059",
+      "epic": "EP-SHARING",
+      "milestone": "S6",
+      "points": 2,
+      "priority": "P1",
+      "labels": [
+        "type:story",
+        "epic:sharing",
+        "area:frontend",
+        "feature"
+      ],
+      "title": "Review and revoke shares",
+      "body": "**As a** pilot\n**I want** to see who a flight is shared with and take access away\n**so that** I stay in control of my data.\n\n**Acceptance criteria**\n- [ ] The share dialog lists current recipients with the date access was granted.\n- [ ] Revoking takes effect immediately — the recipient's next request is refused.\n- [ ] Only the owner can revoke, re-checked server side.\n- [ ] Revoking a share that no longer exists is a no-op, not an error."
+    },
+    {
+      "key": "NB-060",
+      "epic": "EP-SHARING",
+      "milestone": "S6",
+      "points": 3,
+      "priority": "P0",
+      "labels": [
+        "type:story",
+        "epic:sharing",
+        "area:backend",
+        "feature"
+      ],
+      "title": "Viewer roles: owner, admin and shared",
+      "body": "**As a** pilot\n**I want** shared viewers to see but not break my dossier\n**so that** sharing is safe.\n\n**Acceptance criteria**\n- [ ] The detail view distinguishes owner, admin and shared viewer, and renders the appropriate actions for each.\n- [ ] A shared viewer can read and export, but cannot edit, delete, share on, or mark as flown.\n- [ ] An admin sees everything and bypasses the share check deliberately and explicitly.\n- [ ] Anyone who is none of the three is redirected to the flight list — the restriction is enforced server side, not by hiding a link.\n- [ ] The flight list's shared filter is expressed in SQL, not evaluated in memory.\n- [ ] Every role combination is covered by tests."
+    },
+    {
+      "key": "NB-061",
+      "epic": "EP-POSTFLIGHT",
+      "milestone": "BL",
+      "points": 3,
+      "priority": "P1",
+      "labels": [
+        "type:story",
+        "epic:post-flight",
+        "area:frontend",
+        "feature"
+      ],
+      "title": "Mark a flight as flown and record what actually happened",
+      "body": "**As a** pilot\n**I want** to record the actual outcome after landing\n**so that** my logbook reflects reality rather than the plan.\n\n**Acceptance criteria**\n- [ ] A single action captures actual landing notes, actual duration (minutes), remarks, actual fuel consumption, actual landing location and visible defects with notes.\n- [ ] One write path updates all post-flight fields together and stamps the updated timestamp.\n- [ ] Only the owner or an admin can mark a flight as flown.\n- [ ] The flown state is reflected in the list badge and filter immediately.\n- [ ] A flight can be un-marked if it was recorded in error."
+    },
+    {
+      "key": "NB-062",
+      "epic": "EP-POSTFLIGHT",
+      "milestone": "BL",
+      "points": 3,
+      "priority": "P1",
+      "labels": [
+        "type:story",
+        "epic:post-flight",
+        "area:backend",
+        "feature"
+      ],
+      "title": "Upload and parse a KML flight track",
+      "body": "**As a** pilot\n**I want** to upload the track my logger recorded\n**so that** I can see where I actually flew.\n\n**Acceptance criteria**\n- [ ] Accepts a KML file exported from common tracker apps and parses it namespace-aware.\n- [ ] The original file is stored in the `flight-tracks` container; the database keeps only the blob reference and derived statistics.\n- [ ] Each coordinate triple is parsed with invariant-culture number handling; a missing altitude defaults to zero.\n- [ ] A malformed or unexpected file results in an empty track and a clear message — never an exception reaching the user.\n- [ ] Upload size and file type are validated before parsing, and upload shows progress.\n- [ ] Derived statistics — maximum and minimum altitude, total distance — are computed once on upload and stored, not recomputed on every view."
+    },
+    {
+      "key": "NB-063",
+      "epic": "EP-POSTFLIGHT",
+      "milestone": "BL",
+      "points": 5,
+      "priority": "P2",
+      "labels": [
+        "type:story",
+        "epic:post-flight",
+        "area:frontend",
+        "feature"
+      ],
+      "title": "Track map and altitude profile with a synchronised crosshair",
+      "body": "**As a** pilot\n**I want** to hover the altitude chart and see where I was on the map\n**so that** I can review how the flight unfolded.\n\n**Acceptance criteria**\n- [ ] The recorded track renders as a polyline on the shared Leaflet map component.\n- [ ] An altitude-over-time chart is drawn in feet using Chart.js through `ng2-charts`.\n- [ ] Hovering the chart moves a crosshair marker on the map, and hovering the map highlights the corresponding chart point — coordinated through a shared Angular service, not direct component coupling.\n- [ ] Both views handle a track with thousands of points without noticeable lag — downsample for display if needed.\n- [ ] The pairing works with touch input, not only with a mouse."
+    },
+    {
+      "key": "NB-064",
+      "epic": "EP-POSTFLIGHT",
+      "milestone": "BL",
+      "points": 5,
+      "priority": "P2",
+      "labels": [
+        "type:story",
+        "epic:post-flight",
+        "area:frontend",
+        "feature"
+      ],
+      "title": "Logbook dashboard with flying statistics",
+      "body": "**As a** pilot\n**I want** to see my flying history summarised\n**so that** I can track my currency and experience.\n\n**Acceptance criteria**\n- [ ] Totals: number of flights, flown versus planned, and total flown minutes.\n- [ ] Most-used location and most-used balloon.\n- [ ] Bar charts for flights by month and flights by location (top eight), rendered with `ng2-charts`.\n- [ ] Scope matches the flight list: own flights plus shared, everything for an admin.\n- [ ] Aggregation happens in the database, not by loading every flight into memory.\n- [ ] An empty state is shown for a pilot with no flights yet, not a page of zeroes and blank charts."
+    },
+    {
+      "key": "NB-065",
+      "epic": "EP-PLATFORM",
+      "milestone": "BL",
+      "points": 3,
+      "priority": "P2",
+      "labels": [
+        "type:story",
+        "epic:platform",
+        "area:frontend",
+        "feature"
+      ],
+      "title": "Installable PWA that survives a poor signal at the launch field",
+      "body": "**As a** pilot standing in a field with one bar of signal\n**I want** the app installed on my phone and usable offline\n**so that** I can still read my dossier.\n\n**Acceptance criteria**\n- [ ] Angular's PWA support is enabled: web app manifest with name, theme colour and a full icon set; the app is installable on Android and iOS.\n- [ ] The Angular service worker caches the app shell and static assets, with automatic versioning on each deploy.\n- [ ] A previously viewed dossier and its images are readable offline.\n- [ ] The offline state is clearly indicated rather than silently showing stale data.\n- [ ] Actions that require the network are disabled with an explanation when offline.\n- [ ] The app prompts to reload when a new version has been deployed."
+    },
+    {
+      "key": "NB-066",
+      "epic": "EP-PLATFORM",
+      "milestone": "BL",
+      "points": 3,
+      "priority": "P2",
+      "labels": [
+        "type:story",
+        "epic:platform",
+        "area:frontend",
+        "feature"
+      ],
+      "title": "In-app user manual",
+      "body": "**As a** new user\n**I want** an explanation of how the app works inside the app\n**so that** I can get going without asking anyone.\n\n**Acceptance criteria**\n- [ ] A manual page covers first-run setup, creating a dossier, each section, the trajectory tools, export and sharing.\n- [ ] Screenshots are included and a documented process keeps them current.\n- [ ] The manual is searchable or at minimum has an in-page table of contents.\n- [ ] It is reachable from the main navigation and from a help affordance on the flight form."
+    },
+    {
+      "key": "NB-067",
+      "epic": "EP-PLATFORM",
+      "milestone": "BL",
+      "points": 5,
+      "priority": "P2",
+      "labels": [
+        "type:story",
+        "epic:platform",
+        "epic:cicd",
+        "area:infra",
+        "feature"
+      ],
+      "title": "Release notes page fed by automated release-note generation",
+      "body": "**As a** user\n**I want** to see what changed in the version I am actually running\n**so that** the changelog is trustworthy.\n\n**Acceptance criteria**\n- [ ] On merge to `main`, the pipeline generates a short release note from the pull request's title, body and labels.\n- [ ] If the generation service is unavailable, it falls back to the PR body and then the title — a release is never blocked by it.\n- [ ] The semantic version is bumped from the PR label: `feature` major, `refactor` minor, `BUG` patch.\n- [ ] The updated notes file is committed back to `main` with a marker that prevents the bot's own commit from re-triggering the pipeline.\n- [ ] The notes file is baked into the deployed artifact, so the in-app page always matches what is live.\n- [ ] The page lists versions newest first with dates."
+    },
+    {
+      "key": "NB-068",
+      "epic": "EP-QUALITY",
+      "milestone": "BL",
+      "points": 5,
+      "priority": "P1",
+      "labels": [
+        "type:task",
+        "epic:quality",
+        "area:infra",
+        "feature"
+      ],
+      "title": "Playwright end-to-end suite running in the pipeline",
+      "body": "**As a** maintainer\n**I want** the critical journeys checked in a real browser before deployment\n**so that** a regression is caught before a pilot finds it.\n\n**Acceptance criteria**\n- [ ] Covered journeys: register and approve, log in, set up reference data, create and save a dossier, run a simulation, export a PDF, share a flight, mark as flown.\n- [ ] The suite runs against the containerised stack — API, SQL Server and Azurite — with a seeded database, deterministically.\n- [ ] External providers are stubbed so tests do not depend on third-party availability.\n- [ ] The suite runs before deployment and can be skipped by an explicit commit marker for documentation-only changes.\n- [ ] Failures publish a trace, screenshot and video as workflow artifacts.\n- [ ] Total runtime stays under ten minutes."
+    },
+    {
+      "key": "NB-069",
+      "epic": "EP-QUALITY",
+      "milestone": "BL",
+      "points": 5,
+      "priority": "P2",
+      "labels": [
+        "type:task",
+        "epic:quality",
+        "area:frontend",
+        "refactor"
+      ],
+      "title": "Accessibility and mobile usability pass",
+      "body": "**As a** pilot using the app in bright sunlight on a phone\n**I want** the interface to be legible and operable\n**so that** I can actually use it where I need it.\n\n**Acceptance criteria**\n- [ ] All interactive elements are keyboard reachable with a visible focus indicator.\n- [ ] Form fields have associated labels; errors are announced to assistive technology.\n- [ ] Colour contrast meets WCAG 2.1 AA, including the Go/No-Go badge — which must not rely on colour alone to convey its verdict.\n- [ ] An automated accessibility check (axe) runs against the Angular app in the pipeline and fails on new violations.\n- [ ] Every page is verified at 360 px width with touch targets of at least 44 px."
+    },
+    {
+      "key": "NB-070",
+      "epic": "EP-QUALITY",
+      "milestone": "BL",
+      "points": 3,
+      "priority": "P2",
+      "labels": [
+        "type:task",
+        "epic:quality",
+        "area:backend",
+        "refactor"
+      ],
+      "title": "Query performance guardrails",
+      "body": "**As a** maintainer\n**I want** query behaviour measured rather than assumed\n**so that** the app stays fast as flight history grows.\n\n**Acceptance criteria**\n- [ ] A seeded dataset of at least a thousand flights with children exists for performance testing.\n- [ ] The flight list, logbook and detail endpoints are profiled and their query counts recorded.\n- [ ] A test fails the build if a known N+1 pattern reappears on those endpoints.\n- [ ] Azure SQL Query Store is enabled and the top regressed queries are reviewed each sprint.\n- [ ] Angular bundle size is budgeted in `angular.json` and the build fails when a budget is exceeded.\n- [ ] Findings and the resulting index changes are written up in `docs/performance.md`."
+    },
+    {
+      "key": "NB-078",
+      "epic": "EP-STORAGE",
+      "milestone": "BL",
+      "points": 3,
+      "priority": "P1",
+      "labels": [
+        "type:task",
+        "epic:storage",
+        "area:backend",
+        "feature"
+      ],
+      "title": "Blob lifecycle: orphan cleanup and retention",
+      "body": "**As a** maintainer\n**I want** blobs cleaned up when the thing they belong to goes away\n**so that** storage cost and privacy exposure do not creep upward.\n\n**Acceptance criteria**\n- [ ] Deleting a flight deletes its images, track, exports and cached maps.\n- [ ] Deleting a user's data removes their blobs across every container.\n- [ ] A scheduled job reconciles blobs against the database and reports — then, once trusted, removes — orphans.\n- [ ] The reconciliation job is safe to run repeatedly and never deletes a blob whose owning row exists.\n- [ ] Storage lifecycle rules move old exports to a cool tier.\n- [ ] Soft delete is enabled on the storage account so an accidental deletion is recoverable."
+    }
+  ]
+}
