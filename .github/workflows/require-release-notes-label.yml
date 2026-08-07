@@ -16,7 +16,7 @@ jobs:
   check-release-notes-label:
     runs-on: ubuntu-latest
     steps:
-      - name: Require exactly one of feature / refactor / bug
+      - name: Require exactly one of feature / refactor / bug / documentation / chore
         uses: mheap/github-action-required-labels@v5
         with:
           mode: exactly
@@ -25,5 +25,7 @@ jobs:
             feature
             refactor
             bug
+            documentation
+            chore
           add_comment: true
           message: "This PR must have exactly {{ count }} release-notes label from: {{ provided }}. Found: {{ applied }}."
