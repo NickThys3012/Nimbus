@@ -4,6 +4,7 @@ using HealthChecks.UI.Client;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
+using Microsoft.Extensions.FileProviders;
 using Microsoft.IdentityModel.Tokens;
 using Nimbus.API.Middleware;
 using Nimbus.Application;
@@ -72,6 +73,21 @@ try
     // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
     builder.Services.AddOpenApi();
 
+    if (builder.Environment.IsDevelopment())
+    {
+        var dist = Path.GetFullPath(Path.Combine(
+            builder.Environment.ContentRootPath, "../../Nimbus.Web/dist/Nimbus.Web/browser"));
+        if (Directory.Exists(dist))
+        {
+            builder.Environment.WebRootPath = dist;
+            // WebRootFileProvider is initialized before this point (based on the
+            // default "wwwroot" folder), so it must be rebuilt explicitly — just
+            // updating WebRootPath does not refresh the file provider used by
+            // UseStaticFiles()/MapFallbackToFile().
+            builder.Environment.WebRootFileProvider = new PhysicalFileProvider(dist);
+        }
+    }
+    
     var app = builder.Build();
 
     await app.Services.MigrateDatabaseAsync();

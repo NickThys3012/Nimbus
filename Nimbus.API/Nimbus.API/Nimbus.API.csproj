@@ -26,4 +26,22 @@
         <ProjectReference Include="..\Nimbus.Observability\Nimbus.Observability.csproj"/>
     </ItemGroup>
 
+    <PropertyGroup>
+        <SpaRoot>..\..\Nimbus.Web\</SpaRoot>
+        <SpaDist>$(SpaRoot)dist\nimbus\browser\</SpaDist>
+    </PropertyGroup>
+
+    <Target Name="PublishAngular" AfterTargets="ComputeFilesToPublish"
+            Condition="'$(SkipSpaBuild)' != 'true'">
+        <Exec WorkingDirectory="$(SpaRoot)" Command="npm ci" />
+        <Exec WorkingDirectory="$(SpaRoot)" Command="npm run build -- --configuration production" />
+        <ItemGroup>
+            <SpaFiles Include="$(SpaDist)**\*" />
+            <ResolvedFileToPublish Include="@(SpaFiles->'%(FullPath)')" Exclude="@(ResolvedFileToPublish)">
+                <RelativePath>wwwroot\%(RecursiveDir)%(Filename)%(Extension)</RelativePath>
+                <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+            </ResolvedFileToPublish>
+        </ItemGroup>
+    </Target>
+
 </Project>

@@ -24,7 +24,7 @@ public class AuthenticationController : ControllerBase
     }
     
     [HttpPost("login")]
-    public async Task<IActionResult> Login(LoginRequestDto request)
+    public async Task<ActionResult<LoginResponseDto>> Login(LoginRequestDto request)
     {
         var user = await _users.FindByEmailAsync(request.Email);
         if (user is null)
@@ -49,7 +49,7 @@ public class AuthenticationController : ControllerBase
     
     // ── POST /api/auth/refresh ──────────────────────────────────────
     [HttpPost("refresh")]
-    public async Task<IActionResult> Refresh()
+    public async Task<ActionResult<LoginResponseDto>> Refresh()
     {
         var raw = Request.Cookies["refreshToken"];
         if (raw is null)
@@ -82,7 +82,7 @@ public class AuthenticationController : ControllerBase
     
     // ── POST /api/auth/logout ───────────────────────────────────────
     [HttpPost("logout")]
-    public async Task<IActionResult> Logout()
+    public async Task<ActionResult> Logout()
     {
         var raw = Request.Cookies["refreshToken"];
         if (raw is not null)
@@ -99,7 +99,7 @@ public class AuthenticationController : ControllerBase
     }
     
     [HttpGet]
-    public async Task<IActionResult> Get([FromQuery] string email)
+    public async Task<ActionResult<UserDto>> Get([FromQuery] string email)
     {
         var user = await _mediator.Send(new GetUserByEmailQuery(email));
         return Ok(user);
