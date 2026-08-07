@@ -30,10 +30,16 @@ assignees: ''
 
 ## Environment
 
-- Affected area: [ ] Nimbus.API (backend)  [ ] Nimbus.Web (frontend)  [ ] Database
+- Affected area:
+  - [ ] Nimbus.API (backend)
+  - [ ] Nimbus.Web (frontend)
+  - [ ] Database
 - Browser (if frontend):
 - OS:
-- Environment: [ ] Local dev  [ ] Staging  [ ] Production
+- Environment:
+  - [ ] Local dev
+  - [ ] Staging
+  - [ ] Production
 
 ## Severity / impact
 
