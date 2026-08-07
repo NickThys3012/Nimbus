@@ -1,0 +1,18 @@
+<p>user-by-mail works!</p>
+<input
+  type="email"
+  placeholder="Search by email"
+  (input)="authStore.lookupEmail.set($any($event.target).value)"
+/>
+
+@if (authStore.userLookup.isLoading()) {
+  <p>Loading…</p>
+}
+
+@if (authStore.userLookup.error(); as err) {
+  <p class="error">{{ err.message }}</p>
+}
+
+@if (authStore.userLookup.hasValue()) {
+  <p>{{ authStore.userLookup.value().firstName }} {{ authStore.userLookup.value().lastName }}</p>
+}
