@@ -1,0 +1,31 @@
+name: Require release-notes label
+
+# Ensures every PR carries exactly one of the release-notes labels
+# (feature / refactor / bug) so release notes can be generated
+# automatically from label. Re-runs whenever labels or the PR head change.
+
+on:
+  pull_request:
+    types: [opened, reopened, labeled, unlabeled, synchronize, edited]
+
+permissions:
+  pull-requests: write
+  issues: write
+
+jobs:
+  check-release-notes-label:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require exactly one of feature / refactor / bug / documentation / chore
+        uses: mheap/github-action-required-labels@v5
+        with:
+          mode: exactly
+          count: 1
+          labels: |
+            feature
+            refactor
+            bug
+            documentation
+            chore
+          add_comment: true
+          message: "This PR must have exactly {{ count }} release-notes label from: {{ provided }}. Found: {{ applied }}."
