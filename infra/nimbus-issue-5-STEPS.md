@@ -749,7 +749,7 @@ Note the destination filename: `compose.yaml`. Compose picks that up by default,
 cd ~/path/to/Nimbus
 scp infra/docker-compose.prod.yml deploy@<vps-ip>:/opt/nimbus/compose.yaml
 scp infra/docker-compose.limits.yml deploy@<vps-ip>:/opt/nimbus/compose.override.yaml
-scp infra/Caddyfile infra/prometheus.yml infra/alert.rules.yml deploy@<vps-ip>:/opt/nimbus/
+scp infra/Caddyfile infra/prometheus.yml infra/alert.rules.yml infra/minio-init.sh deploy@<vps-ip>:/opt/nimbus/
 ssh deploy@<vps-ip> 'ls -l /opt/nimbus'
 ```
 
@@ -762,9 +762,12 @@ needs no `-f` flag and carries the memory/CPU ceilings automatically.
 Generate the secrets first and keep the output — you will paste these into your password manager:
 
 ```bash
-echo "SA:      $(openssl rand -base64 24)"
-echo "MINIO:   $(openssl rand -base64 24)"
-echo "GRAFANA: $(openssl rand -base64 24)"
+echo "SA:           $(openssl rand -base64 24)"
+echo "MINIO:        $(openssl rand -base64 24)"
+echo "MINIO_APP:    $(openssl rand -base64 24)"
+echo "GRAFANA:      $(openssl rand -base64 24)"
+echo "MINIO_CONSOLE_PW: $(openssl rand -base64 18)"
+docker run --rm caddy:2-alpine caddy hash-password --plaintext '<paste MINIO_CONSOLE_PW above>'
 ```
 
 Then write the file, substituting your real values:
@@ -782,7 +785,10 @@ MSSQL_MEMORY_LIMIT_MB=1792
 
 MINIO_ROOT_USER=nimbus
 MINIO_ROOT_PASSWORD=<paste MINIO>
-MINIO_BUCKET=nimbus
+MINIO_APP_ACCESS_KEY=nimbus-app
+MINIO_APP_SECRET_KEY=<paste MINIO_APP>
+MINIO_CONSOLE_USER=nick
+MINIO_CONSOLE_PASSWORD_HASH=<paste output of `caddy hash-password`>
 
 GRAFANA_ADMIN_USER=nick
 GRAFANA_ADMIN_PASSWORD=<paste GRAFANA>
@@ -825,6 +831,7 @@ as a container that starts and instantly exits.
 ```bash
 cd /opt/nimbus
 docker compose --profile stub up -d
+docker compose --profile stub up minio-init   # one-shot: bootstraps buckets/policy/app-user, exits 0
 docker compose --profile stub ps
 ```
 
@@ -834,7 +841,8 @@ Watch certificate issuance:
 docker compose logs -f caddy
 ```
 
-You want `certificate obtained successfully` for both hostnames. `Ctrl+C` to stop following.
+You want `certificate obtained successfully` for all three hostnames (`nimbus.`, `grafana.`,
+`console.`). `Ctrl+C` to stop following.
 
 ACME failures are almost always Part B (DNS not resolving) or port 80 blocked.
 
@@ -849,8 +857,9 @@ cd /opt/nimbus
 docker compose --profile stub ps --format 'table {{.Service}}\t{{.State}}'
 ```
 
-All eight must read `running`: `api-stub`, `caddy`, `grafana`, `loki`, `minio`, `node-exporter`,
-`prometheus`, `sqlserver`.
+All eight long-running services must read `running`: `api-stub`, `caddy`, `grafana`, `loki`, `minio`,
+`node-exporter`, `prometheus`, `sqlserver`. `minio-init` is one-shot and correctly shows `exited (0)`
+— re-run `docker compose --profile stub up minio-init` any time to confirm it is still idempotent.
 
 ```bash
 curl -sI http://localhost | head -1        # Caddy is answering
