@@ -62,7 +62,8 @@ services:
       MSSQL_MEMORY_LIMIT_MB: ${MSSQL_MEMORY_LIMIT_MB}
     volumes:
       - /srv/nimbus/data/mssql:/var/opt/mssql
-    mem_limit: 5g
+    # Memory/CPU ceilings live in docker-compose.limits.yml (issue #103), not here,
+    # so the budget stays in one place. Deploy with both files layered.
     networks: [nimbus]
 
   minio:
@@ -88,6 +89,17 @@ services:
   prometheus:
     image: prom/prometheus:v2.55.0
     restart: unless-stopped
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --web.console.libraries=/etc/prometheus/console_libraries
+      - --web.console.templates=/etc/prometheus/consoles
+      # Retention is decided together with the 1536M memory ceiling in
+      # docker-compose.limits.yml (issue #103): Prometheus' footprint scales with
+      # active series and retention, not traffic. 15 days / 8 GB keeps it inside
+      # the ~10 GB disk budget documented in RESOURCE-BUDGET.md.
+      - --storage.tsdb.retention.time=15d
+      - --storage.tsdb.retention.size=8GB
     volumes:
       - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - ./alert.rules.yml:/etc/prometheus/alert.rules.yml:ro

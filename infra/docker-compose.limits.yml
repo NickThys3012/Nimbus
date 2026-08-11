@@ -1,0 +1,90 @@
+name: nimbus
+
+# Resource-limits override for infra/docker-compose.prod.yml (issue #103).
+#
+# On the VPS this file is copied to /opt/nimbus/compose.override.yaml, which Docker
+# Compose auto-loads alongside compose.yaml — no -f flag needed. See
+# infra/nimbus-issue-5-STEPS.md Part D1 for the deploy step. Locally, layer it
+# explicitly instead:
+#   docker compose -f docker-compose.prod.yml -f docker-compose.limits.yml --profile app up -d
+#
+# Host: 6 vCPU / 12 GB RAM / 200 GB SSD.
+#
+# The memory ceilings below sum to ~8.9 GB against 12 GB physical RAM, leaving ~3.1 GB
+# for the kernel, page cache, SSH, cron and restic. That headroom is what makes these
+# limits a real guarantee rather than eight ceilings that can collectively overcommit
+# the box. Adding a service means taking memory from another service's ceiling, not
+# from the headroom.
+#
+# CPU limits deliberately sum to more than 6 (11.25 total): CPU is a share, not a
+# reservation, so oversubscription is correct here. The API can burst into idle cores
+# during a SkiaSharp render while a runaway Prometheus query still cannot starve it.
+#
+# | Service       | Memory limit | Reservation | CPUs |
+# |---------------|--------------|-------------|------|
+# | sqlserver     | 2560M        | 1536M       | 3.0  |
+# | api           | 2G           | 512M        | 3.0  |
+# | prometheus    | 1536M        | 384M        | 1.0  |
+# | minio         | 1G           | 256M        | 1.5  |
+# | loki          | 1G           | 256M        | 1.0  |
+# | grafana       | 512M         | 128M        | 0.5  |
+# | caddy         | 256M         | 64M         | 1.0  |
+# | node-exporter | 128M         | —           | 0.25 |
+# | migrator      | 512M (transient) | —       | 2.0  |
+#
+# SQL Server: MSSQL_MEMORY_LIMIT_MB is set to 1792 in .env.example, comfortably below
+# the 2560M container ceiling here, so SQL Server backs off before the OOM killer
+# intervenes. Express caps the buffer pool near 1410 MB regardless, but the process
+# footprint sits well above that — hence the 2560M ceiling, not 1792M.
+#
+# API: SkiaSharp and QuestPDF allocate native memory outside the .NET GC heap, so no
+# GC setting governs them. This container limit is the only real guard against a
+# runaway render taking down the host.
+#
+# See infra/RESOURCE-BUDGET.md for the full disk allocation, retention and
+# load-test/reboot verification notes.
+
+services:
+  sqlserver:
+    mem_limit: 2560m
+    mem_reservation: 1536m
+    cpus: 3.0
+
+  api:
+    mem_limit: 2g
+    mem_reservation: 512m
+    cpus: 3.0
+
+  prometheus:
+    mem_limit: 1536m
+    mem_reservation: 384m
+    cpus: 1.0
+
+  minio:
+    mem_limit: 1g
+    mem_reservation: 256m
+    cpus: 1.5
+
+  loki:
+    mem_limit: 1g
+    mem_reservation: 256m
+    cpus: 1.0
+
+  grafana:
+    mem_limit: 512m
+    mem_reservation: 128m
+    cpus: 0.5
+
+  caddy:
+    mem_limit: 256m
+    mem_reservation: 64m
+    cpus: 1.0
+
+  node-exporter:
+    mem_limit: 128m
+    cpus: 0.25
+
+  # Transient: runs once per deploy then exits (service_completed_successfully).
+  migrator:
+    mem_limit: 512m
+    cpus: 2.0

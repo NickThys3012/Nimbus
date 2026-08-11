@@ -17,3 +17,27 @@ groups:
           severity: warning
         annotations:
           summary: "{{ $labels.directory }} on track to exceed 100 GB within a week"
+
+      # Per-volume budgets from infra/RESOURCE-BUDGET.md (issue #103). Each fires at
+      # 80% of its documented ceiling so there is runway to react before the volume
+      # actually fills. `nimbus_directory_size_bytes` is emitted by a textfile-collector
+      # cron job (see RESOURCE-BUDGET.md) with a `directory` label per data volume.
+      - alert: NimbusVolumeBudgetExceeded
+        expr: |
+          (
+            nimbus_directory_size_bytes{directory="mssql"} > 20e9
+          ) or (
+            nimbus_directory_size_bytes{directory="minio"} > 80e9
+          ) or (
+            nimbus_directory_size_bytes{directory="loki"} > 16e9
+          ) or (
+            nimbus_directory_size_bytes{directory="prometheus"} > 8e9
+          ) or (
+            nimbus_directory_size_bytes{directory="backup-staging"} > 12e9
+          )
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: "{{ $labels.directory }} is above 80% of its documented disk budget"
+          description: "{{ $labels.directory }} is at {{ $value | humanize1024 }}B. See infra/RESOURCE-BUDGET.md for the per-volume budget table."

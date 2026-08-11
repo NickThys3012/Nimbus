@@ -555,13 +555,18 @@ sudo tee /etc/docker/daemon.json > /dev/null <<'EOF'
 {
   "log-driver": "json-file",
   "log-opts": {
-    "max-size": "10m",
+    "max-size": "50m",
     "max-file": "3"
   },
   "live-restore": true
 }
 EOF
+```
 
+This must match `infra/daemon.json` in the repo (issue #103) — log rotation is set daemon-wide so it
+can't be forgotten on a service added later.
+
+```bash
 sudo systemctl restart docker
 sudo systemctl enable docker
 sudo usermod -aG docker deploy
@@ -743,9 +748,14 @@ Note the destination filename: `compose.yaml`. Compose picks that up by default,
 ```bash
 cd ~/path/to/Nimbus
 scp infra/docker-compose.prod.yml deploy@<vps-ip>:/opt/nimbus/compose.yaml
+scp infra/docker-compose.limits.yml deploy@<vps-ip>:/opt/nimbus/compose.override.yaml
 scp infra/Caddyfile infra/prometheus.yml infra/alert.rules.yml deploy@<vps-ip>:/opt/nimbus/
 ssh deploy@<vps-ip> 'ls -l /opt/nimbus'
 ```
+
+`compose.override.yaml` is `infra/docker-compose.limits.yml` (issue #103) renamed on the server —
+Compose auto-loads `compose.yaml` + `compose.override.yaml` together, so every command below still
+needs no `-f` flag and carries the memory/CPU ceilings automatically.
 
 ## D2. Create `.env` `[VPS]`
 
@@ -768,7 +778,7 @@ IMAGE_TAG=latest
 
 MSSQL_SA_PASSWORD=<paste SA>
 MSSQL_PID=Express
-MSSQL_MEMORY_LIMIT_MB=4096
+MSSQL_MEMORY_LIMIT_MB=1792
 
 MINIO_ROOT_USER=nimbus
 MINIO_ROOT_PASSWORD=<paste MINIO>
