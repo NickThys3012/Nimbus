@@ -3,6 +3,12 @@
 }
 
 nimbus.{$NIMBUS_DOMAIN} {
+	# Upload-size ceiling (issue #103): rejected before it reaches the API or disk.
+	# Must match the API's own MaxRequestBodySize/RequestSizeLimit — see
+	# RESOURCE-BUDGET.md "Upload-size ceiling".
+	request_body {
+		max_size 100MB
+	}
 	reverse_proxy api:8080
 }
 

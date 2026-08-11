@@ -23,6 +23,15 @@ try
 
     builder.Host.AddLogging();
 
+    // Upload-size ceiling (issue #103): must match Caddy's `request_body { max_size 100MB }`
+    // in infra/Caddyfile so one large file cannot exhaust disk. Kestrel is the
+    // defense-in-depth layer behind Caddy — individual endpoints accepting uploads
+    // should additionally use [RequestSizeLimit] if they need a tighter cap.
+    builder.WebHost.ConfigureKestrel(opts =>
+    {
+        opts.Limits.MaxRequestBodySize = 100 * 1024 * 1024; // 100 MB
+    });
+
     builder.Services.AddApplication();
     builder.Services.AddInfrastructure(builder.Configuration);
 
