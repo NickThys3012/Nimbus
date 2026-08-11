@@ -1,0 +1,19 @@
+groups:
+  - name: nimbus-disk
+    rules:
+      - alert: NimbusDiskFillingUp
+        expr: node_filesystem_avail_bytes{mountpoint="/"} < 20e9
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Less than 20 GB free on /"
+          description: "{{ $value | humanize1024 }}B available."
+
+      - alert: NimbusDirectoryGrowthAnomaly
+        expr: predict_linear(nimbus_directory_size_bytes[6h], 7*24*3600) > 100e9
+        for: 30m
+        labels:
+          severity: warning
+        annotations:
+          summary: "{{ $labels.directory }} on track to exceed 100 GB within a week"

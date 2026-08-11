@@ -1,0 +1,125 @@
+name: nimbus
+
+services:
+  # ---------------------------------------------------------------- front door
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      NIMBUS_DOMAIN: ${NIMBUS_DOMAIN}
+      ACME_EMAIL: ${ACME_EMAIL}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - /srv/nimbus/data/caddy/data:/data
+      - /srv/nimbus/data/caddy/config:/config
+    networks: [nimbus]
+
+  # ------------------------------------------------- application (profile: app)
+  api:
+    profiles: ["app"]
+    image: ghcr.io/nickthys3012/nimbus-api:${IMAGE_TAG:-latest}
+    restart: unless-stopped
+    expose: ["8080"]
+    env_file: [.env]
+    depends_on:
+      migrator:
+        condition: service_completed_successfully
+    networks: [nimbus]
+
+  migrator:
+    profiles: ["app"]
+    image: ghcr.io/nickthys3012/nimbus-migrator:${IMAGE_TAG:-latest}
+    restart: on-failure
+    env_file: [.env]
+    depends_on:
+      - sqlserver
+    networks: [nimbus]
+
+  # ------------------------------------------------ placeholder (profile: stub)
+  api-stub:
+    profiles: ["stub"]
+    image: traefik/whoami:latest
+    restart: unless-stopped
+    command: ["--port", "8080"]
+    networks:
+      nimbus:
+        aliases:
+          - api
+    # The alias means Caddy's "api:8080" resolves here while the real API
+    # does not exist. Nothing in Caddyfile needs to change later.
+
+  # ----------------------------------------------------------------- data tier
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    restart: unless-stopped
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: ${MSSQL_SA_PASSWORD}
+      MSSQL_PID: ${MSSQL_PID}
+      MSSQL_MEMORY_LIMIT_MB: ${MSSQL_MEMORY_LIMIT_MB}
+    volumes:
+      - /srv/nimbus/data/mssql:/var/opt/mssql
+    mem_limit: 5g
+    networks: [nimbus]
+
+  minio:
+    image: minio/minio:latest
+    restart: unless-stopped
+    user: "1000:1000"
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+    volumes:
+      - /srv/nimbus/data/minio:/data
+    networks: [nimbus]
+
+  # -------------------------------------------------------------- observability
+  loki:
+    image: grafana/loki:3.2.0
+    restart: unless-stopped
+    volumes:
+      - /srv/nimbus/data/loki:/loki
+    networks: [nimbus]
+
+  prometheus:
+    image: prom/prometheus:v2.55.0
+    restart: unless-stopped
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./alert.rules.yml:/etc/prometheus/alert.rules.yml:ro
+      - /srv/nimbus/data/prometheus:/prometheus
+    networks: [nimbus]
+
+  node-exporter:
+    image: prom/node-exporter:v1.8.2
+    restart: unless-stopped
+    command:
+      - '--path.rootfs=/host'
+      - '--collector.textfile.directory=/host/var/lib/node_exporter/textfile_collector'
+    volumes:
+      - /:/host:ro,rslave
+    networks: [nimbus]
+
+  grafana:
+    image: grafana/grafana:11.3.0
+    restart: unless-stopped
+    environment:
+      GF_SERVER_ROOT_URL: https://grafana.${NIMBUS_DOMAIN}
+      GF_SERVER_DOMAIN: grafana.${NIMBUS_DOMAIN}
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_AUTH_ANONYMOUS_ENABLED: "false"
+      GF_SECURITY_COOKIE_SECURE: "true"
+      GF_SECURITY_COOKIE_SAMESITE: strict
+    volumes:
+      - /srv/nimbus/data/grafana:/var/lib/grafana
+    networks: [nimbus]
+
+networks:
+  nimbus:
+    driver: bridge
