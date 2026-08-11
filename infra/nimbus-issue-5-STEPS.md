@@ -10,7 +10,7 @@ never come back to edit it.
 * Commands are marked `[LOCAL]` (your Mac) or `[VPS]` (over SSH).
 * `[VPS]` commands assume you are logged in as `deploy` and include `sudo` where needed. The single
   exception is Part C1, which runs as `root`.
-* Replace `<vps-ip>` with `169.58.144.133` and `<domain>` with your real domain throughout.
+* Replace `<vps-ip>` with your VPS public IP and `<domain>` with your real domain throughout.
 
 **If you have already done some of this**, skip to Part C0 and run the audit — it tells you exactly
 which parts are done.
