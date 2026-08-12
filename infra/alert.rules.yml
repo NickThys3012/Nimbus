@@ -1,4 +1,33 @@
 groups:
+  - name: nimbus-availability
+    rules:
+      # Prometheus' own "up" series per scrape target — no extra instrumentation
+      # needed. Fires the moment /metrics stops answering, whatever the cause.
+      - alert: NimbusApiUnavailable
+        expr: up{job="nimbus-api"} == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "The Nimbus API is not answering /metrics scrapes"
+          description: "Prometheus has not been able to scrape {{ $labels.instance }} for 2 minutes."
+
+      # http_requests_received_total{code} comes from prometheus-net's UseHttpMetrics
+      # (Program.cs, #47) — no new instrumentation required.
+      - alert: NimbusApiErrorRateSpike
+        expr: |
+          (
+            sum(rate(http_requests_received_total{job="nimbus-api",code=~"5.."}[5m]))
+            /
+            sum(rate(http_requests_received_total{job="nimbus-api"}[5m]))
+          ) > 0.05
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "More than 5% of API responses are 5xx"
+          description: "5xx ratio is {{ $value | humanizePercentage }} over the last 5 minutes."
+
   - name: nimbus-disk
     rules:
       - alert: NimbusDiskFillingUp
@@ -41,3 +70,55 @@ groups:
         annotations:
           summary: "{{ $labels.directory }} is above 80% of its documented disk budget"
           description: "{{ $labels.directory }} is at {{ $value | humanize1024 }}B. See infra/RESOURCE-BUDGET.md for the per-volume budget table."
+
+  - name: nimbus-host-signals
+    rules:
+      # nimbus_cert_expiry_seconds is emitted by infra/scripts/nimbus-cert-expiry.sh
+      # (host cron/timer, see infra/DEPLOY-12.md) reading Caddy's on-disk certificates
+      # via the textfile collector, the same pattern nimbus-dirsize.sh already uses.
+      - alert: NimbusCertificateExpiringSoon
+        expr: nimbus_cert_expiry_seconds - time() < 14 * 24 * 3600
+        for: 1h
+        labels:
+          severity: warning
+        annotations:
+          summary: "TLS certificate for {{ $labels.domain }} expires in under 14 days"
+          description: "Caddy normally renews automatically well before this. Check its logs if this fires."
+
+      # nimbus_container_restart_count is emitted by
+      # infra/scripts/nimbus-container-restarts.sh, which reads `docker inspect
+      # RestartCount` per container on a short timer — a restart loop shows up as
+      # this counter climbing repeatedly within the alert window.
+      - alert: NimbusContainerRestartLoop
+        expr: increase(nimbus_container_restart_count[15m]) >= 3
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "{{ $labels.container }} has restarted 3+ times in 15 minutes"
+          description: "Check `docker logs {{ $labels.container }}` — a restart loop usually means the container cannot reach a dependency or is failing its entrypoint."
+
+      # nimbus_mssql_database_size_bytes is emitted by
+      # infra/scripts/nimbus-mssql-size.sh, which queries sys.master_files inside the
+      # sqlserver container. SQL Server Express caps a single database at 10 GB;
+      # this fires well ahead of that hard ceiling.
+      - alert: NimbusDatabaseApproachingExpressLimit
+        expr: nimbus_mssql_database_size_bytes > 8.5e9
+        for: 15m
+        labels:
+          severity: critical
+        annotations:
+          summary: "The Nimbus database is above 8.5 GB of the 10 GB Express ceiling"
+          description: "Database is at {{ $value | humanize1024 }}B. Plan an upgrade off Express before this hits 10 GB and writes start failing."
+
+      # nimbus_backup_last_success_timestamp is emitted by the restic backup job
+      # itself on successful completion (infra/DEPLOY-12.md) — a Unix timestamp,
+      # so "how long since last success" is just time() minus this gauge.
+      - alert: NimbusBackupStale
+        expr: time() - nimbus_backup_last_success_timestamp > 26 * 3600
+        for: 15m
+        labels:
+          severity: critical
+        annotations:
+          summary: "No successful backup in over 26 hours"
+          description: "Last success was {{ $value | humanizeDuration }} ago. Check the restic timer/service on the VPS."

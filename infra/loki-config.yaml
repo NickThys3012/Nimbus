@@ -1,0 +1,55 @@
+# Loki configuration for the Nimbus production stack (issue #12).
+#
+# Single-binary, filesystem-backed deployment — no object storage, no clustering.
+# This matches the "three containers, not six" scope of #12: one API log source,
+# one Loki instance, retention enforced locally instead of shipped elsewhere.
+auth_enabled: false
+
+server:
+  http_listen_port: 3100
+  # No ports are published on the loki service in docker-compose.prod.yml — only
+  # reachable from the API container over the internal `nimbus` network.
+
+common:
+  path_prefix: /loki
+  storage:
+    filesystem:
+      chunks_directory: /loki/chunks
+      rules_directory: /loki/rules
+  replication_factor: 1
+  ring:
+    kvstore:
+      store: inmemory
+
+schema_config:
+  configs:
+    - from: 2024-01-01
+      store: tsdb
+      object_store: filesystem
+      schema: v13
+      index:
+        prefix: index_
+        period: 24h
+
+# Retention (issue #12 AC): unbounded log growth on a 200 GB disk is the specific
+# failure mode this stack must not reproduce, so retention is explicit here rather
+# than left at Loki's (very long) defaults. 14 days matches the ~16 GB "loki"
+# volume budget in infra/RESOURCE-BUDGET.md.
+limits_config:
+  retention_period: 336h # 14 days
+  # Structured-logging volume guardrails: reject rather than silently drop when
+  # the API misbehaves and starts flooding Loki.
+  ingestion_rate_mb: 8
+  ingestion_burst_size_mb: 16
+  per_stream_rate_limit: 6MB
+  per_stream_rate_limit_burst: 12MB
+  max_streams_per_user: 5000
+
+# retention_enabled is what actually deletes chunks past limits_config.retention_period
+# above — without it that field is advisory only.
+compactor:
+  working_directory: /loki/compactor
+  compaction_interval: 10m
+  retention_enabled: true
+  retention_delete_delay: 2h
+  delete_request_store: filesystem

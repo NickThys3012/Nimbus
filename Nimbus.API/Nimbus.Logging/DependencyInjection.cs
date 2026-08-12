@@ -14,7 +14,10 @@ public static class DependencyInjection
                 .ReadFrom.Services(services)
                 .Enrich.FromLogContext()
                 .Enrich.WithMachineName()
-                .Enrich.WithThreadId();
+                .Enrich.WithThreadId()
+                // Must run last so it redacts properties added by every enricher
+                // and message-template capture above it (issue #12).
+                .Enrich.With<SensitiveDataRedactionEnricher>();
 
             var lokiUrl = context.Configuration["Loki:Url"];
             if (string.IsNullOrWhiteSpace(lokiUrl))

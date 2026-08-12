@@ -1,0 +1,21 @@
+# Grafana datasource provisioning (issue #12): committed so both datasources
+# exist after a host rebuild without clicking "Add data source" by hand.
+apiVersion: 1
+
+datasources:
+  - name: Prometheus
+    uid: Prometheus
+    type: prometheus
+    access: proxy
+    url: http://prometheus:9090
+    isDefault: true
+    jsonData:
+      timeInterval: 30s
+    editable: false
+
+  - name: Loki
+    uid: Loki
+    type: loki
+    access: proxy
+    url: http://loki:3100
+    editable: false
