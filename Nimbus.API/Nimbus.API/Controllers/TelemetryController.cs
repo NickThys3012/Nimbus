@@ -23,6 +23,7 @@ public class TelemetryController : ControllerBase
 
     // ── POST /api/telemetry ─────────────────────────────────────────
     [HttpPost]
+    [RequestSizeLimit(32 * 1024)]
     public IActionResult Post([FromBody] ClientTelemetryEventDto[]? events)
     {
         if (events is null || events.Length == 0)
@@ -33,17 +34,21 @@ public class TelemetryController : ControllerBase
         // Capped so one misbehaving client cannot use this endpoint to flood Loki.
         foreach (var evt in events.Take(50))
         {
+            var url = (evt.Url ?? string.Empty).Split('?', '#')[0];
+            var message = evt.Message is { Length: > 1024 } ? evt.Message[..1024] + "…" : evt.Message;
+            var stack = evt.Stack is { Length: > 4096 } ? evt.Stack[..4096] + "…" : evt.Stack;
+
             using (_logger.BeginScope(new Dictionary<string, object?>
             {
                 ["ClientEventType"] = evt.Type.ToString(),
-                ["ClientUrl"] = evt.Url
+                ["ClientUrl"] = url
             }))
             {
                 if (evt.Type == ClientTelemetryEventType.UnhandledError)
                 {
                     _logger.LogError(
                         "Client unhandled error on {ClientUrl}: {ClientMessage}\n{ClientStack}",
-                        evt.Url, evt.Message, evt.Stack);
+                        url, message, stack);
                 }
                 else
                 {
