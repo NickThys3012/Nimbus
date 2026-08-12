@@ -44,14 +44,14 @@ falls back to `latest`). This is verified before every deploy:
 # infra/.env.example with every value blanked out — the empty-.env check
 cd /opt/nimbus
 mv .env .env.bak
-docker compose --profile app up -d       # must refuse / fail fast, not start with blanks
-docker compose --profile app config | grep -E ':\s*$'   # any secret key resolving to empty is a bug
+if docker compose --profile app config | grep -Eq ':\s*$'; then echo "ERROR: one or more required env vars resolved to empty"; exit 1; fi
+docker compose --profile app up -d       # should fail fast if any required value is missing/invalid
 mv .env.bak .env
 ```
 
 ## 2. GitHub Actions secrets
 
-Exactly these two live in the repo (or environment) settings — no more:
+Exactly these three live in the repo (or environment) settings — no more:
 
 | Secret | Used for | Rotation procedure |
 |---|---|---|
@@ -98,7 +98,7 @@ rotation last happened, only for the *policy*).
 |---|---|---|---|
 | SQL Server `sa` password (`MSSQL_SA_PASSWORD`) | Maintainer | 90 days, or on suspected compromise | Generate with `openssl rand -base64 24` (must contain a digit — SQL Server's password policy rejects weak strings), update `.env`, `docker compose up -d sqlserver`, confirm the API reconnects |
 | MinIO root credential | Maintainer | 90 days | Generate new pair, update `.env`, `docker compose up -d minio`, confirm `minio-init` still applies policy on next run |
-| MinIO app access key (`MINIO_APP_ACCESS_KEY`/`SECRET_KEY`) | Maintainer | 90 days | Generate new pair, update `.env`, `docker compose up -d minio-init`, confirm the API's object-storage calls still succeed before removing the old key from MinIO |
+| MinIO app access key (`MINIO_APP_ACCESS_KEY`/`MINIO_APP_SECRET_KEY`) | Maintainer | 90 days | Generate new pair, update `.env`, `docker compose up -d minio-init`, confirm the API's object-storage calls still succeed before removing the old key from MinIO |
 | Grafana admin password | Maintainer | 90 days | Update `.env`, `docker compose up -d grafana`, log in to confirm |
 | Restic repository password (`RESTIC_PASSWORD`) | Maintainer | On suspected compromise only (rotating re-encrypts nothing retroactively — a rotation effectively starts a new repository) | See §6 — never rotate without first confirming the new password is recorded off-server |
 | Email provider API key | Maintainer | Per provider's own guidance, at minimum yearly | Rotate via provider dashboard, update `.env` and the `EMAIL_PROVIDER_API_KEY` GitHub secret together, confirm a test send succeeds |
