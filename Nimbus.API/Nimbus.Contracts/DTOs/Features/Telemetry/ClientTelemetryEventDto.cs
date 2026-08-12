@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace Nimbus.Contracts.DTOs.Features.Telemetry;
 
 /// <summary>
@@ -11,6 +13,7 @@ public sealed record ClientTelemetryEventDto(
     string? Message = null,
     string? Stack = null);
 
+[JsonConverter(typeof(JsonStringEnumConverter))]
 public enum ClientTelemetryEventType
 {
     PageView,
