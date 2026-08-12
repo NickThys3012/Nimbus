@@ -10,12 +10,25 @@ three observability services plus node-exporter, per the issue's "three containe
 
 ```bash
 cd ~/path/to/Nimbus
-scp infra/docker-compose.prod.yml infra/alert.rules.yml infra/loki-config.yaml deploy@<vps-ip>:/opt/nimbus/
+scp infra/docker-compose.prod.yml deploy@<vps-ip>:/opt/nimbus/compose.yaml
+scp infra/alert.rules.yml infra/loki-config.yaml deploy@<vps-ip>:/opt/nimbus/
 scp -r infra/grafana deploy@<vps-ip>:/opt/nimbus/
 scp -r infra/scripts deploy@<vps-ip>:~/nimbus-scripts/
 ```
 
-`docker-compose.prod.yml` now mounts `./loki-config.yaml` into the `loki` service and
+`docker-compose.prod.yml` **must land as `/opt/nimbus/compose.yaml`**, not
+`docker-compose.prod.yml` — that is the filename Compose actually reads on the VPS (same convention
+as `DEPLOY-103.md`). Copying it under its source name is a no-op: Compose keeps using the old
+`compose.yaml`, the new `loki-config.yaml` and `grafana/provisioning`/`grafana/dashboards` mounts
+never get added, and `docker compose up -d` reports the containers as already "Running" instead of
+recreating them — silently. If dashboards/datasources don't show up in Grafana after deploying,
+this is the first thing to check:
+
+```bash
+grep -A3 'grafana:' /opt/nimbus/compose.yaml   # should show the two extra volume lines below
+```
+
+`compose.yaml` now mounts `./loki-config.yaml` into the `loki` service and
 `./grafana/provisioning` + `./grafana/dashboards` into the `grafana` service — both are relative to
 `/opt/nimbus`, matching the existing `alert.rules.yml`/`prometheus.yml` bind mounts.
 
@@ -91,7 +104,8 @@ expected and can be silenced/ignored.
 ```bash
 cd /opt/nimbus
 docker compose --profile stub config > /dev/null && echo "CONFIG OK"
-docker compose --profile stub config | grep -A3 'loki-config.yaml\|provisioning'
+docker compose --profile stub config | grep -A3 'loki-config.yaml\|provisioning' \
+  || { echo "MISSING new mounts — check compose.yaml was overwritten (see step 1)"; false; }
 ```
 
 ## 5. Roll out `[VPS]`
