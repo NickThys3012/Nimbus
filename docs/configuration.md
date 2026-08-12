@@ -27,7 +27,7 @@ Three places hold configuration, and each has exactly one job:
 | `MINIO_APP_ACCESS_KEY` / `MINIO_APP_SECRET_KEY` | Scoped credential the API authenticates with (see `infra/MINIO.md`) | `.env` | **Yes** |
 | `MINIO_CONSOLE_USER` / `MINIO_CONSOLE_PASSWORD_HASH` | Caddy basic-auth in front of the MinIO console route | `.env` | **Yes** (hash) |
 | `GRAFANA_ADMIN_USER` / `GRAFANA_ADMIN_PASSWORD` | Grafana admin login | `.env` | **Yes** |
-| `LOKI_URL` | Grafana → Loki datasource URL | `.env` (committed default `http://loki:3100`, internal-network only, not a secret) | No |
+| `Loki__Url` | Serilog sink target: the API's own structured logs pushed to Loki (issue #12) | `.env` (committed default `http://loki:3100`, internal-network only, not a secret) | No |
 | `RESTIC_REPOSITORY` | Backup destination URL | `.env` | No (destination, not a credential) |
 | `RESTIC_PASSWORD` | Backup repository encryption key | `.env` **and** off-server (see §5) | **Yes** |
 | `EMAIL_PROVIDER_API_KEY` | Transactional email provider auth | `.env` | **Yes** |

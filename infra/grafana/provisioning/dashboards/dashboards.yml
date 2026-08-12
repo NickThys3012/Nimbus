@@ -1,0 +1,16 @@
+# Dashboard provisioning (issue #12): points Grafana at the JSON files
+# committed under infra/grafana/dashboards/ so dashboards survive a host
+# rebuild instead of being clicked together by hand.
+apiVersion: 1
+
+providers:
+  - name: nimbus
+    orgId: 1
+    folder: Nimbus
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 30
+    allowUiUpdates: false
+    options:
+      path: /etc/grafana/dashboards
+      foldersFromFilesStructure: false

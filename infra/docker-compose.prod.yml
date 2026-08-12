@@ -117,7 +117,10 @@ services:
   loki:
     image: grafana/loki:3.2.0
     restart: unless-stopped
+    command:
+      - -config.file=/etc/loki/loki-config.yaml
     volumes:
+      - ./loki-config.yaml:/etc/loki/loki-config.yaml:ro
       - /srv/nimbus/data/loki:/loki
     networks: [nimbus]
 
@@ -165,6 +168,8 @@ services:
       GF_SECURITY_COOKIE_SAMESITE: strict
     volumes:
       - /srv/nimbus/data/grafana:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/etc/grafana/dashboards:ro
     networks: [nimbus]
 
 networks:
