@@ -1,13 +1,17 @@
+using Amazon.Runtime;
+using Amazon.S3;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 using Nimbus.Application.Common.Interfaces;
 using Nimbus.Domain.Interfaces;
 using Nimbus.Infrastructure.Identity;
 using Nimbus.Infrastructure.Persistence;
 using Nimbus.Infrastructure.Persistence.Repositories;
 using Nimbus.Infrastructure.Services;
+using Nimbus.Infrastructure.Storage;
 namespace Nimbus.Infrastructure;
 
 public static class DependencyInjection
@@ -32,9 +36,41 @@ public static class DependencyInjection
             services.AddHttpContextAccessor();
             services.AddScoped<ICurrentUserService, CurrentUserService>();
 
+            services.AddObjectStorage(config);
+
             services.AddHealthChecks()
                 .AddSqlServer(connectionString)
                 .AddDbContextCheck<AppDbContext>();
+        }
+
+        /// <summary>
+        ///     Bind <see cref="StorageOptions" /> and register the S3-compatible object storage client
+        ///     (issue #11). Endpoint, credentials, region and path-style addressing all come from the
+        ///     <c>Storage</c> config section, so the identical registration serves development
+        ///     (self-hosted MinIO) and production alike.
+        /// </summary>
+        private void AddObjectStorage(IConfiguration config)
+        {
+            services
+                .AddOptions<StorageOptions>()
+                .Bind(config.GetSection(StorageOptions.SectionName))
+                .Validate(o => !string.IsNullOrWhiteSpace(o.Endpoint), "Storage:Endpoint must be configured.")
+                .Validate(o => !string.IsNullOrWhiteSpace(o.AccessKey), "Storage:AccessKey must be configured.")
+                .Validate(o => !string.IsNullOrWhiteSpace(o.SecretKey), "Storage:SecretKey must be configured.")
+                .ValidateOnStart();
+
+            services.AddSingleton<IAmazonS3>(sp =>
+            {
+                var options = sp.GetRequiredService<IOptions<StorageOptions>>().Value;
+                var s3Config = new AmazonS3Config
+                {
+                    ServiceURL = options.Endpoint, ForcePathStyle = options.ForcePathStyle, UseHttp = !options.UseHttps, AuthenticationRegion = options.Region
+                };
+
+                return new AmazonS3Client(new BasicAWSCredentials(options.AccessKey, options.SecretKey), s3Config);
+            });
+
+            services.AddScoped<IObjectStorageService, S3ObjectStorageService>();
         }
 
         /// <summary>

@@ -26,8 +26,18 @@ services:
     restart: unless-stopped
     expose: ["8080"]
     env_file: [.env]
+    environment:
+      # Maps the .env MinIO credentials (issue #95) onto the Storage:* config keys the API
+      # binds StorageOptions from (issue #11) — ASP.NET Core config maps `__` to `:`.
+      Storage__Endpoint: http://minio:9000
+      Storage__AccessKey: ${MINIO_APP_ACCESS_KEY}
+      Storage__SecretKey: ${MINIO_APP_SECRET_KEY}
+      Storage__ForcePathStyle: "true"
+      Storage__UseHttps: "false"
     depends_on:
       migrator:
+        condition: service_completed_successfully
+      minio-init:
         condition: service_completed_successfully
     networks: [nimbus]
 

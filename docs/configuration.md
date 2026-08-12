@@ -24,7 +24,7 @@ Three places hold configuration, and each has exactly one job:
 | `MSSQL_PID` | SQL Server edition | `.env` (committed default `Express`) | No |
 | `MSSQL_MEMORY_LIMIT_MB` | SQL Server's own buffer-pool ceiling (paired with the container `mem_limit` in `docker-compose.limits.yml`) | `.env` | No |
 | `MINIO_ROOT_USER` / `MINIO_ROOT_PASSWORD` | MinIO admin credential — console + `minio-init` only | `.env` | **Yes** |
-| `MINIO_APP_ACCESS_KEY` / `MINIO_APP_SECRET_KEY` | Scoped credential the API authenticates with (see `infra/MINIO.md`) | `.env` | **Yes** |
+| `MINIO_APP_ACCESS_KEY` / `MINIO_APP_SECRET_KEY` | Scoped credential the API authenticates with (see `infra/MINIO.md`); mapped onto `Storage__AccessKey`/`Storage__SecretKey` for `IObjectStorageService` (issue #11) | `.env` | **Yes** |
 | `MINIO_CONSOLE_USER` / `MINIO_CONSOLE_PASSWORD_HASH` | Caddy basic-auth in front of the MinIO console route | `.env` | **Yes** (hash) |
 | `GRAFANA_ADMIN_USER` / `GRAFANA_ADMIN_PASSWORD` | Grafana admin login | `.env` | **Yes** |
 | `Loki__Url` | Serilog sink target: the API's own structured logs pushed to Loki (issue #12) | `.env` (committed default `http://loki:3100`, internal-network only, not a secret) | No |
