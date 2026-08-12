@@ -7,7 +7,7 @@ auth_enabled: false
 
 server:
   http_listen_port: 3100
-  # No ports: published on the loki service in docker-compose.prod.yml — only
+  # No ports are published on the loki service in docker-compose.prod.yml — only
   # reachable from the API container over the internal `nimbus` network.
 
 common:

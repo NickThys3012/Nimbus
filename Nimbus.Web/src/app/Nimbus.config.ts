@@ -37,6 +37,9 @@ export const nimbusConfig: ApplicationConfig = {
 export function reportPageViews(router: Router, telemetry: TelemetryService): void {
   router.events
     .pipe(filter((event): event is NavigationEnd => event instanceof NavigationEnd))
-    .subscribe((event) => telemetry.reportPageView(event.urlAfterRedirects));
+    .subscribe((event) => {
+      const url = event.urlAfterRedirects.split('?')[0].split('#')[0];
+      telemetry.reportPageView(url);
+    });
 }
 

@@ -23,9 +23,9 @@ public class TelemetryController : ControllerBase
 
     // ── POST /api/telemetry ─────────────────────────────────────────
     [HttpPost]
-    public IActionResult Post([FromBody] ClientTelemetryEventDto[] events)
+    public IActionResult Post([FromBody] ClientTelemetryEventDto[]? events)
     {
-        if (events.Length == 0)
+        if (events is null || events.Length == 0)
         {
             return NoContent();
         }
