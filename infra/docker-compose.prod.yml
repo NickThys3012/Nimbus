@@ -11,6 +11,8 @@ services:
     environment:
       NIMBUS_DOMAIN: ${NIMBUS_DOMAIN}
       ACME_EMAIL: ${ACME_EMAIL}
+      MINIO_CONSOLE_USER: ${MINIO_CONSOLE_USER}
+      MINIO_CONSOLE_PASSWORD_HASH: ${MINIO_CONSOLE_PASSWORD_HASH}
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - /srv/nimbus/data/caddy/data:/data
@@ -70,12 +72,45 @@ services:
     image: minio/minio:latest
     restart: unless-stopped
     user: "1000:1000"
+    # No ports: published — reachable only on the internal `nimbus` network.
+    # The console is exposed to the outside world exclusively through Caddy's
+    # authenticated console.$NIMBUS_DOMAIN route (see Caddyfile) — see #95.
     command: server /data --console-address ":9001"
     environment:
+      # Root credentials only: generated at deploy time (never defaulted), and
+      # never the credentials the application authenticates with (see minio-init).
       MINIO_ROOT_USER: ${MINIO_ROOT_USER}
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+      # Lets the bundled `mc` binary resolve the `local` alias for the healthcheck
+      # below without a separate `mc alias set` step.
+      MC_HOST_local: http://${MINIO_ROOT_USER}:${MINIO_ROOT_PASSWORD}@localhost:9000
     volumes:
       - /srv/nimbus/data/minio:/data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 15s
+    networks: [nimbus]
+
+  # One-shot, idempotent bucket/policy/app-user bootstrap (issue #95). Safe to
+  # re-run on every `docker compose up` — see infra/minio-init.sh.
+  minio-init:
+    image: minio/mc:latest
+    restart: "no"
+    entrypoint: ["/bin/sh", "/init/minio-init.sh"]
+    environment:
+      MINIO_ENDPOINT: http://minio:9000
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+      MINIO_APP_ACCESS_KEY: ${MINIO_APP_ACCESS_KEY}
+      MINIO_APP_SECRET_KEY: ${MINIO_APP_SECRET_KEY}
+    volumes:
+      - ./minio-init.sh:/init/minio-init.sh:ro
+    depends_on:
+      minio:
+        condition: service_healthy
     networks: [nimbus]
 
   # -------------------------------------------------------------- observability
