@@ -74,7 +74,7 @@ groups:
   - name: nimbus-host-signals
     rules:
       # nimbus_cert_expiry_seconds is emitted by infra/scripts/nimbus-cert-expiry.sh
-      # (host cron/timer, see infra/DEPLOY-12.md) reading Caddy's on-disk certificates
+      # (host cron/timer, see infra/VPS-SETUP.md#e3-install-the-host-side-observability-scripts-and-timers) reading Caddy's on-disk certificates
       # via the textfile collector, the same pattern nimbus-dirsize.sh already uses.
       - alert: NimbusCertificateExpiringSoon
         expr: nimbus_cert_expiry_seconds - time() < 14 * 24 * 3600
@@ -112,7 +112,7 @@ groups:
           description: "Database is at {{ $value | humanize1024 }}B. Plan an upgrade off Express before this hits 10 GB and writes start failing."
 
       # nimbus_backup_last_success_timestamp is emitted by the restic backup job
-      # itself on successful completion (infra/DEPLOY-12.md) — a Unix timestamp,
+      # itself on successful completion (infra/VPS-SETUP.md#e3-install-the-host-side-observability-scripts-and-timers) — a Unix timestamp,
       # so "how long since last success" is just time() minus this gauge.
       - alert: NimbusBackupStale
         expr: time() - nimbus_backup_last_success_timestamp > 26 * 3600

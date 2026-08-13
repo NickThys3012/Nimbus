@@ -6,8 +6,12 @@ name: CI
 # Angular production bundle published into the .NET app's wwwroot/.
 #
 # `dotnet` and `angular` run in parallel; `publish` waits on both and stitches
-# their outputs together. No CD here yet — publishing images/deploying to the
-# VPS stays manual until issue #6.
+# their outputs together. This workflow only builds and tests — publishing
+# images to GHCR and deploying to the VPS happens in cd.yml, which triggers
+# via `workflow_run` once this workflow finishes successfully on `main`
+# (issue #6). Keeping them separate means a broken build never even attempts
+# a deploy, and the deploy job's `environment: production` reviewer gate
+# doesn't slow down every PR's build/test feedback.
 
 on:
   pull_request:

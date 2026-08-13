@@ -6,7 +6,7 @@
 #                applies pending EF Core migrations and exits — nothing here reads
 #                or writes application code, so it is safe to run as a one-shot
 #                `depends_on: condition: service_completed_successfully` step ahead
-#                of `api` (see infra/docker-compose.prod.yml).
+#                of `api` (see infra/compose/docker-compose.prod.yml).
 #
 # Build context is the repository root:
 #   docker build --target api      -t nimbus-api .
@@ -91,6 +91,6 @@ COPY --from=migrator-build --chown=nimbus:nimbus /app/efbundle ./efbundle
 # `ConnectionStrings__Database` is the same config key the API binds
 # (Nimbus.Infrastructure/DependencyInjection.cs), so both images read the
 # connection string from the same environment variable — just different
-# credentials (see infra/sqlserver-init.sql: nimbus_migrator vs nimbus_app).
+# credentials (see infra/db/sqlserver-init.sql: nimbus_migrator vs nimbus_app).
 # Exec-form ENTRYPOINT does not expand env vars, hence the shell wrapper.
 ENTRYPOINT ["/bin/sh", "-c", "exec ./efbundle --connection \"$ConnectionStrings__Database\""]

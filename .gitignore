@@ -6,4 +6,4 @@ Nimbus/Nimbus.API/appsettings.Development.json
 Nimbus.API/Nimbus.API/appsettings.Development.json
 
 .idea/
-infra/.env
+infra/compose/.env

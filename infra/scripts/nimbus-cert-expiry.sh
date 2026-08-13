@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Emits nimbus_cert_expiry_seconds{domain=...} for every certificate Caddy manages,
-# read by node-exporter's textfile collector. Alerted on in infra/alert.rules.yml
-# (NimbusCertificateExpiringSoon). Install as a systemd timer — see infra/DEPLOY-12.md.
+# read by node-exporter's textfile collector. Alerted on in infra/observability/alert.rules.yml
+# (NimbusCertificateExpiringSoon). Install as a systemd timer — see infra/VPS-SETUP.md#e3-install-the-host-side-observability-scripts-and-timers.
 set -euo pipefail
 
 OUT=/var/lib/node_exporter/textfile_collector/nimbus_cert_expiry.prom

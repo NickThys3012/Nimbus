@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # Emits nimbus_container_restart_count{container=...}, read by node-exporter's
-# textfile collector. Alerted on in infra/alert.rules.yml (NimbusContainerRestartLoop),
+# textfile collector. Alerted on in infra/observability/alert.rules.yml (NimbusContainerRestartLoop),
 # which looks for the counter climbing within a 15-minute window. Install as a
-# systemd timer running every 1-2 minutes — see infra/DEPLOY-12.md.
+# systemd timer running every 1-2 minutes — see infra/VPS-SETUP.md#e3-install-the-host-side-observability-scripts-and-timers.
 set -euo pipefail
 
 OUT=/var/lib/node_exporter/textfile_collector/nimbus_container_restarts.prom

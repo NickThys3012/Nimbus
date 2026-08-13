@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # Emits nimbus_mssql_database_size_bytes, read by node-exporter's textfile
-# collector. Alerted on in infra/alert.rules.yml (NimbusDatabaseApproachingExpressLimit)
+# collector. Alerted on in infra/observability/alert.rules.yml (NimbusDatabaseApproachingExpressLimit)
 # ahead of SQL Server Express's hard 10 GB per-database ceiling. Install as a
-# systemd timer — see infra/DEPLOY-12.md.
+# systemd timer — see infra/VPS-SETUP.md#e3-install-the-host-side-observability-scripts-and-timers.
 set -euo pipefail
 
 OUT=/var/lib/node_exporter/textfile_collector/nimbus_mssql_size.prom

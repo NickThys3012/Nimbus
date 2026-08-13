@@ -1,5 +1,5 @@
 # Dashboard provisioning (issue #12): points Grafana at the JSON files
-# committed under infra/grafana/dashboards/ so dashboards survive a host
+# committed under infra/observability/grafana/dashboards/ so dashboards survive a host
 # rebuild instead of being clicked together by hand.
 apiVersion: 1
 

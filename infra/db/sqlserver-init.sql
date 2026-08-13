@@ -10,7 +10,7 @@
 --      migrator container, never by the long-running API
 --
 -- Every statement is guarded so a re-run (redeploy, container restart) is a no-op
--- rather than an error — mirrors the idempotency pattern in infra/minio-init.sh.
+-- rather than an error — mirrors the idempotency pattern in infra/minio/minio-init.sh.
 IF DB_ID(N'Nimbus') IS NULL
 BEGIN
     CREATE DATABASE [Nimbus];
