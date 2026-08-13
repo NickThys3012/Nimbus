@@ -18,6 +18,15 @@
         </PackageReference>
         <PackageReference Include="Microsoft.OpenApi" Version="2.11.0" />
         <PackageReference Include="Scalar.AspNetCore" Version="2.16.17"/>
+        <!-- Trajectory/PDF map rendering (issues #57, #62) needs SkiaSharp at runtime.
+             Brought in now (issue #96) so the production image's native dependencies
+             are proven before any feature code depends on them. The `.NoDependencies`
+             native asset statically links freetype/fontconfig/harfbuzz instead of
+             dynamically linking the host's — the dynamic variant hits undefined-symbol
+             failures against Ubuntu 24.04's fontconfig/libuuid ABI (verified against the
+             `mcr.microsoft.com/dotnet/aspnet:10.0` image while building this image). -->
+        <PackageReference Include="SkiaSharp" Version="3.119.1" />
+        <PackageReference Include="SkiaSharp.NativeAssets.Linux.NoDependencies" Version="3.119.1" />
     </ItemGroup>
 
     <ItemGroup>
