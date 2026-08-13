@@ -157,6 +157,7 @@ try
 catch (Exception ex) when (ex is not HostAbortedException)
 {
     Log.Fatal(ex, "Nimbus.Api terminated unexpectedly");
+    return 1;
 }
 finally { Log.CloseAndFlush(); }
 
