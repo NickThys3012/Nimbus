@@ -20,7 +20,9 @@ Three places hold configuration, and each has exactly one job:
 | `ACME_EMAIL` | Contact address for Let's Encrypt | `.env` | No |
 | `ASPNETCORE_ENVIRONMENT` | .NET hosting environment | `.env` (committed default `Production` in `.env.example`) | No |
 | `IMAGE_TAG` | GHCR image tag to deploy | `.env` (compose default `latest` — not a secret, safe to fall back) | No |
-| `MSSQL_SA_PASSWORD` | SQL Server `sa` login password | `.env` | **Yes** |
+| `MSSQL_SA_PASSWORD` | SQL Server `sa` login password — used only by the SQL Server container's own bootstrap and by `sqlserver-init`'s one-time login creation (issue #2); the API and migrator never authenticate as `sa` | `.env` | **Yes** |
+| `MSSQL_APP_PASSWORD` | Password for the least-privilege `nimbus_app` SQL login (`db_datareader`/`db_datawriter` only) the API actually connects with (issue #2) | `.env` | **Yes** |
+| `MSSQL_MIGRATOR_PASSWORD` | Password for the `nimbus_migrator` SQL login (`db_owner`) the transient `migrator` container connects with to apply EF Core migrations (issue #2) | `.env` | **Yes** |
 | `MSSQL_PID` | SQL Server edition | `.env` (committed default `Express`) | No |
 | `MSSQL_MEMORY_LIMIT_MB` | SQL Server's own buffer-pool ceiling (paired with the container `mem_limit` in `docker-compose.limits.yml`) | `.env` | No |
 | `MINIO_ROOT_USER` / `MINIO_ROOT_PASSWORD` | MinIO admin credential — console + `minio-init` only | `.env` | **Yes** |
@@ -72,6 +74,10 @@ in any step touching them).
   the server, fill it in, `chmod 600`. Never edit `.env.example` to hold a real secret.
 - `infra/.env` (the filled, local-editing copy) is listed in `.gitignore`; `git check-ignore -v
   infra/.env` must print a match before it is ever created locally.
+- **Local development**: `ConnectionStrings:Database` is intentionally blank in
+  `appsettings.Development.json` — never commit a real connection string there. Set it via
+  [user-secrets](https://learn.microsoft.com/aspnet/core/security/app-secrets) instead:
+  `dotnet user-secrets set "ConnectionStrings:Database" "Server=localhost,1433;Database=Nimbus;User Id=sa;Password=<local-only>;TrustServerCertificate=True;" --project Nimbus.API/Nimbus.API`.
 
 ## 4. Deploy keypair
 
@@ -96,7 +102,8 @@ rotation last happened, only for the *policy*).
 
 | Secret | Owner | Rotation interval | Rotation procedure |
 |---|---|---|---|
-| SQL Server `sa` password (`MSSQL_SA_PASSWORD`) | Maintainer | 90 days, or on suspected compromise | Generate with `openssl rand -base64 24` (must contain a digit — SQL Server's password policy rejects weak strings), update `.env`, `docker compose up -d sqlserver`, confirm the API reconnects |
+| SQL Server `sa` password (`MSSQL_SA_PASSWORD`) | Maintainer | 90 days, or on suspected compromise | Generate with `openssl rand -base64 24` (must contain a digit — SQL Server's password policy rejects weak strings), update `.env`, `docker compose up -d sqlserver`, then re-run `sqlserver-init` (`docker compose --profile app up -d sqlserver-init`) so the app/migrator logins stay in sync, confirm the API reconnects |
+| SQL Server app/migrator logins (`MSSQL_APP_PASSWORD` / `MSSQL_MIGRATOR_PASSWORD`) | Maintainer | 90 days, or on suspected compromise | Generate new passwords, update `.env`, `docker compose --profile app up -d sqlserver-init` (re-applies the `ALTER LOGIN` in `infra/sqlserver-init.sql`), then restart `api`/`migrator` to pick up the new connection strings |
 | MinIO root credential | Maintainer | 90 days | Generate new pair, update `.env`, `docker compose up -d minio`, confirm `minio-init` still applies policy on next run |
 | MinIO app access key (`MINIO_APP_ACCESS_KEY`/`MINIO_APP_SECRET_KEY`) | Maintainer | 90 days | Generate new pair, update `.env`, `docker compose up -d minio-init`, confirm the API's object-storage calls still succeed before removing the old key from MinIO |
 | Grafana admin password | Maintainer | 90 days | Update `.env`, `docker compose up -d grafana`, log in to confirm |
@@ -146,3 +153,40 @@ grep -nE '\$\{[A-Z_]+:-' infra/docker-compose.prod.yml infra/docker-compose.limi
 The only acceptable match is `IMAGE_TAG:-latest` — anything else (e.g. a reintroduced
 `GRAFANA_ADMIN_PASSWORD:-admin` or a hardcoded `MSSQL_PID: "Developer"`) must be removed before
 merge.
+
+## 9. SQL Server persistence and migrations (issue #2)
+
+- `AppDbContext` (`Nimbus.Infrastructure/Persistence/AppDbContext.cs`) extends
+  `IdentityDbContext<ApplicationUser>` and is registered against the SQL Server provider with
+  `EnableRetryOnFailure` — the database container restarting mid-deploy is the realistic transient
+  fault, not exotic network partitions.
+- Schema changes are applied by the dedicated `migrator` service (`docker-compose.prod.yml`), an EF
+  Core migration bundle (`dotnet ef migrations bundle --self-contained`) built by the `migrator`
+  target in the repo-root `Dockerfile`. `AppDbContextFactory` (an `IDesignTimeDbContextFactory`)
+  lets the bundle resolve `AppDbContext` from just a connection string instead of booting the full
+  application host, so the migrator's footprint stays limited to the database connection. It runs
+  to completion and exits; `api` declares `depends_on: migrator: condition:
+  service_completed_successfully`, so it can never start against an un-migrated schema, and a
+  failed migration fails the deploy while the previous `api` container keeps running. **No
+  migration code runs inside `Program.cs`** — the API carries no migration responsibility and
+  makes no single-instance assumption.
+- The API never connects as `sa`. `sqlserver-init` (`infra/sqlserver-init.sh`/`.sql`) is a one-shot,
+  idempotent bootstrap — mirroring `minio-init.sh`'s pattern — that creates two least-privilege SQL
+  logins once `sqlserver` reports healthy:
+  - `nimbus_app` (`db_datareader`/`db_datawriter` only) — what the API connects as.
+  - `nimbus_migrator` (`db_owner`, i.e. DDL rights) — what only the transient `migrator` container
+    connects as, never the long-running API.
+  `sa` is used solely for this bootstrap and for the SQL Server container's own healthcheck.
+- `sqlserver` has a `healthcheck` (`sqlcmd -Q "SELECT 1"`); `api` and `migrator` both
+  `depends_on: sqlserver: condition: service_healthy` so the API waits for a healthy database
+  instead of crash-looping while SQL Server's slow cold start completes.
+- `/srv/nimbus/data/mssql` is chowned `10001:0` on the host for the image's non-root `mssql` user
+  (see `infra/nimbus-issue-5-STEPS.md`) — no explicit `user:` override is needed in compose.
+- **Licensing**: Developer Edition (most Docker examples) is dev/test only; `MSSQL_PID` is set
+  explicitly (`Express` by default, free for production) with recorded limits — 10 GB per database,
+  ~1.4 GB buffer pool, 1 socket/4 cores. Revisit before this becomes a real constraint; do not
+  silently upgrade the edition/licence without recording that decision.
+- Integration tests (`Nimbus.Infrastructure.Tests/AppDbContextMigrationTests.cs`) run migrations
+  against a real SQL Server instance via Testcontainers — not an in-memory provider — to prove the
+  initial migration applies cleanly to an empty database and is idempotent on a second run.
+

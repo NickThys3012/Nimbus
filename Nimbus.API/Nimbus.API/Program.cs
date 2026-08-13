@@ -99,7 +99,10 @@ try
     
     var app = builder.Build();
 
-    await app.Services.MigrateDatabaseAsync();
+    // Schema migrations are applied by the dedicated `migrator` container (an EF Core
+    // migration bundle) before this container is ever started — see infra/docker-compose.prod.yml
+    // (`api` depends_on `migrator: condition: service_completed_successfully`). The API itself
+    // carries no migration responsibility and makes no single-instance assumption.
     await app.Services.SeedUsers();
 
     // ── Middleware pipeline ───────────────────────────────────────────

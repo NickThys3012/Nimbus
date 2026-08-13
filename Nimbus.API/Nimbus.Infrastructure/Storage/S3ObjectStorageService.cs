@@ -69,7 +69,7 @@ public sealed class S3ObjectStorageService : IObjectStorageService
                 return;
             }
 
-            await _resiliencePipeline.ExecuteAsync(PutOnceAsync, cancellationToken);
+            await _resiliencePipeline.ExecuteAsync(async ct => await PutOnceAsync(ct), cancellationToken);
         }
         catch (Exception ex) when (ex is not ObjectStorageException)
         {
