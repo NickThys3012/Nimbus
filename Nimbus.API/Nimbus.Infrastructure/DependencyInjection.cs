@@ -56,8 +56,7 @@ public static class DependencyInjection
                 .Bind(config.GetSection(StorageOptions.SectionName))
                 .Validate(o => !string.IsNullOrWhiteSpace(o.Endpoint), "Storage:Endpoint must be configured.")
                 .Validate(o => !string.IsNullOrWhiteSpace(o.AccessKey), "Storage:AccessKey must be configured.")
-                .Validate(o => !string.IsNullOrWhiteSpace(o.SecretKey), "Storage:SecretKey must be configured.")
-                .ValidateOnStart();
+                .Validate(o => !string.IsNullOrWhiteSpace(o.SecretKey), "Storage:SecretKey must be configured.");
 
             services.AddSingleton<IAmazonS3>(sp =>
             {

@@ -34,26 +34,47 @@ public sealed class S3ObjectStorageService : IObjectStorageService
 
     public async Task UploadAsync(StorageBucket bucket, ObjectKey key, ObjectUpload upload, CancellationToken cancellationToken = default)
     {
-        var request = new PutObjectRequest
-        {
-            BucketName = ResolveBucketName(bucket),
-            Key = key.Value,
-            InputStream = upload.Content,
-            ContentType = upload.ContentType,
-            AutoCloseStream = false,
-            AutoResetStreamPosition = false,
-            Headers =
-            {
-                ContentLength = upload.ContentLength
-            }
-        };
+        var bucketName = ResolveBucketName(bucket);
 
-        await ExecuteAsync(
-            "upload",
-            bucket,
-            key,
-            ct => _client.PutObjectAsync(request, ct),
-            cancellationToken);
+        Task PutOnceAsync(CancellationToken ct)
+        {
+            if (upload.Content.CanSeek)
+            {
+                upload.Content.Position = 0;
+            }
+
+            var request = new PutObjectRequest
+            {
+                BucketName = bucketName,
+                Key = key.Value,
+                InputStream = upload.Content,
+                ContentType = upload.ContentType,
+                AutoCloseStream = false,
+                AutoResetStreamPosition = false,
+                Headers =
+                {
+                    ContentLength = upload.ContentLength
+                }
+            };
+
+            return _client.PutObjectAsync(request, ct);
+        }
+
+        try
+        {
+            // A non-seekable stream cannot be retried safely (the stream may be partially consumed).
+            if (!upload.Content.CanSeek && _options.MaxRetryAttempts > 0)
+            {
+                await PutOnceAsync(cancellationToken);
+                return;
+            }
+
+            await _resiliencePipeline.ExecuteAsync(PutOnceAsync, cancellationToken);
+        }
+        catch (Exception ex) when (ex is not ObjectStorageException)
+        {
+            throw ToObjectStorageException("upload", bucket, key, ex);
+        }
     }
 
     public async Task<ObjectDownload?> DownloadAsync(StorageBucket bucket, ObjectKey key, CancellationToken cancellationToken = default)
@@ -188,8 +209,8 @@ public sealed class S3ObjectStorageService : IObjectStorageService
 
     private static bool IsNotFound(AmazonS3Exception ex)
     {
-        return ex.StatusCode == System.Net.HttpStatusCode.NotFound
-               || string.Equals(ex.ErrorCode, "NoSuchKey", StringComparison.OrdinalIgnoreCase)
+        // Only treat missing object keys as "not found"; missing buckets are configuration errors.
+        return string.Equals(ex.ErrorCode, "NoSuchKey", StringComparison.OrdinalIgnoreCase)
                || string.Equals(ex.ErrorCode, "NotFound", StringComparison.OrdinalIgnoreCase);
     }
 

@@ -74,6 +74,6 @@ handled, typed error rather than an unhandled `AmazonS3Exception`.
 ## Testing
 
 Integration tests in `Nimbus.Infrastructure.Tests` run `S3ObjectStorageService` against a real MinIO
-container via Testcontainers (`Testcontainers.MinIo`) — not a mock — covering upload/download,
+container via Testcontainers (`Testcontainers.Minio`) — not a mock — covering upload/download,
 content-type/length round-tripping, delete idempotency, existence checks, and presigned URL
 generation.
