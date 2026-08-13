@@ -58,13 +58,12 @@ WORKDIR /app
 # libuuid ABI, which is exactly the class of bug this build-time smoke test exists
 # to catch before it reaches production.
 RUN useradd --no-create-home --uid 10001 nimbus
-COPY --from=api-build /app/publish ./
+COPY --from=api-build --chown=nimbus:nimbus /app/publish ./
 # Proves the SkiaSharp native dependency actually works in *this* image, rather
 # than assuming a local dev-machine build behaves the same in a slim Linux
 # runtime — runs as the same non-root user the container starts as.
-RUN chown -R nimbus:nimbus /app \
-    && su nimbus -s /bin/sh -c "dotnet Nimbus.API.dll --render-smoke-test"
 USER nimbus
+RUN dotnet Nimbus.API.dll --render-smoke-test
 ENTRYPOINT ["dotnet", "Nimbus.API.dll"]
 
 # ------------------------------------------------------------- migrator build

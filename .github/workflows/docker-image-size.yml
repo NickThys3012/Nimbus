@@ -26,7 +26,7 @@ on:
 
 permissions:
   contents: read
-
+  actions: write
 # Baseline measured locally at 837MB (issue #96) — the budget below leaves
 # headroom for routine dependency bumps while still catching an accidental
 # SDK/Node/build-cache leak into the final stage.
@@ -55,13 +55,14 @@ jobs:
       - name: Measure and enforce the size budget
         run: |
           size_bytes=$(docker image inspect nimbus-api:size-check --format '{{.Size}}')
-          size_mb=$(( size_bytes / 1024 / 1024 ))
+          max_bytes=$(( MAX_IMAGE_SIZE_MB * 1024 * 1024 ))
+          size_mb=$(( (size_bytes + 1024 * 1024 - 1) / 1024 / 1024 ))
 
           echo "### Docker image size" >> "$GITHUB_STEP_SUMMARY"
           echo "\`nimbus-api\`: **${size_mb} MB** (budget: ${MAX_IMAGE_SIZE_MB} MB)" >> "$GITHUB_STEP_SUMMARY"
           echo "nimbus-api image size: ${size_mb} MB (budget: ${MAX_IMAGE_SIZE_MB} MB)"
 
-          if [ "$size_mb" -gt "$MAX_IMAGE_SIZE_MB" ]; then
-            echo "::error::nimbus-api image is ${size_mb}MB, over the ${MAX_IMAGE_SIZE_MB}MB budget."
+          if [ "$size_bytes" -gt "$max_bytes" ]; then
+            echo "::error::nimbus-api image is ${size_mb}MB (${size_bytes} bytes), over the ${MAX_IMAGE_SIZE_MB}MB budget."
             exit 1
           fi
