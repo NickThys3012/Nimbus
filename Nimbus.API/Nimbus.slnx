@@ -18,5 +18,6 @@
         <Project Path="Nimbus.Api.Tests/Nimbus.Api.Tests.csproj" />
         <Project Path="Nimbus.Application.Tests/Nimbus.Application.Tests.csproj" />
         <Project Path="Nimbus.Domain.Tests/Nimbus.Domain.Tests.csproj" />
+        <Project Path="Nimbus.Infrastructure.Tests/Nimbus.Infrastructure.Tests.csproj" />
     </Folder>
 </Solution>

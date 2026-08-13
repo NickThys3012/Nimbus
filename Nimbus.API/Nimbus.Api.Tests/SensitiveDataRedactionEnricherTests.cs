@@ -1,13 +1,14 @@
 using Nimbus.Logging;
 using Serilog;
+using Serilog.Core;
 using Serilog.Events;
 namespace Nimbus.Api.Tests;
 
 /// <summary>
-/// Guards issue #12's "no personal data, passwords, tokens or presigned URLs are
-/// ever logged" acceptance criterion: renders representative log calls through
-/// the real enricher pipeline and asserts sensitive values never appear in the
-/// resulting output.
+///     Guards issue #12's "no personal data, passwords, tokens or presigned URLs are
+///     ever logged" acceptance criterion: renders representative log calls through
+///     the real enricher pipeline and asserts sensitive values never appear in the
+///     resulting output.
 /// </summary>
 public class SensitiveDataRedactionEnricherTests
 {
@@ -60,8 +61,11 @@ public class SensitiveDataRedactionEnricherTests
         Assert.That(output, Does.Not.Contain("REDACTED"));
     }
 
-    private sealed class DelegatingSink(Action<LogEvent> write) : Serilog.Core.ILogEventSink
+    private sealed class DelegatingSink(Action<LogEvent> write) : ILogEventSink
     {
-        public void Emit(LogEvent logEvent) => write(logEvent);
+        public void Emit(LogEvent logEvent)
+        {
+            write(logEvent);
+        }
     }
 }

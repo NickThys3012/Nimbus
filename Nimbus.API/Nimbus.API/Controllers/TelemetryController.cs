@@ -34,7 +34,7 @@ public class TelemetryController : ControllerBase
         // Capped so one misbehaving client cannot use this endpoint to flood Loki.
         foreach (var evt in events.Take(50))
         {
-            var url = (evt.Url ?? string.Empty).Split('?', '#')[0];
+            var url = (evt.Url).Split('?', '#')[0];
             var message = evt.Message is { Length: > 1024 } ? evt.Message[..1024] + "…" : evt.Message;
             var stack = evt.Stack is { Length: > 4096 } ? evt.Stack[..4096] + "…" : evt.Stack;
 
@@ -52,7 +52,7 @@ public class TelemetryController : ControllerBase
                 }
                 else
                 {
-                    _logger.LogInformation("Client page view: {ClientUrl}", evt.Url);
+                    _logger.LogInformation("Client page view: {ClientUrl}", url);
                 }
             }
         }

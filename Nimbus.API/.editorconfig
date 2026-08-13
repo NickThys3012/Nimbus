@@ -529,6 +529,7 @@ resharper_unused_type_global_highlighting = none
 
 [Nimbus.Contracts/DTOs/**/*Dto.cs]
 resharper_not_accessed_positional_property_global_highlighting = none
+resharper_class_never_instantiated_global_highlighting = none
 
 [Nimbus.Domain/Entities/**/*.cs]
 resharper_unused_auto_property_accessor_global_highlighting = none

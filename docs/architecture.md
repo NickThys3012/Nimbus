@@ -224,6 +224,10 @@ to be consumed reactively via signals.
   `TokenService`, backed by ASP.NET Core Identity (`ApplicationUser`,
   roles). Refresh tokens are set as an HTTP-only, secure, `SameSite=Strict`
   cookie.
+- **Object storage**: `IObjectStorageService` (Domain) /
+  `S3ObjectStorageService` (Infrastructure, over `AWSSDK.S3`) abstracts the
+  self-hosted MinIO store used for flight images/tracks/exports and map
+  tiles — see [`docs/object-storage.md`](object-storage.md).
 
 ## Known gaps / not yet in place
 
