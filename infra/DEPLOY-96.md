@@ -49,6 +49,9 @@ docker images nimbus-api:96 --format "{{.Size}}"
 Measured locally (arm64): **837MB**. Watch this number on future PRs — a jump usually means a stray
 SDK/Node artifact leaked into the final stage.
 
+`.github/workflows/docker-image-size.yml` builds the `api` target on every relevant PR/push and
+fails if it exceeds a 1024MB budget, printing the measured size to the job summary either way.
+
 ## Verifying before the CD pipeline exists
 
 No CI workflow publishes `nimbus-api`/`nimbus-migrator` to GHCR yet (that's #6) — so nothing here is
