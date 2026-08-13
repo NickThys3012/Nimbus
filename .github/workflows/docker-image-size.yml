@@ -1,0 +1,68 @@
+name: Docker image size
+
+# Builds the `api` production image (issue #96) on every PR/push that could
+# affect it, and fails the build if the image grows past a size budget — the
+# same class of regression a stray SDK/Node artifact leaking into the final
+# stage would cause, caught here instead of on the VPS.
+
+on:
+  pull_request:
+    paths:
+      - "Dockerfile"
+      - ".dockerignore"
+      - "release-notes.json"
+      - "Nimbus.API/**"
+      - "Nimbus.Web/**"
+      - ".github/workflows/docker-image-size.yml"
+  push:
+    branches: [main]
+    paths:
+      - "Dockerfile"
+      - ".dockerignore"
+      - "release-notes.json"
+      - "Nimbus.API/**"
+      - "Nimbus.Web/**"
+      - ".github/workflows/docker-image-size.yml"
+
+permissions:
+  contents: read
+  actions: write
+# Baseline measured locally at 837MB (issue #96) — the budget below leaves
+# headroom for routine dependency bumps while still catching an accidental
+# SDK/Node/build-cache leak into the final stage.
+env:
+  MAX_IMAGE_SIZE_MB: 1024
+
+jobs:
+  image-size:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build the api image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          target: api
+          tags: nimbus-api:size-check
+          load: true
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Measure and enforce the size budget
+        run: |
+          size_bytes=$(docker image inspect nimbus-api:size-check --format '{{.Size}}')
+          max_bytes=$(( MAX_IMAGE_SIZE_MB * 1024 * 1024 ))
+          size_mb=$(( (size_bytes + 1024 * 1024 - 1) / 1024 / 1024 ))
+
+          echo "### Docker image size" >> "$GITHUB_STEP_SUMMARY"
+          echo "\`nimbus-api\`: **${size_mb} MB** (budget: ${MAX_IMAGE_SIZE_MB} MB)" >> "$GITHUB_STEP_SUMMARY"
+          echo "nimbus-api image size: ${size_mb} MB (budget: ${MAX_IMAGE_SIZE_MB} MB)"
+
+          if [ "$size_bytes" -gt "$max_bytes" ]; then
+            echo "::error::nimbus-api image is ${size_mb}MB (${size_bytes} bytes), over the ${MAX_IMAGE_SIZE_MB}MB budget."
+            exit 1
+          fi

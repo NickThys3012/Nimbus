@@ -1,0 +1,16 @@
+# Keeps the build context small and prevents host-specific/build artifacts
+# from ever being sent to the Docker daemon or accidentally copied into an image.
+**/node_modules/
+**/bin/
+**/obj/
+**/dist/
+.git/
+.gitignore
+.idea/
+.vscode/
+.DS_Store
+**/*.user
+GithubSetup/
+docs/
+infra/
+README.md

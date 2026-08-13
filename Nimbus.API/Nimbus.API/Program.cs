@@ -16,6 +16,19 @@ using Nimbus.Observability;
 using Prometheus;
 using Scalar.AspNetCore;
 using Serilog;
+using SkiaSharp;
+
+// Docker build-time smoke test (issue #96): the trajectory/PDF map rendering features
+// (#57, #62) depend on SkiaSharp's native library, which is the single most common way
+// a working local build silently breaks in a slim Linux runtime image (missing
+// fontconfig/freetype). This renders a tiny bitmap with text and exits immediately —
+// no web host, no database — so the Dockerfile can fail the build instead of failing
+// the first real map render in production.
+if (args.Contains("--render-smoke-test"))
+{
+    return RunRenderSmokeTest();
+}
+
 Log.Logger = new LoggerConfiguration().WriteTo.Console().CreateBootstrapLogger();
 try
 {
@@ -144,5 +157,40 @@ try
 catch (Exception ex) when (ex is not HostAbortedException)
 {
     Log.Fatal(ex, "Nimbus.Api terminated unexpectedly");
+    return 1;
 }
 finally { Log.CloseAndFlush(); }
+
+return 0;
+
+// Renders a small bitmap with a text label — text rendering is what actually
+// exercises fontconfig, which is the dependency a slim runtime image is missing
+// when everything else "looks" fine. Returns non-zero so a Dockerfile RUN step
+// fails the build rather than shipping a broken image.
+int RunRenderSmokeTest()
+{
+    try
+    {
+        using var bitmap = new SKBitmap(64, 64);
+        using var canvas = new SKCanvas(bitmap);
+        canvas.Clear(SKColors.CornflowerBlue);
+        using var font = new SKFont { Size = 12 };
+        using var paint = new SKPaint { Color = SKColors.White };
+        canvas.DrawText("OK", 8, 32, SKTextAlign.Left, font, paint);
+        using var image = SKImage.FromBitmap(bitmap);
+        using var data = image.Encode(SKEncodedImageFormat.Png, 100);
+        if (data is null || data.Size == 0)
+        {
+            Console.Error.WriteLine("Skia render smoke test produced no image data.");
+            return 1;
+        }
+
+        Console.WriteLine($"Skia render smoke test OK ({data.Size} bytes).");
+        return 0;
+    }
+    catch (Exception ex)
+    {
+        Console.Error.WriteLine($"Skia render smoke test failed: {ex}");
+        return 1;
+    }
+}

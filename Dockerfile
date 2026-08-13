@@ -45,12 +45,25 @@ RUN dotnet publish Nimbus.API/Nimbus.API/Nimbus.API.csproj \
     -c Release -o /app/publish \
     -p:SkipSpaBuild=true
 COPY --from=web-build /src/Nimbus.Web/dist/Nimbus.Web/browser/ /app/publish/wwwroot/
+# Baked in at build time (issue #96), not read from the environment at start-up,
+# so the in-app changelog can never drift from the image actually running.
+COPY release-notes.json /app/publish/wwwroot/release-notes.json
 
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS api
 WORKDIR /app
+# Trajectory/PDF map rendering (#57, #62) uses SkiaSharp. The NuGet package
+# (SkiaSharp.NativeAssets.Linux.NoDependencies) statically links freetype/
+# fontconfig/harfbuzz, so no extra apt packages are needed here — the dynamically
+# linked variant hit undefined-symbol failures against this image's fontconfig/
+# libuuid ABI, which is exactly the class of bug this build-time smoke test exists
+# to catch before it reaches production.
 RUN useradd --no-create-home --uid 10001 nimbus
-USER nimbus
 COPY --from=api-build --chown=nimbus:nimbus /app/publish ./
+# Proves the SkiaSharp native dependency actually works in *this* image, rather
+# than assuming a local dev-machine build behaves the same in a slim Linux
+# runtime — runs as the same non-root user the container starts as.
+USER nimbus
+RUN dotnet Nimbus.API.dll --render-smoke-test
 ENTRYPOINT ["dotnet", "Nimbus.API.dll"]
 
 # ------------------------------------------------------------- migrator build
