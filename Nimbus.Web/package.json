@@ -7,7 +7,8 @@
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
-    "generate:api": "curl -sf http://localhost:5214/openapi/v1.json -o .openapi-spec.json && openapi --input .openapi-spec.json --output src/app/core/api-client --client angular --useOptions --name NimbusApiClient && rm -f .openapi-spec.json"
+    "generate:api": "curl -sf http://localhost:5214/openapi/v1.json -o .openapi-spec.json && openapi --input .openapi-spec.json --output src/app/core/api-client --client angular --useOptions --name NimbusApiClient && rm -f .openapi-spec.json",
+    "lint": "ng lint"
   },
   "private": true,
   "packageManager": "npm@11.19.0",
@@ -25,10 +26,15 @@
     "@angular/build": "^21.2.20",
     "@angular/cli": "^21.2.20",
     "@angular/compiler-cli": "^21.2.0",
+    "@eslint/js": "^10.0.1",
+    "@vitest/coverage-v8": "^4.1.10",
+    "angular-eslint": "21.4.0",
+    "eslint": "^10.3.0",
     "jsdom": "^28.0.0",
     "openapi-typescript-codegen": "^0.31.0",
     "prettier": "^3.8.1",
     "typescript": "~5.9.2",
+    "typescript-eslint": "8.59.2",
     "vitest": "^4.0.8"
   }
 }
