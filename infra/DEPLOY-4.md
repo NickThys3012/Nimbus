@@ -35,7 +35,12 @@ Three jobs, all defined in `.github/workflows/ci.yml`:
 
 Both `dotnet` and `angular` post their test results as GitHub PR checks (via
 `dorny/test-reporter`) and a coverage summary table into the job's step summary (via
-`irongut/CodeCoverageSummary`) — both show up on the PR without needing to open the raw logs.
+`danielpalme/ReportGenerator-GitHub-Action`) — both show up on the PR without needing to open the
+raw logs. ReportGenerator was picked over `irongut/CodeCoverageSummary` (the initial choice)
+because coverlet emits an empty `<packages/>` cobertura file for test projects with no
+instrumentable app code of their own (e.g. `Nimbus.Domain.Tests`/`Nimbus.Application.Tests`), and
+irongut's action hard-fails the job on those ("No package data found"); ReportGenerator merges
+all per-project cobertura files and silently skips the empty ones.
 
 ### Angular tooling added
 

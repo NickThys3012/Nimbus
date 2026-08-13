@@ -74,19 +74,21 @@ jobs:
           fail-on-error: true
 
       - name: Coverage summary
-        uses: irongut/CodeCoverageSummary@v1.3.0
+        # ReportGenerator, not irongut/CodeCoverageSummary: coverlet emits an
+        # empty <packages/> cobertura file for test projects with no
+        # instrumentable app code of their own (e.g. Domain/Application.Tests),
+        # and irongut's action hard-fails on those ("No package data found").
+        # ReportGenerator merges all four cobertura files and skips empty ones.
+        uses: danielpalme/ReportGenerator-GitHub-Action@5.5.11
         if: ${{ !cancelled() }}
         with:
-          filename: "Nimbus.API/TestResults/**/coverage.cobertura.xml"
-          badge: false
-          format: markdown
-          output: both
+          reports: "Nimbus.API/TestResults/**/coverage.cobertura.xml"
+          targetdir: "Nimbus.API/TestResults/report"
+          reporttypes: "MarkdownSummaryGithub"
 
       - name: Add coverage to job summary
-        # irongut/CodeCoverageSummary is a Docker action: it writes relative
-        # to $GITHUB_WORKSPACE (repo root), not this job's working-directory.
         if: ${{ !cancelled() }}
-        run: cat ../code-coverage-results.md >> "$GITHUB_STEP_SUMMARY" || true
+        run: cat TestResults/report/SummaryGithub.md >> "$GITHUB_STEP_SUMMARY" || true
 
   angular:
     name: Angular build & test
@@ -102,6 +104,11 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
           cache-dependency-path: Nimbus.Web/package-lock.json
+
+      # ReportGenerator (used below) is a .NET global tool.
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
 
       - name: Install dependencies
         run: npm ci
@@ -125,19 +132,16 @@ jobs:
           fail-on-error: true
 
       - name: Coverage summary
-        uses: irongut/CodeCoverageSummary@v1.3.0
+        uses: danielpalme/ReportGenerator-GitHub-Action@5.5.11
         if: ${{ !cancelled() }}
         with:
-          filename: "Nimbus.Web/coverage/**/cobertura-coverage.xml"
-          badge: false
-          format: markdown
-          output: both
+          reports: "Nimbus.Web/coverage/**/cobertura-coverage.xml"
+          targetdir: "Nimbus.Web/coverage/report"
+          reporttypes: "MarkdownSummaryGithub"
 
       - name: Add coverage to job summary
-        # irongut/CodeCoverageSummary is a Docker action: it writes relative
-        # to $GITHUB_WORKSPACE (repo root), not this job's working-directory.
         if: ${{ !cancelled() }}
-        run: cat ../code-coverage-results.md >> "$GITHUB_STEP_SUMMARY" || true
+        run: cat coverage/report/SummaryGithub.md >> "$GITHUB_STEP_SUMMARY" || true
 
       - name: Production build
         run: npx ng build --configuration production
