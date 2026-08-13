@@ -20,10 +20,15 @@ public sealed class AppDbContextFactory : IDesignTimeDbContextFactory<AppDbConte
         // back to the environment variable ASP.NET Core's own config binding would use.
         var connectionString = GetConnectionStringArg(args)
             ?? Environment.GetEnvironmentVariable("ConnectionStrings__Database")
-            ?? "Server=localhost,1433;Database=Nimbus;TrustServerCertificate=True;";
+            ?? throw new InvalidOperationException(
+                "Database connection string not provided. Pass --connection <value> or set ConnectionStrings__Database.");
 
         var optionsBuilder = new DbContextOptionsBuilder<AppDbContext>();
-        optionsBuilder.UseSqlServer(connectionString);
+        optionsBuilder.UseSqlServer(connectionString, sql =>
+            sql.EnableRetryOnFailure(
+                maxRetryCount: 5,
+                maxRetryDelay: TimeSpan.FromSeconds(10),
+                errorNumbersToAdd: null));
 
         return new AppDbContext(optionsBuilder.Options);
     }

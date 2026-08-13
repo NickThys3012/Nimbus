@@ -53,8 +53,10 @@ END;
 GO
 
 -- The API never needs DDL rights, so it never gets them — read/write on rows only.
-ALTER ROLE db_datareader ADD MEMBER [nimbus_app];
-ALTER ROLE db_datawriter ADD MEMBER [nimbus_app];
+IF IS_ROLEMEMBER(N'db_datareader', N'nimbus_app') <> 1
+    ALTER ROLE db_datareader ADD MEMBER [nimbus_app];
+IF IS_ROLEMEMBER(N'db_datawriter', N'nimbus_app') <> 1
+    ALTER ROLE db_datawriter ADD MEMBER [nimbus_app];
 GO
 
 -- db_owner is scoped to this database only, and only the transient `migrator`

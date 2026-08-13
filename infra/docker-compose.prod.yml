@@ -111,7 +111,7 @@ services:
     healthcheck:
       # sa is only ever used for this in-container liveness probe and by
       # sqlserver-init's one-time login bootstrap — never by the API.
-      test: ["CMD", "/opt/mssql-tools18/bin/sqlcmd", "-S", "localhost", "-U", "sa", "-P", "$MSSQL_SA_PASSWORD", "-C", "-Q", "SELECT 1"]
+      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P \"$$MSSQL_SA_PASSWORD\" -C -Q \"SELECT 1\""]
       interval: 10s
       timeout: 5s
       retries: 10
