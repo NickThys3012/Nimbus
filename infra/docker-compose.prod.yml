@@ -34,7 +34,12 @@ services:
       Storage__SecretKey: ${MINIO_APP_SECRET_KEY}
       Storage__ForcePathStyle: "true"
       Storage__UseHttps: "false"
+      # nimbus_app: db_datareader/db_datawriter only, created by sqlserver-init
+      # (issue #2) — the API never connects as sa and never gets DDL rights.
+      ConnectionStrings__Database: "Server=sqlserver;Database=Nimbus;User Id=nimbus_app;Password=${MSSQL_APP_PASSWORD};TrustServerCertificate=True;"
     depends_on:
+      sqlserver:
+        condition: service_healthy
       migrator:
         condition: service_completed_successfully
       minio-init:
@@ -46,8 +51,35 @@ services:
     image: ghcr.io/nickthys3012/nimbus-migrator:${IMAGE_TAG:-latest}
     restart: on-failure
     env_file: [.env]
+    environment:
+      # nimbus_migrator: db_owner (DDL rights) — used only for the lifetime of
+      # this transient, one-shot container, never by the long-running API.
+      ConnectionStrings__Database: "Server=sqlserver;Database=Nimbus;User Id=nimbus_migrator;Password=${MSSQL_MIGRATOR_PASSWORD};TrustServerCertificate=True;"
     depends_on:
-      - sqlserver
+      sqlserver:
+        condition: service_healthy
+      sqlserver-init:
+        condition: service_completed_successfully
+    networks: [nimbus]
+
+  # One-shot, idempotent least-privilege login bootstrap (issue #2). Safe to
+  # re-run on every `docker compose up` — see infra/sqlserver-init.sh/.sql.
+  sqlserver-init:
+    profiles: ["app"]
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    restart: "no"
+    entrypoint: ["/bin/bash", "/init/sqlserver-init.sh"]
+    environment:
+      MSSQL_HOST: sqlserver
+      MSSQL_SA_PASSWORD: ${MSSQL_SA_PASSWORD}
+      MSSQL_APP_PASSWORD: ${MSSQL_APP_PASSWORD}
+      MSSQL_MIGRATOR_PASSWORD: ${MSSQL_MIGRATOR_PASSWORD}
+    volumes:
+      - ./sqlserver-init.sh:/init/sqlserver-init.sh:ro
+      - ./sqlserver-init.sql:/init/sqlserver-init.sql:ro
+    depends_on:
+      sqlserver:
+        condition: service_healthy
     networks: [nimbus]
 
   # ------------------------------------------------ placeholder (profile: stub)
@@ -67,11 +99,23 @@ services:
   sqlserver:
     image: mcr.microsoft.com/mssql/server:2022-latest
     restart: unless-stopped
+    # Runs as the image's built-in non-root `mssql` user (uid 10001) by default —
+    # /srv/nimbus/data/mssql is chowned `10001:0` on the host (see
+    # infra/nimbus-issue-5-STEPS.md Part C1/"first-run failure" table), so no
+    # explicit `user:` override is needed here.
     environment:
       ACCEPT_EULA: "Y"
       MSSQL_SA_PASSWORD: ${MSSQL_SA_PASSWORD}
       MSSQL_PID: ${MSSQL_PID}
       MSSQL_MEMORY_LIMIT_MB: ${MSSQL_MEMORY_LIMIT_MB}
+    healthcheck:
+      # sa is only ever used for this in-container liveness probe and by
+      # sqlserver-init's one-time login bootstrap — never by the API.
+      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P \"$$MSSQL_SA_PASSWORD\" -C -Q \"SELECT 1\""]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
     volumes:
       - /srv/nimbus/data/mssql:/var/opt/mssql
     # Memory/CPU ceilings live in docker-compose.limits.yml (issue #103), not here,

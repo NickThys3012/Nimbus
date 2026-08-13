@@ -29,7 +29,16 @@ public static class DependencyInjection
 
             services.AddDbContext<AppDbContext>(opts =>
             {
-                opts.UseSqlServer(connectionString);
+                opts.UseSqlServer(connectionString, sql =>
+                {
+                    // The database container restarting mid-deploy is the realistic transient
+                    // fault here, not exotic network partitions — retry a handful of times
+                    // with EF Core's built-in exponential backoff before giving up.
+                    sql.EnableRetryOnFailure(
+                        maxRetryCount: 5,
+                        maxRetryDelay: TimeSpan.FromSeconds(10),
+                        errorNumbersToAdd: null);
+                });
             });
 
             services.AddScoped<IUserRepository, UserRepository>();
