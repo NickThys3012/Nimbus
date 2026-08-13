@@ -1,6 +1,5 @@
 import { Component, inject } from '@angular/core';
 import { AuthStore } from '../../core/auth/auth.store';
-import { UserDto } from '../../core/api-client';
 
 @Component({
   selector: 'Nimbus-user-by-mail',

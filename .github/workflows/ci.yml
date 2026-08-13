@@ -1,0 +1,193 @@
+name: CI
+
+# Builds and tests both sides of the stack on every PR (and on push to main,
+# so a merge that somehow slips past required checks is still caught), then
+# combines the two into the one artifact that actually gets deployed — the
+# Angular production bundle published into the .NET app's wwwroot/.
+#
+# `dotnet` and `angular` run in parallel; `publish` waits on both and stitches
+# their outputs together. No CD here yet — publishing images/deploying to the
+# VPS stays manual until issue #6.
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+  checks: write
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  DOTNET_VERSION: "10.0.x"
+  NODE_VERSION: "22"
+  DOTNET_NOLOGO: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+
+jobs:
+  dotnet:
+    name: .NET build & test
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: Nimbus.API
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+          cache: true
+          cache-dependency-path: Nimbus.API/**/*.csproj
+
+      - name: Restore
+        run: dotnet restore Nimbus.slnx
+
+      # SkipSpaBuild=true: the Angular bundle is built/tested by the `angular`
+      # job and stitched in by the `publish` job — building it again here (and
+      # needing a Node toolchain in this job) would be redundant.
+      - name: Build (warnings as errors)
+        run: dotnet build Nimbus.slnx --no-restore -c Release -p:SkipSpaBuild=true
+
+      - name: Test
+        # No explicit LogFileName: `dotnet test` runs each test project
+        # separately, and a fixed name would make each project overwrite the
+        # previous one's .trx instead of producing one file per project.
+        run: |
+          dotnet test Nimbus.slnx --no-build -c Release \
+            --logger "trx" \
+            --collect:"XPlat Code Coverage" \
+            --results-directory ./TestResults
+
+      - name: Publish test results to PR checks
+        uses: dorny/test-reporter@v3
+        if: ${{ !cancelled() }}
+        with:
+          name: .NET test results
+          path: "Nimbus.API/TestResults/*.trx"
+          reporter: dotnet-trx
+          fail-on-error: true
+
+      - name: Coverage summary
+        # ReportGenerator, not irongut/CodeCoverageSummary: coverlet emits an
+        # empty <packages/> cobertura file for test projects with no
+        # instrumentable app code of their own (e.g. Domain/Application.Tests),
+        # and irongut's action hard-fails on those ("No package data found").
+        # ReportGenerator merges all four cobertura files and skips empty ones.
+        uses: danielpalme/ReportGenerator-GitHub-Action@5.5.11
+        if: ${{ !cancelled() }}
+        with:
+          reports: "Nimbus.API/TestResults/**/coverage.cobertura.xml"
+          targetdir: "Nimbus.API/TestResults/report"
+          reporttypes: "MarkdownSummaryGithub"
+
+      - name: Add coverage to job summary
+        if: ${{ !cancelled() }}
+        run: cat TestResults/report/SummaryGithub.md >> "$GITHUB_STEP_SUMMARY" || true
+
+  angular:
+    name: Angular build & test
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: Nimbus.Web
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: Nimbus.Web/package-lock.json
+
+      # ReportGenerator (used below) is a .NET global tool.
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Unit test (headless)
+        run: |
+          npx ng test --no-watch \
+            --coverage --coverage-reporters=cobertura \
+            --reporters=default --reporters=junit --output-file=test-results/junit.xml
+
+      - name: Publish test results to PR checks
+        uses: dorny/test-reporter@v3
+        if: ${{ !cancelled() }}
+        with:
+          name: Angular test results
+          path: "Nimbus.Web/test-results/junit.xml"
+          reporter: java-junit
+          fail-on-error: true
+
+      - name: Coverage summary
+        uses: danielpalme/ReportGenerator-GitHub-Action@5.5.11
+        if: ${{ !cancelled() }}
+        with:
+          reports: "Nimbus.Web/coverage/**/cobertura-coverage.xml"
+          targetdir: "Nimbus.Web/coverage/report"
+          reporttypes: "MarkdownSummaryGithub"
+
+      - name: Add coverage to job summary
+        if: ${{ !cancelled() }}
+        run: cat coverage/report/SummaryGithub.md >> "$GITHUB_STEP_SUMMARY" || true
+
+      - name: Production build
+        run: npx ng build --configuration production
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: angular-dist
+          path: Nimbus.Web/dist/Nimbus.Web/browser
+          retention-days: 1
+
+  publish:
+    name: Publish combined artifact
+    needs: [dotnet, angular]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+          cache: true
+          cache-dependency-path: Nimbus.API/**/*.csproj
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: angular-dist
+          path: angular-dist
+
+      - name: Restore
+        working-directory: Nimbus.API
+        run: dotnet restore Nimbus.slnx
+
+      # Same trick as the `dotnet` job (SkipSpaBuild=true), but this publish
+      # copies the already-built Angular bundle into wwwroot/ itself, so one
+      # artifact — not two — is what actually gets deployed.
+      - name: Publish API (SPA build skipped)
+        working-directory: Nimbus.API
+        run: |
+          dotnet publish Nimbus.API/Nimbus.API.csproj \
+            -c Release -o ../publish -p:SkipSpaBuild=true
+
+      - name: Stitch Angular bundle into wwwroot
+        run: |
+          mkdir -p publish/wwwroot
+          cp -r angular-dist/. publish/wwwroot/
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nimbus-app
+          path: publish
+          retention-days: 7
