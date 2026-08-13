@@ -2,7 +2,20 @@
 	email {$ACME_EMAIL}
 }
 
+# Security headers applied to every route (issue #94): HSTS pins clients to
+# HTTPS for a year (including subdomains) once they've seen it once, and the
+# other two headers stop the browser second-guessing our Content-Type and stop
+# the referrer leaking our URLs to third parties.
+(security_headers) {
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "strict-origin-when-cross-origin"
+	}
+}
+
 nimbus.{$NIMBUS_DOMAIN} {
+	import security_headers
 	# Upload-size ceiling (issue #103): rejected before it reaches the API or disk.
 	# Must match the API's own MaxRequestBodySize/RequestSizeLimit — see
 	# RESOURCE-BUDGET.md "Upload-size ceiling".
@@ -13,10 +26,12 @@ nimbus.{$NIMBUS_DOMAIN} {
 }
 
 grafana.{$NIMBUS_DOMAIN} {
+	import security_headers
 	reverse_proxy grafana:3000
 }
 
 console.{$NIMBUS_DOMAIN} {
+	import security_headers
 	# MinIO console (issue #95): not reachable directly, no ports published on the
 	# minio service. Basic auth here is defense-in-depth in front of MinIO's own
 	# root-credential login — two factors, not one, guard the only admin surface

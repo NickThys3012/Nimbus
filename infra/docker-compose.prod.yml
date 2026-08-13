@@ -2,6 +2,15 @@ name: nimbus
 
 services:
   # ---------------------------------------------------------------- front door
+  #
+  # Only Caddy publishes ports here — 80/443, nothing else. Docker's own iptables
+  # rules are evaluated before ufw's, so a published `ports:` entry on any other
+  # service is reachable from the internet even with ufw configured to block it
+  # (issue #94). Any developer-facing dev/local setup that publishes SQL
+  # Server/Grafana/Prometheus/Loki ports for debugging belongs in a separate
+  # compose file, not this one — production never publishes them, deliberately,
+  # not by omission. If a port is ever needed for debugging in production, bind
+  # it as `127.0.0.1:PORT:PORT` (SSH tunnel only), never a bare `PORT:PORT`.
   caddy:
     image: caddy:2-alpine
     restart: unless-stopped
@@ -40,6 +49,8 @@ services:
     depends_on:
       sqlserver:
         condition: service_healthy
+      minio:
+        condition: service_healthy
       migrator:
         condition: service_completed_successfully
       minio-init:
@@ -49,7 +60,11 @@ services:
   migrator:
     profiles: ["app"]
     image: ghcr.io/nickthys3012/nimbus-migrator:${IMAGE_TAG:-latest}
-    restart: on-failure
+    # One-shot: runs once per deploy then exits — never restarted automatically
+    # (issue #94). A failed migration must be investigated and re-run
+    # deliberately with `docker compose --profile app up migrator`, not retried
+    # silently forever like `on-failure` would do.
+    restart: "no"
     env_file: [.env]
     environment:
       # nimbus_migrator: db_owner (DDL rights) — used only for the lifetime of
