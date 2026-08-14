@@ -196,8 +196,10 @@ int RunRenderSmokeTest()
         using var bitmap = new SKBitmap(64, 64);
         using var canvas = new SKCanvas(bitmap);
         canvas.Clear(SKColors.CornflowerBlue);
-        using var font = new SKFont { Size = 12 };
-        using var paint = new SKPaint { Color = SKColors.White };
+        using var font = new SKFont();
+        font.Size = 12;
+        using var paint = new SKPaint();
+        paint.Color = SKColors.White;
         canvas.DrawText("OK", 8, 32, SKTextAlign.Left, font, paint);
         using var image = SKImage.FromBitmap(bitmap);
         using var data = image.Encode(SKEncodedImageFormat.Png, 100);

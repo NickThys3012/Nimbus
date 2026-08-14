@@ -10,7 +10,6 @@ using Nimbus.Domain.Interfaces;
 using Nimbus.Infrastructure.Identity;
 using Nimbus.Infrastructure.Persistence;
 using Nimbus.Infrastructure.Persistence.Repositories;
-using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Nimbus.Infrastructure.Services;
 using Nimbus.Infrastructure.Storage;
 namespace Nimbus.Infrastructure;
