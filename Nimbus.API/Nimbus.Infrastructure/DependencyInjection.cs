@@ -47,9 +47,13 @@ public static class DependencyInjection
 
             services.AddObjectStorage(config);
 
+            // Tagged "ready" (issue #97): /health/ready runs only checks carrying this tag, so
+            // SQL Server and MinIO gate readiness while /health/live — which runs no checks at
+            // all — stays a pure "is the process up" probe.
             services.AddHealthChecks()
-                .AddSqlServer(connectionString)
-                .AddDbContextCheck<AppDbContext>();
+                .AddSqlServer(connectionString, tags: ["ready"])
+                .AddDbContextCheck<AppDbContext>(tags: ["ready"])
+                .AddCheck<MinioHealthCheck>("minio", tags: ["ready"]);
         }
 
         /// <summary>

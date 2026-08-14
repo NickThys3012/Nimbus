@@ -46,6 +46,16 @@ services:
       # nimbus_app: db_datareader/db_datawriter only, created by sqlserver-init
       # (issue #2) — the API never connects as sa and never gets DDL rights.
       ConnectionStrings__Database: "Server=sqlserver;Database=Nimbus;User Id=nimbus_app;Password=${MSSQL_APP_PASSWORD};TrustServerCertificate=True;"
+    # /health/live performs no dependency checks (issue #97) — this only confirms the process
+    # itself is up and answering, which is exactly what a container orchestrator should use to
+    # decide whether to keep routing traffic here. Deploy-gating on SQL Server/MinIO reachability
+    # is /health/ready's job (see the CD workflow), not this in-container probe's.
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8080/health/live"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
     depends_on:
       sqlserver:
         condition: service_healthy

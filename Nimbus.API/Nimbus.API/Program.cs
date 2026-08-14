@@ -1,6 +1,5 @@
 using System.Security.Claims;
 using System.Text;
-using HealthChecks.UI.Client;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
@@ -135,30 +134,37 @@ try
     app.UseAuthentication();
     app.UseAuthorization();
 
-    app.MapHealthChecks("/health", new HealthCheckOptions
+    // Both endpoints are anonymous (no [Authorize], nothing upstream requires a token for
+    // /health/*) and both use HealthEndpointResponseWriter (issue #97), which writes only the
+    // literal string "Healthy"/"Unhealthy" — no check names, exception messages, version string
+    // or anything else that could hint at infrastructure topology to an anonymous caller.
+
+    // No dependency checks run here (Predicate matches nothing) — this answers as soon as the
+    // process can serve a request, which is exactly what the docker-compose `healthcheck:` for
+    // the `api` container polls every few seconds to decide whether to keep routing traffic to
+    // this instance, without ever touching SQL Server or MinIO.
+    app.MapHealthChecks("/health/live", new HealthCheckOptions
     {
         ResultStatusCodes =
         {
             [HealthStatus.Healthy] = StatusCodes.Status200OK, [HealthStatus.Degraded] = StatusCodes.Status200OK, [HealthStatus.Unhealthy] = StatusCodes.Status503ServiceUnavailable
         },
-        ResponseWriter = UIResponseWriter.WriteHealthCheckUIResponse,
-        Predicate = _ => true
+        ResponseWriter = HealthEndpointResponseWriter.WriteAsync,
+        Predicate = _ => false
     });
 
-    // Distinct route from /health: this is what the CD workflow (issue #6) polls after
-    // swapping in the new `api` container, so a deploy fails fast instead of leaving a
-    // container that started but can't actually reach SQL Server/its dependencies serving
-    // traffic. Same checks as /health today (there is only one set registered), but kept as
-    // its own endpoint so a future liveness-only check can be added to /health without
-    // weakening what gates a deploy.
+    // Runs every check tagged "ready" (SQL Server + MinIO — see AddInfrastructure). This is
+    // what the CD workflow (issue #6) polls after swapping in the new `api` container, and what
+    // the external uptime monitor and Caddy alike should treat as "can this instance actually
+    // serve" — a deploy or an alert fires on the same truth, not a looser/tighter proxy for it.
     app.MapHealthChecks("/health/ready", new HealthCheckOptions
     {
         ResultStatusCodes =
         {
             [HealthStatus.Healthy] = StatusCodes.Status200OK, [HealthStatus.Degraded] = StatusCodes.Status200OK, [HealthStatus.Unhealthy] = StatusCodes.Status503ServiceUnavailable
         },
-        ResponseWriter = UIResponseWriter.WriteHealthCheckUIResponse,
-        Predicate = _ => true
+        ResponseWriter = HealthEndpointResponseWriter.WriteAsync,
+        Predicate = check => check.Tags.Contains("ready")
     });
 
     app.MapOpenApi();
@@ -190,8 +196,10 @@ int RunRenderSmokeTest()
         using var bitmap = new SKBitmap(64, 64);
         using var canvas = new SKCanvas(bitmap);
         canvas.Clear(SKColors.CornflowerBlue);
-        using var font = new SKFont { Size = 12 };
-        using var paint = new SKPaint { Color = SKColors.White };
+        using var font = new SKFont();
+        font.Size = 12;
+        using var paint = new SKPaint();
+        paint.Color = SKColors.White;
         canvas.DrawText("OK", 8, 32, SKTextAlign.Left, font, paint);
         using var image = SKImage.FromBitmap(bitmap);
         using var data = image.Encode(SKEncodedImageFormat.Png, 100);
