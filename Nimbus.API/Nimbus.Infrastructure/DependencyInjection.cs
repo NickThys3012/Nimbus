@@ -10,6 +10,7 @@ using Nimbus.Domain.Interfaces;
 using Nimbus.Infrastructure.Identity;
 using Nimbus.Infrastructure.Persistence;
 using Nimbus.Infrastructure.Persistence.Repositories;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Nimbus.Infrastructure.Services;
 using Nimbus.Infrastructure.Storage;
 namespace Nimbus.Infrastructure;
@@ -47,9 +48,13 @@ public static class DependencyInjection
 
             services.AddObjectStorage(config);
 
+            // Tagged "ready" (issue #97): /health/ready runs only checks carrying this tag, so
+            // SQL Server and MinIO gate readiness while /health/live — which runs no checks at
+            // all — stays a pure "is the process up" probe.
             services.AddHealthChecks()
-                .AddSqlServer(connectionString)
-                .AddDbContextCheck<AppDbContext>();
+                .AddSqlServer(connectionString, tags: ["ready"])
+                .AddDbContextCheck<AppDbContext>(tags: ["ready"])
+                .AddCheck<MinioHealthCheck>("minio", tags: ["ready"]);
         }
 
         /// <summary>
