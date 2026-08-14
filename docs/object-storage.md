@@ -15,12 +15,12 @@ tiles) goes through one abstraction, so the backing store can change without tou
 - **`Nimbus.Domain.Enums.StorageBucket`** — the logical buckets the application knows about:
   `FlightImages`, `FlightTracks`, `FlightExports`, `MapCache`. Callers never reference a raw bucket
   name; `StorageOptions.Buckets` maps each enum value to the real, configured bucket name (see
-  `infra/minio-init.sh` for how those four buckets are provisioned).
+  `infra/minio/minio-init.sh` for how those four buckets are provisioned).
 
 ## Configuration
 
 Bound from the `Storage` config section (`appsettings.json`, environment variables, or — in
-production — `Storage__*` variables set on the `api` service in `infra/docker-compose.prod.yml`,
+production — `Storage__*` variables set on the `api` service in `infra/compose/docker-compose.prod.yml`,
 sourced from the `MINIO_APP_ACCESS_KEY`/`MINIO_APP_SECRET_KEY` pair in `.env`; see
 `infra/MINIO.md`):
 

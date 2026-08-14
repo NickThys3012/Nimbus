@@ -8,8 +8,9 @@ resource.
 
 ## Memory and CPU ceilings
 
-Enforced by `infra/docker-compose.limits.yml`, deployed on the VPS as `compose.override.yaml` so
-Compose merges it automatically alongside `compose.yaml` (see `nimbus-issue-5-STEPS.md` Part D1).
+Enforced by `infra/compose/docker-compose.limits.yml`, deployed on the VPS as `compose.override.yaml` so
+Compose merges it automatically alongside `compose.yaml` (see
+[`VPS-SETUP.md`](VPS-SETUP.md#part-e-first-deploy)).
 
 | Service | Memory limit | Reservation | CPUs |
 |---|---|---|---|
@@ -63,9 +64,9 @@ ceiling and the ~10 GB disk budget below.
 
 ## Docker log rotation
 
-Set daemon-wide in `/etc/docker/daemon.json` (committed at `infra/daemon.json`, applied in
-`nimbus-issue-5-STEPS.md` Part C5), not per service, so it cannot be forgotten on a service added
-later:
+Set daemon-wide in `/etc/docker/daemon.json` (committed at `infra/docker/daemon.json`, applied in
+[`infra/VPS-SETUP.md`](VPS-SETUP.md#c5-install-docker-and-set-the-daemon-policy)), not per service,
+so it cannot be forgotten on a service added later:
 
 ```json
 {
@@ -95,7 +96,7 @@ Budgeted per volume, not just monitored on the root filesystem:
 
 `nimbus_directory_size_bytes` is emitted by a textfile-collector script (cron job scraping `du -sb`
 per directory into `/var/lib/node_exporter/textfile_collector`, read by `node-exporter`) and alerted
-on in `infra/alert.rules.yml` (`NimbusDiskFillingUp`, `NimbusDirectoryGrowthAnomaly`).
+on in `infra/observability/alert.rules.yml` (`NimbusDiskFillingUp`, `NimbusDirectoryGrowthAnomaly`).
 
 **The one genuinely variable number is MinIO's disk.** 100–200 GB is generous for a single-pilot
 logbook, but media accumulates and nothing prunes it automatically — that's what issue #78's orphan
@@ -107,7 +108,7 @@ A documented ceiling of **100 MB per upload** is enforced at two layers, so one 
 exhaust the disk:
 
 1. **Caddy** — `request_body { max_size 100MB }` on the `nimbus.$NIMBUS_DOMAIN` site
-   (`infra/Caddyfile`). Requests exceeding this are rejected before reaching the API.
+   (`infra/caddy/Caddyfile`). Requests exceeding this are rejected before reaching the API.
 2. **API (Kestrel)** — `KestrelServerOptions.Limits.MaxRequestBodySize = 100 * 1024 * 1024` set in
    `Nimbus.API/Nimbus.API/Program.cs`. This is the defense-in-depth layer behind Caddy; individual
    upload endpoints can additionally apply `[RequestSizeLimit]` for a tighter, endpoint-specific cap.

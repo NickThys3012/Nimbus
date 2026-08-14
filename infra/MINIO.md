@@ -1,19 +1,20 @@
 # MinIO object store — operations notes (issue #95)
 
 This is the operational reference for the `minio` + `minio-init` services in
-`infra/docker-compose.prod.yml`. See `infra/RESOURCE-BUDGET.md` for the memory ceiling and disk
-budget (already covers MinIO — issue #103) and `infra/DEPLOY-103.md` for the general deploy flow.
+`infra/compose/docker-compose.prod.yml`. See [`infra/RESOURCE-BUDGET.md`](RESOURCE-BUDGET.md) for the
+memory ceiling and disk budget (already covers MinIO — issue #103) and
+[`infra/VPS-SETUP.md`](VPS-SETUP.md#part-e-first-deploy) for the general deploy flow.
 
 ## Topology
 
 - `minio` runs with **no `ports:` key** — reachable only on the internal `nimbus` compose network.
   Neither the S3 API (9000) nor the console (9001) is published to the host.
 - The console is reachable from outside only through Caddy's `console.$NIMBUS_DOMAIN` route
-  (`infra/Caddyfile`), which adds HTTP Basic Auth (`MINIO_CONSOLE_USER` /
+  (`infra/caddy/Caddyfile`), which adds HTTP Basic Auth (`MINIO_CONSOLE_USER` /
   `MINIO_CONSOLE_PASSWORD_HASH`) **in front of** MinIO's own root-credential login — two factors
   guarding the only admin surface for the object store, not one.
 - `minio-init` (image `minio/mc`) runs once per `docker compose up`, waits for `minio`'s healthcheck,
-  and bootstraps buckets/policy/app-user. It is safe to re-run — see `infra/minio-init.sh`.
+  and bootstraps buckets/policy/app-user. It is safe to re-run — see `infra/minio/minio-init.sh`.
 
 ## Credentials
 
@@ -25,7 +26,8 @@ Two, deliberately different, credential pairs — generated at deploy time, neve
 | `MINIO_APP_ACCESS_KEY` / `MINIO_APP_SECRET_KEY` | The API | Read/write/list/delete on exactly `flight-images`, `flight-tracks`, `flight-exports`, `map-cache` — no admin actions |
 
 Generate all four with `openssl rand -base64 24` (or similar) alongside the other secrets in
-`nimbus-issue-5-STEPS.md` Part D2. `MINIO_CONSOLE_PASSWORD_HASH` is generated separately:
+[`infra/VPS-SETUP.md`](VPS-SETUP.md#part-d-populate-optnimbusenv). `MINIO_CONSOLE_PASSWORD_HASH`
+is generated separately:
 
 ```bash
 docker run --rm caddy:2-alpine caddy hash-password --plaintext '<console password>'
@@ -75,9 +77,9 @@ mc admin info appuser                                    # → Access Denied —
 ## RAM and disk budget
 
 Already covered by issue #103 — see `infra/RESOURCE-BUDGET.md`:
-- Memory: `mem_limit: 1g`, `mem_reservation: 256m`, `cpus: 1.5` in `infra/docker-compose.limits.yml`.
+- Memory: `mem_limit: 1g`, `mem_reservation: 256m`, `cpus: 1.5` in `infra/compose/docker-compose.limits.yml`.
 - Disk: `/srv/nimbus/data/minio` is budgeted at ~100 GB and alerted on independently of the root
-  filesystem via the `NimbusVolumeBudgetExceeded` rule in `infra/alert.rules.yml` (fires above 80 GB).
+  filesystem via the `NimbusVolumeBudgetExceeded` rule in `infra/observability/alert.rules.yml` (fires above 80 GB).
 
 ## Restoring from backup (verify once, then keep as a runbook)
 

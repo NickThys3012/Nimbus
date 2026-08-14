@@ -5,7 +5,7 @@
 # `mssql/server` image already on the box, so `sqlcmd` is available with no
 # extra image to pull. Authenticates with `sa` for this bootstrap only, then
 # creates the least-privilege `nimbus_app` / `nimbus_migrator` logins the
-# application containers actually connect as (see infra/sqlserver-init.sql).
+# application containers actually connect as (see infra/db/sqlserver-init.sql).
 #
 # Safe to re-run: every statement in the .sql file is guarded with an
 # existence check or is a plain ALTER, so a rebuild never errors on a login

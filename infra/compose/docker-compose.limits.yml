@@ -1,10 +1,10 @@
 name: nimbus
 
-# Resource-limits override for infra/docker-compose.prod.yml (issue #103).
+# Resource-limits override for infra/compose/docker-compose.prod.yml (issue #103).
 #
 # On the VPS this file is copied to /opt/nimbus/compose.override.yaml, which Docker
 # Compose auto-loads alongside compose.yaml — no -f flag needed. See
-# infra/nimbus-issue-5-STEPS.md Part D1 for the deploy step. Locally, layer it
+# infra/VPS-SETUP.md#part-e-first-deploy for the deploy step. Locally, layer it
 # explicitly instead:
 #   docker compose -f docker-compose.prod.yml -f docker-compose.limits.yml --profile app up -d
 #

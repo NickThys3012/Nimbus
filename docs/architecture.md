@@ -129,8 +129,10 @@ The ASP.NET Core entry point (`Program.cs`) that composes everything above:
 - **API docs**: `Microsoft.AspNetCore.OpenApi` (`AddOpenApi`/`MapOpenApi`,
   spec served at `/openapi/v1.json`) with **Scalar** as the interactive
   docs UI (`MapScalarApiReference`, served at `/scalar`).
-- **Health checks**: `/health` endpoint (SQL Server + `AppDbContext` checks),
-  formatted via `AspNetCore.HealthChecks.UI.Client`.
+- **Health checks**: `/health` and `/health/ready` (same SQL Server +
+  `AppDbContext` checks today; `/health/ready` is the deploy-gate endpoint
+  polled by `cd.yml` after a container swap), formatted via
+  `AspNetCore.HealthChecks.UI.Client`.
 - **Metrics**: Prometheus scraping endpoint at `/metrics`.
 - **Middleware pipeline** (in order): custom `ExceptionHandlingMiddleware` →
   Serilog request logging → HTTPS redirection/HSTS → static files → HTTP
@@ -219,7 +221,8 @@ to be consumed reactively via signals.
 - **Metrics**: Prometheus (`prometheus-net`) for HTTP metrics, plus custom
   business metrics via `IBusinessMetrics`/`PrometheusBusinessMetrics`
   (`Nimbus.Observability`), exposed at `/metrics`.
-- **Health checks**: SQL Server + EF Core `DbContext` checks at `/health`.
+- **Health checks**: SQL Server + EF Core `DbContext` checks at `/health`
+  and `/health/ready`.
 - **Auth**: JWT bearer tokens (access + refresh), issued/validated by
   `TokenService`, backed by ASP.NET Core Identity (`ApplicationUser`,
   roles). Refresh tokens are set as an HTTP-only, secure, `SameSite=Strict`
@@ -229,9 +232,33 @@ to be consumed reactively via signals.
   self-hosted MinIO store used for flight images/tracks/exports and map
   tiles — see [`docs/object-storage.md`](object-storage.md).
 
+## Deployment
+
+- **Pipeline**: `ci.yml` builds/tests on every PR and push to `main`; `cd.yml`
+  triggers via `workflow_run` once CI succeeds on `main`, builds the `api`
+  and `migrator` images on a GitHub-hosted runner (never on the VPS), pushes
+  both to GHCR tagged `latest` and the commit SHA, then deploys over SSH
+  gated by the `production` environment's required reviewer. See
+  [`infra/VPS-SETUP.md`](../infra/VPS-SETUP.md#part-f-github-actions-cd-setup)
+  for the one-time VPS/GitHub setup and the rollback procedure.
+- **Deploy sequence**: pull the new images, run the `migrator` to
+  completion, then replace only the `api` container — `sqlserver`, `minio`
+  and the observability services are never restarted by a routine deploy. A
+  failing migrator aborts the deploy with the previous `api` container still
+  serving traffic. The swap is gated on `/health/ready` returning healthy;
+  a failed check fails the workflow.
+- **Rollback is image-only, not schema**: rolling back means setting
+  `IMAGE_TAG` on the VPS back to the previous commit SHA and re-running
+  `docker compose up -d` — the database is never rolled back with it.
+  Because of that, **every EF Core migration must be additive and
+  backward-compatible with the immediately previous release**: e.g. add a
+  column in one release, drop it only in a later one — never both in the
+  same release. A migration that isn't safe for the *previous* version of
+  the code to run against is not a migration this pipeline can safely roll
+  back from.
+
 ## Known gaps / not yet in place
 
-- No CI/CD pipeline or containerization (Dockerfiles/compose) yet.
 - Authentication endpoints call `UserManager`/`TokenService` directly from
   the controller rather than going through MediatR commands/queries like
   the rest of the application layer.

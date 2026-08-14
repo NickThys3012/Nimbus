@@ -1,16 +1,17 @@
 # Configuration and secrets inventory (issue #98)
 
 Every configuration value the production stack needs, where it lives, and — for secrets — who owns
-it and when it must rotate. If the VPS is lost, this document plus `infra/nimbus-issue-5-STEPS.md`
-is all that is needed to rebuild it; nothing should be "remembered".
+it and when it must rotate. If the VPS is lost, this document plus
+[`infra/VPS-SETUP.md`](../infra/VPS-SETUP.md) is all that is needed to rebuild it; nothing should
+be "remembered".
 
 Three places hold configuration, and each has exactly one job:
 
 | Source | What lives there | Committed? |
 |---|---|---|
 | GitHub Actions secrets | Values the CD pipeline (issue #6) needs to reach and authenticate against the VPS | No — configured in repo/environment settings |
-| `/opt/nimbus/.env` (server) | Every runtime value `docker-compose.prod.yml` interpolates: passwords, keys, domain, feature flags | No — `infra/.env` is gitignored, never leaves the VPS except into a password manager |
-| `infra/.env.example` (repo) | The full list of keys above, each with an empty or placeholder value, so a rebuild starts from a complete template | Yes |
+| `/opt/nimbus/.env` (server) | Every runtime value `docker-compose.prod.yml` interpolates: passwords, keys, domain, feature flags | No — `infra/compose/.env` is gitignored, never leaves the VPS except into a password manager |
+| `infra/compose/.env.example` (repo) | The full list of keys above, each with an empty or placeholder value, so a rebuild starts from a complete template | Yes |
 
 ## 1. Full settings inventory
 
@@ -43,7 +44,7 @@ plain `${VAR}` — **no default fallback exists for any secret** (only the non-s
 falls back to `latest`). This is verified before every deploy:
 
 ```bash
-# infra/.env.example with every value blanked out — the empty-.env check
+# infra/compose/.env.example with every value blanked out — the empty-.env check
 cd /opt/nimbus
 mv .env .env.bak
 if docker compose --profile app config | grep -Eq ':\s*$'; then echo "ERROR: one or more required env vars resolved to empty"; exit 1; fi
@@ -70,10 +71,10 @@ in any step touching them).
 - Path: `/opt/nimbus/.env`
 - Owner: `deploy:deploy`
 - Mode: `600` (verify with `stat -c '%a %U:%G' /opt/nimbus/.env`)
-- Template: `infra/.env.example`, committed with every key present and no real values — copy it to
+- Template: `infra/compose/.env.example`, committed with every key present and no real values — copy it to
   the server, fill it in, `chmod 600`. Never edit `.env.example` to hold a real secret.
-- `infra/.env` (the filled, local-editing copy) is listed in `.gitignore`; `git check-ignore -v
-  infra/.env` must print a match before it is ever created locally.
+- `infra/compose/.env` (the filled, local-editing copy) is listed in `.gitignore`; `git check-ignore -v
+  infra/compose/.env` must print a match before it is ever created locally.
 - **Local development**: `ConnectionStrings:Database` is intentionally blank in
   `appsettings.Development.json` — never commit a real connection string there. Set it via
   [user-secrets](https://learn.microsoft.com/aspnet/core/security/app-secrets) instead:
@@ -88,10 +89,11 @@ never a maintainer's personal SSH key:
 ssh-keygen -t ed25519 -f nimbus-deploy -C "nimbus-ci-deploy" -N ""
 ```
 
-The public half goes into `deploy`'s `authorized_keys` on the VPS (`infra/nimbus-issue-5-STEPS.md`
-Part C4); the private half becomes the `VPS_SSH_KEY` GitHub secret and lives nowhere else. Because
-it is single-purpose, revoking it (delete the line from `authorized_keys`) never affects a
-maintainer's own access to the box.
+The public half goes into `deploy`'s `authorized_keys` on the VPS (see
+[`infra/VPS-SETUP.md`](../infra/VPS-SETUP.md#f1-add-the-github-actions-secrets)); the private half
+becomes the `VPS_SSH_KEY` GitHub secret and lives nowhere else. Because it is single-purpose,
+revoking it (delete the line from `authorized_keys`) never affects a maintainer's own access to the
+box.
 
 ## 5. Secrets inventory: owner and rotation
 
@@ -103,7 +105,7 @@ rotation last happened, only for the *policy*).
 | Secret | Owner | Rotation interval | Rotation procedure |
 |---|---|---|---|
 | SQL Server `sa` password (`MSSQL_SA_PASSWORD`) | Maintainer | 90 days, or on suspected compromise | Generate with `openssl rand -base64 24` (must contain a digit — SQL Server's password policy rejects weak strings), update `.env`, `docker compose up -d sqlserver`, then re-run `sqlserver-init` (`docker compose --profile app up -d sqlserver-init`) so the app/migrator logins stay in sync, confirm the API reconnects |
-| SQL Server app/migrator logins (`MSSQL_APP_PASSWORD` / `MSSQL_MIGRATOR_PASSWORD`) | Maintainer | 90 days, or on suspected compromise | Generate new passwords, update `.env`, `docker compose --profile app up -d sqlserver-init` (re-applies the `ALTER LOGIN` in `infra/sqlserver-init.sql`), then restart `api`/`migrator` to pick up the new connection strings |
+| SQL Server app/migrator logins (`MSSQL_APP_PASSWORD` / `MSSQL_MIGRATOR_PASSWORD`) | Maintainer | 90 days, or on suspected compromise | Generate new passwords, update `.env`, `docker compose --profile app up -d sqlserver-init` (re-applies the `ALTER LOGIN` in `infra/db/sqlserver-init.sql`), then restart `api`/`migrator` to pick up the new connection strings |
 | MinIO root credential | Maintainer | 90 days | Generate new pair, update `.env`, `docker compose up -d minio`, confirm `minio-init` still applies policy on next run |
 | MinIO app access key (`MINIO_APP_ACCESS_KEY`/`MINIO_APP_SECRET_KEY`) | Maintainer | 90 days | Generate new pair, update `.env`, `docker compose up -d minio-init`, confirm the API's object-storage calls still succeed before removing the old key from MinIO |
 | Grafana admin password | Maintainer | 90 days | Update `.env`, `docker compose up -d grafana`, log in to confirm |
@@ -122,7 +124,8 @@ point of failure. `RESTIC_PASSWORD` therefore lives in two places, never one:
 
 1. `/opt/nimbus/.env` on the VPS (needed for `restic backup`/`restic forget` to run).
 2. The maintainer's password manager, entered at the same time the `.env` value is generated in
-   `infra/nimbus-issue-5-STEPS.md` Part D2 — copy it out **before** moving on, not after.
+   [`infra/VPS-SETUP.md`](../infra/VPS-SETUP.md#part-d-populate-optnimbusenv) — copy it out
+   **before** moving on, not after.
 
 If the VPS is destroyed, the password manager copy is what makes the offsite `RESTIC_REPOSITORY`
 snapshots recoverable at all. Losing both copies makes every existing snapshot permanently
@@ -138,7 +141,7 @@ follow-up.
   Actions also automatically redacts any literal secret value that appears in step output.
 - Secret-scanning runs in CI on every push and pull request —
   `.github/workflows/secret-scan.yml` (gitleaks) — and fails the build on a match.
-- `infra/.env` is gitignored; `infra/.env.example` is the only committed variant and holds no real
+- `infra/compose/.env` is gitignored; `infra/compose/.env.example` is the only committed variant and holds no real
   values.
 
 ## 8. Verifying "no default fallback" stays true
@@ -147,7 +150,7 @@ Because this is easy to regress one PR at a time, check it whenever `docker-comp
 `docker-compose.limits.yml` changes:
 
 ```bash
-grep -nE '\$\{[A-Z_]+:-' infra/docker-compose.prod.yml infra/docker-compose.limits.yml
+grep -nE '\$\{[A-Z_]+:-' infra/compose/docker-compose.prod.yml infra/compose/docker-compose.limits.yml
 ```
 
 The only acceptable match is `IMAGE_TAG:-latest` — anything else (e.g. a reintroduced
@@ -170,7 +173,7 @@ merge.
   failed migration fails the deploy while the previous `api` container keeps running. **No
   migration code runs inside `Program.cs`** — the API carries no migration responsibility and
   makes no single-instance assumption.
-- The API never connects as `sa`. `sqlserver-init` (`infra/sqlserver-init.sh`/`.sql`) is a one-shot,
+- The API never connects as `sa`. `sqlserver-init` (`infra/db/sqlserver-init.sh`/`infra/db/sqlserver-init.sql`) is a one-shot,
   idempotent bootstrap — mirroring `minio-init.sh`'s pattern — that creates two least-privilege SQL
   logins once `sqlserver` reports healthy:
   - `nimbus_app` (`db_datareader`/`db_datawriter` only) — what the API connects as.
@@ -181,7 +184,8 @@ merge.
   `depends_on: sqlserver: condition: service_healthy` so the API waits for a healthy database
   instead of crash-looping while SQL Server's slow cold start completes.
 - `/srv/nimbus/data/mssql` is chowned `10001:0` on the host for the image's non-root `mssql` user
-  (see `infra/nimbus-issue-5-STEPS.md`) — no explicit `user:` override is needed in compose.
+  (see [`infra/VPS-SETUP.md`](../infra/VPS-SETUP.md#c7-create-the-persistent-data-directories)) —
+  no explicit `user:` override is needed in compose.
 - **Licensing**: Developer Edition (most Docker examples) is dev/test only; `MSSQL_PID` is set
   explicitly (`Express` by default, free for production) with recorded limits — 10 GB per database,
   ~1.4 GB buffer pool, 1 socket/4 cores. Revisit before this becomes a real constraint; do not
@@ -189,4 +193,3 @@ merge.
 - Integration tests (`Nimbus.Infrastructure.Tests/AppDbContextMigrationTests.cs`) run migrations
   against a real SQL Server instance via Testcontainers — not an in-memory provider — to prove the
   initial migration applies cleanly to an empty database and is idempotent on a second run.
-

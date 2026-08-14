@@ -1,0 +1,149 @@
+name: CD
+
+# Publishes the `api` and `migrator` images to GHCR and deploys them to the VPS on every
+# successful merge to `main` (issue #6). Replaces the old Azure App Service/OIDC pipeline:
+# the image is always built on a GitHub-hosted runner, never on the VPS, and the deploy step
+# only ever pulls a pre-built, already-tested image — a broken build can never take the
+# running site down, because the site never rebuilds itself.
+#
+# Triggered by `workflow_run` on CI rather than `push`, so this can never run against commits
+# that haven't passed the build/unit-test/e2e gate in ci.yml — `if: conclusion == 'success'`
+# below is the actual gate, `branches: [main]` alone would not be enough (CI also runs on
+# PRs, which don't target the CD-relevant ref this way, but `workflow_run` filters on the
+# workflow's own trigger branch, not the head branch of a PR run).
+on:
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
+    branches: [main]
+
+permissions:
+  contents: read
+  packages: write
+
+concurrency:
+  # Only one deploy in flight at a time; never cancelled mid-flight — a cancelled deploy
+  # could leave the migrator half-applied or the api container swap half-done.
+  group: cd-production
+  cancel-in-progress: false
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_OWNER: nickthys3012
+
+jobs:
+  build-and-push:
+    name: Build & push images
+    if: github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    outputs:
+      image_tag: ${{ github.event.workflow_run.head_sha }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Build exactly the commit CI just validated, not whatever HEAD of main has
+          # drifted to since (a second merge could have landed in between).
+          ref: ${{ github.event.workflow_run.head_sha }}
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          # GITHUB_TOKEN (scoped to `packages: write` above) is enough to push — no
+          # long-lived PAT is ever handled by this workflow.
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build & push api
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          target: api
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_OWNER }}/nimbus-api:latest
+            ${{ env.REGISTRY }}/${{ env.IMAGE_OWNER }}/nimbus-api:${{ github.event.workflow_run.head_sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build & push migrator
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          target: migrator
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_OWNER }}/nimbus-migrator:latest
+            ${{ env.REGISTRY }}/${{ env.IMAGE_OWNER }}/nimbus-migrator:${{ github.event.workflow_run.head_sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  deploy:
+    name: Deploy to VPS
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    # Required reviewer lives on this environment (repo Settings → Environments →
+    # production), not in this file — see infra/VPS-SETUP.md#part-f-github-actions-cd-setup for the one-time setup. That
+    # is what stops an accidental/automatic merge from deploying unattended.
+    environment: production
+    env:
+      IMAGE_TAG: ${{ needs.build-and-push.outputs.image_tag }}
+    steps:
+      - name: Deploy over SSH
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          # A stuck/unhealthy migrator or api must not hang the workflow forever.
+          command_timeout: 10m
+          envs: IMAGE_TAG
+          script: |
+            set -euo pipefail
+            cd /opt/nimbus
+
+            # Pin the exact SHA CI just tested — never a moving `latest` — so a rollback
+            # later is just changing this value back and re-running `up -d`.
+            sed -i "s/^IMAGE_TAG=.*/IMAGE_TAG=${IMAGE_TAG}/" .env
+
+            # Build-in-CI, pull-on-server: the server only ever pulls, it never runs `docker
+            # build`. Auth to GHCR is a `read:packages` token already sitting in this deploy
+            # user's ~/.docker/config.json (infra/VPS-SETUP.md#part-f-github-actions-cd-setup) — this workflow never sees it.
+            docker compose --profile app pull api migrator
+
+            # Migrate first, to completion, before the new api image is even started. A
+            # non-zero exit here aborts the deploy with the *previous* api container
+            # untouched and still serving traffic — `--exit-code-from` is what lets us fail
+            # the SSH command (and hence the workflow) on the migrator's own exit code.
+            if ! docker compose --profile app up --exit-code-from migrator migrator; then
+              echo "::error::migrator failed — aborting deploy, previous api container is still running"
+              exit 1
+            fi
+
+            # Only the api container is replaced. sqlserver, minio, caddy and the
+            # observability services are never part of this command, so a routine deploy
+            # never restarts anything stateful.
+            docker compose --profile app up -d api
+
+            # Readiness gate: poll from inside the network the api actually serves on
+            # rather than through the public domain, so this can't be confused by an
+            # unrelated Caddy/DNS/TLS problem. A failed check fails the workflow.
+            ready=false
+            for i in $(seq 1 30); do
+              if docker compose --profile app exec -T api curl -fsS http://localhost:8080/health/ready; then
+                ready=true
+                break
+              fi
+              sleep 2
+            done
+            if [ "$ready" != "true" ]; then
+              echo "::error::api did not become ready on /health/ready within 60s after the swap"
+              exit 1
+            fi
+
+            # Keeps the disk from silently filling with superseded layers over time;
+            # dangling-only (no -a), so the previous SHA's tagged image some other
+            # deploy might still reference is never removed by this alone.
+            docker image prune -f

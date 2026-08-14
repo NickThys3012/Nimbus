@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Records a successful backup as nimbus_backup_last_success_timestamp (a Unix
 # timestamp gauge), read by node-exporter's textfile collector and alerted on
-# in infra/alert.rules.yml (NimbusBackupStale).
+# in infra/observability/alert.rules.yml (NimbusBackupStale).
 #
 # The nightly backup job itself is issue #99 (not yet built) — call this script
 # as the very last step of that job, only after `restic backup` / `restic check`

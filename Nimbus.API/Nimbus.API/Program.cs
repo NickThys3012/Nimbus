@@ -37,7 +37,7 @@ try
     builder.Host.AddLogging();
 
     // Upload-size ceiling (issue #103): must match Caddy's `request_body { max_size 100MB }`
-    // in infra/Caddyfile so one large file cannot exhaust disk. Kestrel is the
+    // in infra/caddy/Caddyfile so one large file cannot exhaust disk. Kestrel is the
     // defense-in-depth layer behind Caddy — individual endpoints accepting uploads
     // should additionally use [RequestSizeLimit] if they need a tighter cap.
     builder.WebHost.ConfigureKestrel(opts =>
@@ -113,7 +113,7 @@ try
     var app = builder.Build();
 
     // Schema migrations are applied by the dedicated `migrator` container (an EF Core
-    // migration bundle) before this container is ever started — see infra/docker-compose.prod.yml
+    // migration bundle) before this container is ever started — see infra/compose/docker-compose.prod.yml
     // (`api` depends_on `migrator: condition: service_completed_successfully`). The API itself
     // carries no migration responsibility and makes no single-instance assumption.
     await app.Services.SeedUsers();
@@ -136,6 +136,22 @@ try
     app.UseAuthorization();
 
     app.MapHealthChecks("/health", new HealthCheckOptions
+    {
+        ResultStatusCodes =
+        {
+            [HealthStatus.Healthy] = StatusCodes.Status200OK, [HealthStatus.Degraded] = StatusCodes.Status200OK, [HealthStatus.Unhealthy] = StatusCodes.Status503ServiceUnavailable
+        },
+        ResponseWriter = UIResponseWriter.WriteHealthCheckUIResponse,
+        Predicate = _ => true
+    });
+
+    // Distinct route from /health: this is what the CD workflow (issue #6) polls after
+    // swapping in the new `api` container, so a deploy fails fast instead of leaving a
+    // container that started but can't actually reach SQL Server/its dependencies serving
+    // traffic. Same checks as /health today (there is only one set registered), but kept as
+    // its own endpoint so a future liveness-only check can be added to /health without
+    // weakening what gates a deploy.
+    app.MapHealthChecks("/health/ready", new HealthCheckOptions
     {
         ResultStatusCodes =
         {

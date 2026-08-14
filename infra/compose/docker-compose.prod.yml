@@ -78,7 +78,8 @@ services:
     networks: [nimbus]
 
   # One-shot, idempotent least-privilege login bootstrap (issue #2). Safe to
-  # re-run on every `docker compose up` — see infra/sqlserver-init.sh/.sql.
+  # re-run on every `docker compose up` — see infra/db/sqlserver-init.sh and
+  # infra/db/sqlserver-init.sql.
   sqlserver-init:
     profiles: ["app"]
     image: mcr.microsoft.com/mssql/server:2022-latest
@@ -116,7 +117,7 @@ services:
     restart: unless-stopped
     # Runs as the image's built-in non-root `mssql` user (uid 10001) by default —
     # /srv/nimbus/data/mssql is chowned `10001:0` on the host (see
-    # infra/nimbus-issue-5-STEPS.md Part C1/"first-run failure" table), so no
+    # infra/VPS-SETUP.md#c7-create-the-persistent-data-directories), so no
     # explicit `user:` override is needed here.
     environment:
       ACCEPT_EULA: "Y"
@@ -164,7 +165,7 @@ services:
     networks: [nimbus]
 
   # One-shot, idempotent bucket/policy/app-user bootstrap (issue #95). Safe to
-  # re-run on every `docker compose up` — see infra/minio-init.sh.
+  # re-run on every `docker compose up` — see infra/minio/minio-init.sh.
   minio-init:
     image: minio/mc:latest
     restart: "no"
