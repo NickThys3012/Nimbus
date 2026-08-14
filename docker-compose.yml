@@ -1,0 +1,209 @@
+name: nimbus-dev
+
+# One-command local development (issue #3). Everything a fresh clone needs —
+# the API (Angular bundled into it, see Dockerfile), SQL Server, MinIO and
+# Mailpit — comes up with:
+#
+#   cp .env.example .env
+#   docker compose up --build
+#
+# The API is then reachable at http://localhost:8080 (Angular served from the
+# same origin — no separate frontend container/port).
+#
+# This file intentionally mirrors infra/compose/docker-compose.prod.yml's
+# service shapes (same MinIO image, same healthcheck/depends_on gating, same
+# sqlserver-init/minio-init bootstrap scripts) so nothing behaves differently
+# here than it will in production — see that file's own comments for the
+# reasoning behind each choice.
+#
+# Apple Silicon (M-series): mcr.microsoft.com/mssql/server has no arm64 build
+# (verified — its manifest is single-platform amd64, not a multi-arch list),
+# so `sqlserver` below runs under Rosetta/QEMU emulation. It works, but cold
+# start is noticeably slower than on Intel/AMD — the generous
+# `start_period` on its healthcheck already accounts for this. MinIO,
+# Mailpit and the API image all have native arm64 builds.
+
+services:
+  # ----------------------------------------------------------- application
+  api:
+    build:
+      context: .
+      target: api
+    image: nimbus-api:dev
+    restart: unless-stopped
+    # Documented port developers hit: http://localhost:8080
+    ports:
+      - "8080:8080"
+    env_file: [.env]
+    environment:
+      ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Development}
+      # Maps the .env MinIO credentials onto the Storage:* config keys
+      # StorageOptions binds (issue #11) — ASP.NET Core config maps `__` to `:`.
+      Storage__Endpoint: http://minio:9000
+      Storage__AccessKey: ${MINIO_APP_ACCESS_KEY}
+      Storage__SecretKey: ${MINIO_APP_SECRET_KEY}
+      Storage__ForcePathStyle: "true"
+      Storage__UseHttps: "false"
+      # nimbus_app: db_datareader/db_datawriter only, created by sqlserver-init —
+      # the API never connects as sa and never gets DDL rights, same as prod.
+      ConnectionStrings__Database: "Server=sqlserver;Database=Nimbus;User Id=nimbus_app;Password=${MSSQL_APP_PASSWORD};TrustServerCertificate=True;"
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8080/health/live"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+      migrator:
+        condition: service_completed_successfully
+      minio-init:
+        condition: service_completed_successfully
+    networks: [nimbus-dev]
+
+  migrator:
+    build:
+      context: .
+      target: migrator
+    image: nimbus-migrator:dev
+    # The migrator stage's `dotnet ef migrations bundle` is hardcoded to
+    # `-r linux-x64` (self-contained, see Dockerfile) — on an arm64 host
+    # (Apple Silicon), building/running this without pinning the platform
+    # produces an arm64 *image* around an x64-only *executable*, which fails
+    # at startup ("failed to open elf at /lib64/ld-linux-x86-64.so.2"), not
+    # just slowly. Pinning amd64 here makes the whole image (base + bundle)
+    # consistently x64, run under emulation — same as production's own
+    # amd64 host, just emulated locally.
+    platform: linux/amd64
+    # One-shot: applies pending EF Core migrations then exits. Re-run it
+    # deliberately after a failure with `docker compose up migrator`, not
+    # retried automatically.
+    restart: "no"
+    env_file: [.env]
+    environment:
+      # nimbus_migrator: db_owner (DDL rights) — used only for the lifetime of
+      # this transient, one-shot container, never by the long-running API.
+      ConnectionStrings__Database: "Server=sqlserver;Database=Nimbus;User Id=nimbus_migrator;Password=${MSSQL_MIGRATOR_PASSWORD};TrustServerCertificate=True;"
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+      sqlserver-init:
+        condition: service_completed_successfully
+    networks: [nimbus-dev]
+
+  # ------------------------------------------------------------- data tier
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    restart: unless-stopped
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: ${MSSQL_SA_PASSWORD}
+      # Developer edition here (not Express, as in production): free for
+      # dev/test use, no feature-set limits to trip over locally.
+      MSSQL_PID: ${MSSQL_PID:-Developer}
+    # Publishing 1433 to the host stays commented out by default — a locally
+    # installed SQL Server (or another project's compose stack) already binds
+    # it. Uncomment only if you need to connect a host tool (SSMS/Azure Data
+    # Studio) directly at localhost:1433 and nothing else is using that port.
+    # ports:
+    #   - "1433:1433"
+    # sa is only ever used for this in-container liveness probe and by
+    # sqlserver-init's one-time login bootstrap — never by the API/migrator.
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P \"$$MSSQL_SA_PASSWORD\" -C -Q \"SELECT 1\""]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      # SQL Server's cold start is slow, and slower still under emulation on
+      # Apple Silicon — generous enough that the healthcheck doesn't mark the
+      # container unhealthy before it has actually finished starting.
+      start_period: 60s
+    volumes:
+      - mssql-data:/var/opt/mssql
+    networks: [nimbus-dev]
+
+  # One-shot, idempotent least-privilege login bootstrap — safe to re-run on
+  # every `docker compose up`. See infra/db/sqlserver-init.sh/.sql.
+  sqlserver-init:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    restart: "no"
+    entrypoint: ["/bin/bash", "/init/sqlserver-init.sh"]
+    environment:
+      MSSQL_HOST: sqlserver
+      MSSQL_SA_PASSWORD: ${MSSQL_SA_PASSWORD}
+      MSSQL_APP_PASSWORD: ${MSSQL_APP_PASSWORD}
+      MSSQL_MIGRATOR_PASSWORD: ${MSSQL_MIGRATOR_PASSWORD}
+    volumes:
+      - ./infra/db/sqlserver-init.sh:/init/sqlserver-init.sh:ro
+      - ./infra/db/sqlserver-init.sql:/init/sqlserver-init.sql:ro
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+    networks: [nimbus-dev]
+
+  # Same image and bootstrap flow as production (issue #11's requirement:
+  # one object-store product in every environment, never an emulator locally
+  # and a different product in production).
+  minio:
+    image: minio/minio:latest
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+      MC_HOST_local: http://${MINIO_ROOT_USER}:${MINIO_ROOT_PASSWORD}@localhost:9000
+    # No Caddy in front locally, so — unlike production — the API (9000) and
+    # console (9001) are published directly for developer convenience.
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio-data:/data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 15s
+    networks: [nimbus-dev]
+
+  # One-shot, idempotent bucket/policy/app-user bootstrap — safe to re-run on
+  # every `docker compose up`. See infra/minio/minio-init.sh.
+  minio-init:
+    image: minio/mc:latest
+    restart: "no"
+    entrypoint: ["/bin/sh", "/init/minio-init.sh"]
+    environment:
+      MINIO_ENDPOINT: http://minio:9000
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+      MINIO_APP_ACCESS_KEY: ${MINIO_APP_ACCESS_KEY}
+      MINIO_APP_SECRET_KEY: ${MINIO_APP_SECRET_KEY}
+    volumes:
+      - ./infra/minio/minio-init.sh:/init/minio-init.sh:ro
+    depends_on:
+      minio:
+        condition: service_healthy
+    networks: [nimbus-dev]
+
+  # Captures every outbound email locally — nothing is ever sent from a
+  # developer machine. Web UI at http://localhost:8025; the API (once it
+  # sends mail) would point its SMTP host at mailpit:1025, no auth, no TLS.
+  mailpit:
+    image: axllent/mailpit:latest
+    restart: unless-stopped
+    ports:
+      - "8025:8025"
+      - "1025:1025"
+    networks: [nimbus-dev]
+
+networks:
+  nimbus-dev:
+    driver: bridge
+
+volumes:
+  mssql-data:
+  minio-data:
