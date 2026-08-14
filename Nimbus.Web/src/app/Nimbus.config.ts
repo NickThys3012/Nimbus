@@ -1,4 +1,4 @@
-import { ApplicationConfig, ErrorHandler } from '@angular/core';
+import { ApplicationConfig, ErrorHandler, isDevMode } from '@angular/core';
 import { provideHttpClient } from '@angular/common/http';
 import { provideRouter, Router, NavigationEnd } from '@angular/router';
 import { filter } from 'rxjs';
@@ -10,8 +10,11 @@ import { OpenAPI } from './core/api-client';
 import { TelemetryErrorHandler, TelemetryService } from './core/telemetry/telemetry.service';
 
 // Base URL for the generated API client (see `npm run generate:api`).
-// Points at the local dev API by default.
-OpenAPI.BASE = 'http://localhost:5214';
+// In production the SPA is served by the same API process (see the
+// Dockerfile: the Angular build output is copied into wwwroot/), so requests
+// should go to the same origin. Only point at the separately-running local
+// dev API server when running under `ng serve`.
+OpenAPI.BASE = isDevMode() ? 'http://localhost:5214' : '';
 
 export const nimbusConfig: ApplicationConfig = {
   providers: [
