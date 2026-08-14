@@ -58,6 +58,11 @@ WORKDIR /app
 # libuuid ABI, which is exactly the class of bug this build-time smoke test exists
 # to catch before it reaches production.
 RUN useradd --no-create-home --uid 10001 nimbus
+# curl is used by the CD pipeline (infra/.github/workflows/cd.yml) to poll
+# /health/ready from inside this container after the migrator/api swap; the
+# base aspnet image doesn't ship it.
+RUN apt-get update && apt-get install -y --no-install-recommends curl \
+    && rm -rf /var/lib/apt/lists/*
 COPY --from=api-build --chown=nimbus:nimbus /app/publish ./
 # Proves the SkiaSharp native dependency actually works in *this* image, rather
 # than assuming a local dev-machine build behaves the same in a slim Linux
