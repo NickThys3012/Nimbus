@@ -76,7 +76,16 @@ RUN dotnet restore Nimbus.API/Nimbus.API/Nimbus.API.csproj -r linux-x64
 # A migration bundle is a self-contained executable purpose-built to apply
 # migrations and exit (dotnet/efcore docs: "Applying migrations in production");
 # it needs neither the SDK nor the ASP.NET Core app at runtime.
-RUN dotnet ef migrations bundle \
+#
+# `ConnectionStrings__Database` here is a placeholder, never a real secret, and scoped to
+# just this command (not a persistent ENV): building the bundle only needs to enumerate
+# migrations through AppDbContextFactory (Nimbus.Infrastructure/Persistence/
+# AppDbContextFactory.cs), which throws unless *some* connection string is present — it
+# never actually opens a connection at build time. The real connection string is supplied
+# at runtime, when the bundle executable itself is run (see this file's `migrator`
+# ENTRYPOINT below, which passes `--connection "$ConnectionStrings__Database"`).
+RUN ConnectionStrings__Database="Server=.;Database=DesignTime;User Id=sa;Password=DesignTime123!;TrustServerCertificate=True;" \
+    dotnet ef migrations bundle \
     --project Nimbus.API/Nimbus.Infrastructure/Nimbus.Infrastructure.csproj \
     --startup-project Nimbus.API/Nimbus.API/Nimbus.API.csproj \
     --configuration Release \
