@@ -404,7 +404,11 @@ scp infra/compose/docker-compose.prod.yml deploy@<vps-ip>:/opt/nimbus/compose.ya
 scp infra/compose/docker-compose.limits.yml deploy@<vps-ip>:/opt/nimbus/compose.override.yaml
 scp infra/caddy/Caddyfile infra/observability/prometheus.yml infra/observability/alert.rules.yml infra/observability/loki-config.yaml     infra/minio/minio-init.sh infra/db/sqlserver-init.sh infra/db/sqlserver-init.sql     deploy@<vps-ip>:/opt/nimbus/
 scp -r infra/observability/grafana deploy@<vps-ip>:/opt/nimbus/
-scp -r infra/scripts deploy@<vps-ip>:~/nimbus-scripts/
+# `scp -r infra/scripts deploy@<vps-ip>:~/nimbus-scripts/` does NOT work here: modern
+# OpenSSH scp (SFTP-backed) cannot rename a directory on the fly like classic scp could —
+# it needs the destination directory to already exist first, hence the mkdir + `/*` below.
+ssh deploy@<vps-ip> 'mkdir -p ~/nimbus-scripts'
+scp -r infra/scripts/* deploy@<vps-ip>:~/nimbus-scripts/
 ssh deploy@<vps-ip> 'ls -la /opt/nimbus && ls -la ~/nimbus-scripts'
 ```
 
