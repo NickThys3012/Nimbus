@@ -95,6 +95,13 @@ RUN ConnectionStrings__Database="Server=.;Database=DesignTime;User Id=sa;Passwor
 FROM mcr.microsoft.com/dotnet/runtime-deps:10.0 AS migrator
 WORKDIR /app
 RUN useradd --no-create-home --uid 10001 nimbus
+# The efbundle is a self-contained single-file executable: at startup it extracts its
+# embedded assemblies to a cache directory, which it locates via $HOME by default. This
+# container's `nimbus` user has no home directory (--no-create-home), so without this,
+# extraction fails with "Default extraction directory [/home/nimbus] either doesn't
+# exist or is not accessible" and the migrator exits before ever touching the database.
+# /tmp is writable by any user (sticky bit) regardless of $HOME, so point extraction there.
+ENV DOTNET_BUNDLE_EXTRACT_BASE_DIR=/tmp
 USER nimbus
 COPY --from=migrator-build --chown=nimbus:nimbus /app/efbundle ./efbundle
 # `ConnectionStrings__Database` is the same config key the API binds
