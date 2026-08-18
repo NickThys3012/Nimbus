@@ -8,29 +8,37 @@ Follows the same provisioning pattern as the existing dashboards: see
 [`infra/observability/grafana/dashboards/nimbus-api-overview.json`](../infra/observability/grafana/dashboards/nimbus-api-overview.json)
 and `infra/observability/grafana/provisioning/dashboards/dashboards.yml`.
 
-## Prerequisites
+**Status: built.** The dashboard is provisioned at
+[`infra/observability/grafana/dashboards/nimbus-mail-overview.json`](../infra/observability/grafana/dashboards/nimbus-mail-overview.json)
+(`uid: nimbus-mail-overview`) — no manual Grafana setup is required, it loads automatically the
+same way `nimbus-api-overview.json` does. The rest of this document describes the data it's built
+on and how to verify it end to end.
 
-This dashboard has nothing to query until the mail feature ships its instrumentation. Blocked on:
+## Prerequisites (done)
 
 - #127 — `IEmailSender` / `SmtpEmailSender` (MailKit), which is where sends actually happen
-- #128 — retry, failure handling and delivery logging: this issue's acceptance criteria
-  ("Failures visible in Grafana via the Loki sink, with a distinct log event name that can be
-  alerted on") and the `SentEmail` audit table are the two data sources this dashboard is built on
-
-Do not start building the dashboard until at least #128 has landed — the log event name and any
-Prometheus counters below are the *proposed* contract, not yet implemented; confirm the actual
-field/event names against the merged code before wiring panels to them.
+- #128 — retry, failure handling and delivery logging, plus the `SentEmail` audit table
 
 ## Data sources
 
 ### 1. Structured logs (Loki) — required
 
-`SmtpEmailSender` / the retry wrapper from #128 should emit one structured Serilog event per send
-attempt, distinct from generic API request logs, e.g. `EmailSendSucceeded` / `EmailSendFailed`,
-carrying at minimum: `recipient` (or a hashed/redacted form — see
-`Nimbus.Logging/SensitiveDataRedactionEnricher.cs`, mail addresses are PII), `template`, `attempt`,
-`outcome`, and `providerMessageId`. Confirm the exact event/field names in the merged #128 PR
-before writing LogQL against them.
+`SmtpEmailSender` emits one Serilog message-template event per send attempt, distinct from generic
+API request logs. The actual event names shipped in #128 (message-template prefixes, not a
+dedicated `event` field) are:
+
+- `EmailSent {Template} to {Recipient} attempt {Attempt} id {MessageId}` — succeeded
+- `EmailRejected {Template} to {Recipient}: {Reason}` — permanent failure, no retry attempted
+- `EmailRetry {Template} to {Recipient} attempt {Attempt} in {Delay}ms: {Reason}` — transient
+  failure, will retry
+- `EmailFailed {Template} to {Recipient} after {Attempts} attempts: {Reason}` — retries exhausted
+
+These are *not* the `EmailSendSucceeded` / `EmailSendFailed` names originally proposed here before
+#128 landed — the dashboard queries below use the real names. The `Serilog.Sinks.Grafana.Loki`
+`LokiJsonTextFormatter` (in use via `Nimbus.Logging/DependencyInjection.cs`) puts every Serilog
+property (`Template`, `Recipient`, `Attempt`, `Reason`, `MessageId`, …) as a top-level field in the
+JSON log body, queryable with `| json` in LogQL, and injects `level` as a stream label. Recipient
+addresses are still redacted by `SensitiveDataRedactionEnricher` before they reach Loki.
 
 ### 2. Business metrics (Prometheus) — optional, follow existing pattern
 
@@ -51,27 +59,30 @@ _emailSentCounter = metricsFactory.CreateCounter(
 This is optional — the Loki logs alone are enough for a first version of the dashboard; add the
 counter only if the log-volume panel proves too coarse.
 
-## Building the dashboard
+## The dashboard (`nimbus-mail-overview.json`)
 
-1. Copy `infra/observability/grafana/dashboards/nimbus-api-overview.json` as a starting point and
-   change `id`, `uid` (e.g. `nimbus-mail-overview`) and `title` (`Nimbus Mail`).
-2. Suggested panels:
-   - **Send rate (success vs failure)** — `timeseries`, Loki:
-     `sum(count_over_time({app="nimbus-api"} | json | event="EmailSendSucceeded" [5m]))` and the
-     `EmailSendFailed` equivalent, or the Prometheus counter from above if added.
-   - **Failure ratio** — `timeseries`, failed / (failed + succeeded) over a rolling window, same
-     shape as the existing "5xx error ratio" panel.
-   - **Failures by reason** — `timeseries` or `barchart`, Loki, `by (reason)` (SMTP response /
-     exception type) so a provider-side outage is visually distinct from a bad recipient address.
-   - **Retry count** — `timeseries`, Loki, `by (attempt)` — a rising share of `attempt > 1` sends
-     is an early warning before sends start failing outright.
-   - **Recent failures (logs panel)** — `logs`, `{app="nimbus-api"} | json | event="EmailSendFailed"`,
-     so an on-call engineer can read the actual SMTP rejection reason without shelling into the box.
-3. Save as `infra/observability/grafana/dashboards/nimbus-mail-overview.json`. No provisioning
-   change needed — `dashboards.yml` already watches the whole `dashboards/` directory.
-4. Verify locally: send a test mail through the Mailpit dev container (#131), confirm the log
-   event appears in Loki (`docker compose logs -f loki` or the Explore view in Grafana), then
-   confirm the panel renders before committing.
+Panels, all Loki-backed since there's no Prometheus counter yet:
+
+- **Send rate (success vs failure)** — `timeseries`:
+  `sum(count_over_time({app="nimbus-api"} |= "EmailSent " [5m]))` vs. `EmailRejected` +
+  `EmailFailed` counts summed together (a rejection and an exhausted-retries failure are both
+  "the mail didn't go out").
+- **Failure ratio** — `timeseries`, failed / (failed + succeeded), same shape as the existing
+  "5xx error ratio" panel.
+- **Failures by reason** — `barchart`, `| json` then `by (Reason)`, split across `EmailRejected`
+  and `EmailFailed` lines, so a provider-side outage (SMTP 5xx) is visually distinct from a bad
+  recipient address.
+- **Retry count (by attempt)** — `timeseries`, `EmailRetry` lines `| json` `by (Attempt)` — a
+  rising share of `Attempt > 1` is an early warning before sends start failing outright.
+- **Recent failures (logs panel)** — `logs`, `{app="nimbus-api"} |~ "EmailRejected |EmailFailed "`,
+  so an on-call engineer can read the actual SMTP rejection reason without shelling into the box.
+
+No provisioning change was needed — `dashboards.yml` already watches the whole `dashboards/`
+directory, so the file is picked up automatically.
+
+To verify locally: send a test mail through the Mailpit dev container (#131), confirm the log
+event appears in Loki (`docker compose logs -f loki` or the Explore view in Grafana), then check
+the panels render in the "Nimbus" folder in Grafana.
 
 ## Alerting (optional follow-up)
 

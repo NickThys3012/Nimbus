@@ -1,0 +1,84 @@
+{
+  "id": null,
+  "uid": "nimbus-mail-overview",
+  "title": "Nimbus Mail",
+  "tags": ["nimbus", "mail"],
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "30s",
+  "time": { "from": "now-6h", "to": "now" },
+  "panels": [
+    {
+      "id": 1,
+      "title": "Send rate (success vs failure)",
+      "type": "timeseries",
+      "datasource": { "type": "loki", "uid": "Loki" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "targets": [
+        {
+          "expr": "sum(count_over_time({app=\"nimbus-api\"} |= \"EmailSent \" [5m]))",
+          "legendFormat": "sent"
+        },
+        {
+          "expr": "sum(count_over_time({app=\"nimbus-api\"} |= \"EmailRejected \" [5m])) + sum(count_over_time({app=\"nimbus-api\"} |= \"EmailFailed \" [5m]))",
+          "legendFormat": "failed"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "title": "Failure ratio",
+      "type": "timeseries",
+      "datasource": { "type": "loki", "uid": "Loki" },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "fieldConfig": { "defaults": { "unit": "percentunit" }, "overrides": [] },
+      "targets": [
+        {
+          "expr": "(sum(count_over_time({app=\"nimbus-api\"} |= \"EmailRejected \" [5m])) + sum(count_over_time({app=\"nimbus-api\"} |= \"EmailFailed \" [5m]))) / clamp_min(sum(count_over_time({app=\"nimbus-api\"} |= \"EmailSent \" [5m])) + sum(count_over_time({app=\"nimbus-api\"} |= \"EmailRejected \" [5m])) + sum(count_over_time({app=\"nimbus-api\"} |= \"EmailFailed \" [5m])), 1)",
+          "legendFormat": "failure ratio"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "title": "Failures by reason",
+      "type": "barchart",
+      "datasource": { "type": "loki", "uid": "Loki" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+      "targets": [
+        {
+          "expr": "sum(count_over_time({app=\"nimbus-api\"} |= \"EmailRejected \" | json [5m])) by (Reason)",
+          "legendFormat": "rejected: {{Reason}}"
+        },
+        {
+          "expr": "sum(count_over_time({app=\"nimbus-api\"} |= \"EmailFailed \" | json [5m])) by (Reason)",
+          "legendFormat": "failed: {{Reason}}"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "title": "Retry count (by attempt)",
+      "type": "timeseries",
+      "datasource": { "type": "loki", "uid": "Loki" },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+      "targets": [
+        {
+          "expr": "sum(count_over_time({app=\"nimbus-api\"} |= \"EmailRetry \" | json [5m])) by (Attempt)",
+          "legendFormat": "attempt {{Attempt}}"
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "title": "Recent failures",
+      "type": "logs",
+      "datasource": { "type": "loki", "uid": "Loki" },
+      "gridPos": { "h": 10, "w": 24, "x": 0, "y": 16 },
+      "targets": [
+        { "expr": "{app=\"nimbus-api\"} |~ \"EmailRejected |EmailFailed \"" }
+      ]
+    }
+  ]
+}
