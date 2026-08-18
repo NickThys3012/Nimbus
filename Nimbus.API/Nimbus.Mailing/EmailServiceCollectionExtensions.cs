@@ -23,11 +23,17 @@ public static class EmailServiceCollectionExtensions
         if (enabled)
         {
             builder.ValidateDataAnnotations().ValidateOnStart();
-            services.AddScoped<IEmailSender, SmtpEmailSender>();
+            services.AddScoped<SmtpEmailSender>();
+            services.AddScoped<IEmailSender>(sp => new AuditingEmailSender(
+                sp.GetRequiredService<SmtpEmailSender>(),
+                sp.GetRequiredService<IEmailAuditLogger>()));
         }
         else
         {
-            services.AddScoped<IEmailSender, NullEmailSender>();
+            services.AddScoped<NullEmailSender>();
+            services.AddScoped<IEmailSender>(sp => new AuditingEmailSender(
+                sp.GetRequiredService<NullEmailSender>(),
+                sp.GetRequiredService<IEmailAuditLogger>()));
         }
     }
 }

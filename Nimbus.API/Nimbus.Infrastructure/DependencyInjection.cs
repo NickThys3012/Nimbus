@@ -43,6 +43,7 @@ public static void AddInfrastructure(this IServiceCollection services, IConfigur
         services.AddScoped<IUserRepository, UserRepository>();
         services.AddHttpContextAccessor();
         services.AddScoped<ICurrentUserService, CurrentUserService>();
+        services.AddScoped<IEmailAuditLogger, EmailAuditLogger>();
 
         AddObjectStorage(services, config);
 

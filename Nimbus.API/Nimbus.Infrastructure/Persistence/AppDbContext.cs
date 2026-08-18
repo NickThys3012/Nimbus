@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
+using Nimbus.Domain.Entities;
 using Nimbus.Domain.Entities.Base;
 using Nimbus.Infrastructure.Identity;
 namespace Nimbus.Infrastructure.Persistence;
@@ -9,6 +10,7 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
 
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) {}
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
+    public DbSet<SentEmail> SentEmails => Set<SentEmail>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -19,6 +21,18 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
             e.HasOne(t => t.User)
                 .WithMany()
                 .HasForeignKey(t => t.UserId);
+        });
+
+        builder.Entity<SentEmail>(e =>
+        {
+            e.HasKey(s => s.Id);
+            e.Property(s => s.Recipient).IsRequired().HasMaxLength(320);
+            e.Property(s => s.Template).HasMaxLength(200);
+            e.Property(s => s.ProviderMessageId).HasMaxLength(500);
+            e.Property(s => s.FailureReason).HasMaxLength(2000);
+            // Recent-attempts-for-a-recipient is the query the "did the reset email
+            // actually go out" support question always turns into.
+            e.HasIndex(s => new { s.Recipient, s.SentAt });
         });
 
 

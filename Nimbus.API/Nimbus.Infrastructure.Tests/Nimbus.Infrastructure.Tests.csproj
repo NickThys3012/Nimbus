@@ -25,6 +25,7 @@
     </ItemGroup>
 
     <ItemGroup>
+        <ProjectReference Include="..\Nimbus.Application\Nimbus.Application.csproj"/>
         <ProjectReference Include="..\Nimbus.Domain\Nimbus.Domain.csproj"/>
         <ProjectReference Include="..\Nimbus.Infrastructure\Nimbus.Infrastructure.csproj"/>
     </ItemGroup>
