@@ -24,14 +24,14 @@ public static class IdentitySeed
         }
 
         // Create admin user
-        if (await users.FindByEmailAsync("admin@nimbus.dev") is null)
+        if (await users.FindByEmailAsync("nick.thijs@hotmail.com") is null)
         {
             var admin = new ApplicationUser
             {
-                UserName = "admin@nimbus.dev",
-                Email = "admin@nimbus.dev",
-                FirstName = "Admin",
-                Name = "Admin",
+                UserName = "nick.thijs@hotmail.com",
+                Email = "nick.thijs@hotmail.com",
+                FirstName = "Nick",
+                Name = "Thys",
                 Role = UserRole.Admin,
                 PhoneNumber = "0000000000"
             };
