@@ -41,7 +41,7 @@ export class TelemetryService {
 
 /**
  * Forwards uncaught Angular errors to the telemetry pipeline before falling
- * back to the default console logging behaviour.
+ * back to the default console logging behavior.
  */
 @Injectable()
 export class TelemetryErrorHandler implements ErrorHandler {

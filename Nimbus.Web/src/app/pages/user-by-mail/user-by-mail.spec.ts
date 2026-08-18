@@ -2,7 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import UserByMail from './user-by-mail';
 import { OpenAPI } from '../../core/api-client';
-import { BaseHttpRequest } from '../../core/api-client/core/BaseHttpRequest';
+import { BaseHttpRequest } from '../../core/api-client';
 import { AngularHttpRequest } from '../../core/api-client/core/AngularHttpRequest';
 import { provideHttpClient } from '@angular/common/http';
 

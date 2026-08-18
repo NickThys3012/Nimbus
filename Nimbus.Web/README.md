@@ -77,7 +77,7 @@ set explicitly in `src/app/Nimbus.config.ts`.
 
 `openapi-typescript-codegen` only produces Observable-based services (RxJS),
 not signals — that's a hard limitation of the tool, not something a codegen
-flag can change. To get signals, add a thin hand-written wrapper on top of
+flag can change. To get signals, add a thin handwritten wrapper on top of
 the generated service, rather than editing generated files (they get
 overwritten on every `npm run generate:api`).
 
