@@ -9,6 +9,7 @@
     <Folder Name="/3. Infrstructure/">
         <Project Path="Nimbus.Infrastructure/Nimbus.Infrastructure.csproj" />
         <Project Path="Nimbus.Logging/Nimbus.Logging.csproj" />
+        <Project Path="Nimbus.Mailing/Nimbus.Mailing.csproj" />
         <Project Path="Nimbus.Observability/Nimbus.Observability.csproj" />
     </Folder>
     <Folder Name="/3. Presentation/">
