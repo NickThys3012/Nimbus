@@ -1,6 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { Manual } from './manual';
+import Manual from './manual';
 
 describe('Manual', () => {
   let component: Manual;
