@@ -10,7 +10,7 @@ export const routes: Routes = [
   },
   {
     path: 'home',
-    loadComponent: () => import('./pages/home/home')
+    loadComponent: () => import('./pages/home/home'),
   },
   {
     path: 'flights',
@@ -20,6 +20,11 @@ export const routes: Routes = [
   {
     path: 'logbook',
     loadComponent: () => import('./pages/logbook/logbook'),
+    canActivate: [authGuard],
+  },
+  {
+    path: 'manual',
+    loadComponent: () => import('./pages/manual/manual'),
     canActivate: [authGuard],
   },
   {
