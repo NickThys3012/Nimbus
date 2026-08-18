@@ -24,7 +24,7 @@ public static class DependencyInjection
     /// <exception cref="ArgumentNullException"></exception>
 public static void AddInfrastructure(this IServiceCollection services, IConfiguration config)
     {
-        var connectionString = config.GetConnectionString("Database") ?? throw new ArgumentNullException(nameof(config));
+        var connectionString = config.GetConnectionString("Database") ?? throw new InvalidOperationException("Connection string 'Database' is not configured.");
 
         services.AddDbContext<AppDbContext>(opts =>
         {

@@ -24,7 +24,7 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
 
   const token = authStore.accessToken();
   const authedReq = token && !isAuthEndpoint
-    ? req.clone({ setHeaders: { Authorization: `Bearer ${token}` } })
+    ? req.clone({ setHeaders: { Authorization: 'Bearer ' + token } })
     : req;
 
   return next(authedReq).pipe(
@@ -43,7 +43,7 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
           }
 
           const retriedReq = req.clone({
-            setHeaders: { Authorization: `Bearer ${authStore.accessToken()}` },
+            setHeaders: { Authorization: `Bearer ${authStore.accessToken()!}` },
           });
           return next(retriedReq);
         }),

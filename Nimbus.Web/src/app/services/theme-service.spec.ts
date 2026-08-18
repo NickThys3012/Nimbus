@@ -6,6 +6,7 @@ describe('ThemeService', () => {
   let service: ThemeService;
 
   beforeEach(() => {
+    localStorage.removeItem('darkMode');
     TestBed.configureTestingModule({});
     service = TestBed.inject(ThemeService);
   });
