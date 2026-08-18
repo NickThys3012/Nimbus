@@ -1,12 +1,12 @@
-import { Component, signal } from '@angular/core';
+import { Component } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
+import { Navbar } from './layout/navbar/navbar';
 
 @Component({
   selector: 'Nimbus-root',
-  imports: [RouterOutlet],
+  imports: [RouterOutlet, Navbar],
   templateUrl: './Nimbus.html',
   styleUrl: './Nimbus.css',
 })
 export class Nimbus {
-  protected readonly title = signal('Nimbus.Web');
 }

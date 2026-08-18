@@ -1,0 +1,37 @@
+version: '3.8'
+
+services:
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: nimbus-sqlserver
+    platform: linux/amd64
+    user: root
+    environment:
+      ACCEPT_EULA: "Y"
+      SA_PASSWORD: "YourStrongPassword123!"
+      MSSQL_PID: "Developer"
+      MSSQL_DATA_DIR: /var/opt/mssql/data
+    ports:
+      - "1434:1433"
+    volumes:
+      - sqlserver_data:/var/opt/mssql/data
+    entrypoint: >
+      bash -c "
+      chmod 777 /var/opt/mssql && chmod 777 /var/opt/mssql/data &&
+      /opt/mssql/bin/sqlservr
+      "
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P YourStrongPassword123! -Q 'SELECT 1'"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - nimbus-network
+
+networks:
+  nimbus-network:
+    driver: bridge
+
+volumes:
+  sqlserver_data:
+    driver: local

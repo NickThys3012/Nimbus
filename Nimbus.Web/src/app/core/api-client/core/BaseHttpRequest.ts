@@ -10,7 +10,7 @@ import type { OpenAPIConfig } from './OpenAPI';
 
 export abstract class BaseHttpRequest {
 
-    constructor(
+    protected constructor(
         public readonly config: OpenAPIConfig,
         public readonly http: HttpClient,
     ) {}

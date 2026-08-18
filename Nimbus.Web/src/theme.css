@@ -1,0 +1,18 @@
+:root {
+    --bg: #12161c; --pan: #171c24; --ln: #262c36; --ln2: #323a47;
+    --tx: #e8eaed; --dim: #8b95a3; --fnt: #6b7684;
+    --ac: #9fe1cb; --acbg: rgba(159,225,203,.12);
+    --g: #5dcaa5; --gb: rgba(93,202,165,.14);
+    --a: #ef9f27; --ab: rgba(239,159,39,.14);
+    --r: #f09595; --rb: rgba(240,149,149,.14);
+    --chip: #1e242e; --inp: #0e1218;
+}
+
+html.lt {
+    --bg: #f4f3ee; --pan: #ffffff; --ln: #e3e1d9; --ln2: #d3d1c7;
+    --tx: #2c2c2a; --dim: #5f5e5a; --fnt: #888780;
+    --ac: #0f6e56; --acbg: #e1f5ee; --g: #0f6e56; --gb: #e1f5ee;
+    --a: #854f0b; --ab: #faeeda; --r: #a32d2d; --rb: #fcebeb;
+    --chip: #edebe4; --inp: #faf9f6;
+}
+

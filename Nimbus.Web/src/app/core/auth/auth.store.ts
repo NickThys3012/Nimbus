@@ -1,6 +1,6 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
-import { finalize } from 'rxjs';
+import { Observable, catchError, finalize, map, of, tap } from 'rxjs';
 
 import {
   AuthenticationService,
@@ -35,6 +35,13 @@ export class AuthStore {
   readonly error = this._error.asReadonly();
   readonly isAuthenticated = computed(() => this._accessToken() !== null);
 
+  /** Set once a restore/refresh attempt has resolved, so guards know
+   *  whether `isAuthenticated` reflects a real answer yet (relevant right
+   *  after a full page reload, before the access token in memory has been
+   *  re-hydrated from the httpOnly refresh cookie). */
+  private readonly _isRestored = signal(false);
+  readonly isRestored = this._isRestored.asReadonly();
+
   /** Reactive lookup, kept in sync with `lookupEmail`. Set `lookupEmail` and
    *  `userLookup.value()` / `.isLoading()` / `.error()` update automatically.
    *  This is the pattern to reach for whenever a query should refetch as its
@@ -62,15 +69,31 @@ export class AuthStore {
   }
 
   refresh(): void {
-    this.authApi.postApiAuthenticationRefresh().subscribe({
-      next: (response) => this.applyLoginResponse(response),
-      error: (err) => this._error.set(err?.message ?? 'Session refresh failed'),
-    });
+    this.restoreSession().subscribe();
+  }
+
+  /**
+   * Silently attempts to obtain a new access token from the httpOnly
+   * refresh-token cookie. Used on app start (to restore a session after a
+   * page reload, since the access token itself only ever lives in memory)
+   * and by `authGuard`/the auth interceptor before giving up on a route or
+   * request. Never throws — resolves to `false` on any failure.
+   */
+  restoreSession(): Observable<boolean> {
+    return this.authApi.postApiAuthenticationRefresh().pipe(
+      tap((response) => this.applyLoginResponse(response)),
+      map(() => true),
+      catchError(() => {
+        this.clearSession();
+        return of(false);
+      }),
+      finalize(() => this._isRestored.set(true)),
+    );
   }
 
   logout(): void {
     this.authApi.postApiAuthenticationLogout().subscribe({
-      // Clear local session state whether or not the API call succeeds —
+      // Clear local session state whether the API call succeeds —
       // the user should be logged out client-side regardless.
       next: () => this.clearSession(),
       error: () => this.clearSession(),

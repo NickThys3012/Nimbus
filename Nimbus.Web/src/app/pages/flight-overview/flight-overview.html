@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nimbus — Flights</title>
+  <style>
+
+
+
+      .wrap { max-width: 780px; margin: 0 auto; padding: 20px; }
+
+      /* ===== shared app nav (desktop: inline top bar / mobile: bottom tabs) ===== */
+
+      .spacer { flex:1; }
+
+      @media (max-width: 700px) {
+          .wrap { padding-bottom:78px; }
+      }
+
+      /* ===== page content ===== */
+      .page-head { display:flex; align-items:center; margin-bottom:14px; }
+      .page-head .ttl { font-size:16px; font-weight:600; color:var(--tx); }
+      .page-head .sub { font-size:11px; color:var(--fnt); font-family:var(--mono); margin-top:2px; }
+      .new-flight-btn {
+          font-size:12px; color:var(--ac); background:none; border:1px solid var(--ln2);
+          padding:7px 13px; border-radius:8px; cursor:pointer; display:flex; align-items:center; gap:6px;
+      }
+      .new-flight-btn:hover { background: var(--chip); }
+
+      .stat-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(110px,1fr)); gap:10px; margin-bottom:16px; }
+      .stat-card { background:var(--pan); border:1px solid var(--ln); border-radius:10px; padding:11px 13px; }
+      .stat-card .lbl { font-size:10px; color:var(--fnt); font-family:var(--mono); }
+      .stat-card .val { font-size:20px; color:var(--tx); font-family:var(--mono); margin-top:3px; }
+
+      .filter-chips { display:flex; gap:6px; margin-bottom:10px; flex-wrap:wrap; }
+      .chip { font-size:12px; padding:5px 12px; border-radius:8px; color:var(--dim); cursor:pointer; }
+      .chip.on { background:var(--acbg); color:var(--ac); }
+
+      .list { background:var(--pan); border:1px solid var(--ln); border-radius:10px; }
+      .flight-row {
+          display:flex; align-items:center; gap:12px; padding:12px 14px; border-bottom:1px solid var(--ln);
+          cursor:pointer; text-decoration:none; color:inherit;
+      }
+      .flight-row:last-child { border-bottom:none; }
+      .flight-row:hover { background: var(--chip); }
+      .flight-row .date-block { width:44px; flex:0 0 auto; text-align:center; }
+      .flight-row .date-block .d { font-size:11px; color:var(--fnt); font-family:var(--mono); }
+      .flight-row .date-block .t { font-size:14px; color:var(--tx); font-family:var(--mono); }
+      .flight-row .div { width:1px; height:30px; background:var(--ln); flex:0 0 auto; }
+      .flight-row .info { flex:1; min-width:0; }
+      .flight-row .nm { font-size:14px; color:var(--tx); }
+      .flight-row .meta { font-size:11px; color:var(--fnt); font-family:var(--mono); margin-top:2px; }
+      .badge { font-size:11px; font-family:var(--mono); padding:4px 9px; border-radius:8px; white-space:nowrap; flex:0 0 auto; }
+      .badge.go { color:var(--g); background:var(--gb); }
+      .badge.caution { color:var(--a); background:var(--ab); }
+      .badge.nogo { color:var(--r); background:var(--rb); }
+      .badge.flown { color:var(--fnt); background:var(--chip); }
+  </style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="page-head">
+    <div>
+      <div class="ttl">Flights</div>
+      <div class="sub">N. Thys</div>
+    </div>
+    <div class="spacer"></div>
+    <button class="new-flight-btn" onclick="window.location.href='nimbus-prep-form.html'"><i class="ti ti-plus" aria-hidden="true"></i> New Flight</button>
+  </div>
+
+  <div class="stat-grid">
+    <div class="stat-card"><div class="lbl">Total</div><div class="val">14</div></div>
+    <div class="stat-card"><div class="lbl">Flown</div><div class="val">9</div></div>
+    <div class="stat-card"><div class="lbl">Hours</div><div class="val">11.4</div></div>`
+  </div>
+
+  <div class="filter-chips">
+    <span class="chip on">All</span>
+    <span class="chip">Flown</span>
+    <span class="chip">Not Flown</span>
+    <span class="chip">Shared</span>
+  </div>
+
+  <div class="list">
+    <a class="flight-row" href="nimbus-flight-detail.html">
+      <div class="date-block"><div class="d">VR 08</div><div class="t">18:45</div></div>
+      <div class="div"></div>
+      <div class="info">
+        <div class="nm">Weelde · evening flight</div>
+        <div class="meta">OO-BLK · 6 kt/240° · 12 km</div>
+      </div>
+      <span class="badge go">GO</span>
+    </a>
+    <a class="flight-row" href="nimbus-flight-detail.html">
+      <div class="date-block"><div class="d">ZA 09</div><div class="t">06:10</div></div>
+      <div class="div"></div>
+      <div class="info">
+        <div class="nm">Retie · morning flight</div>
+        <div class="meta">OO-BQZ · 12 kt/190° · 4 km</div>
+      </div>
+      <span class="badge caution">CAU</span>
+    </a>
+    <a class="flight-row" href="nimbus-flight-detail.html">
+      <div class="date-block"><div class="d">ZO 10</div><div class="t">19:00</div></div>
+      <div class="div"></div>
+      <div class="info">
+        <div class="nm">Malle · test flight</div>
+        <div class="meta">OO-BLK · 17 kt/210° · 2 km</div>
+      </div>
+      <span class="badge nogo">NO-GO</span>
+    </a>
+    <a class="flight-row" href="nimbus-flight-detail.html">
+      <div class="date-block"><div class="d">ZO 27</div><div class="t">07:20</div></div>
+      <div class="div"></div>
+      <div class="info">
+        <div class="nm">Kasterlee · balloon meeting</div>
+        <div class="meta">OO-BQZ · flown · 74 min</div>
+      </div>
+      <span class="badge flown">FLOWN</span>
+    </a>
+  </div>
+
+</div>
+
+
+<script>
+  const root = document.documentElement;
+  const toggleBtn = document.getElementById('theme-toggle');
+  const toggleIcon = document.getElementById('theme-icon');
+
+  function setLight(isLight) {
+    root.classList.toggle('lt', isLight);
+    toggleIcon.className = 'ti ' + (isLight ? 'ti-moon' : 'ti-sun');
+  }
+  setLight(!window.matchMedia('(prefers-color-scheme: dark)').matches);
+  toggleBtn.addEventListener('click', function () { setLight(!root.classList.contains('lt')); });
+
+  // Admin nav item is role-gated — hidden entirely for non-admin users.
+  // Hardcoded true here for the mockup; a real build reads this from the signed-in user's role.
+  const isAdmin = true;
+  if (!isAdmin) {
+    document.getElementById('nav-admin').style.display = 'none';
+    document.getElementById('tab-admin').style.display = 'none';
+  }
+
+  document.querySelectorAll('.chip').forEach(function (c) {
+    c.addEventListener('click', function () {
+      document.querySelectorAll('.chip').forEach(function (x) { x.classList.remove('on'); });
+      c.classList.add('on');
+    });
+  });
+</script>
+</body>
+</html>

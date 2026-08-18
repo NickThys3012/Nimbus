@@ -1,0 +1,28 @@
+<div class="app-topbar">
+  <div class="brand">
+    <span class="logo-tile"><img ngSrc="assets/logo.svg" alt="Nimbus Logo" class="logo-image" height="16" width="16"></span>
+    <span class="wordmark">Nimbus</span>
+  </div>
+  <div class="nav-links desktop-only">
+    @for (item of navItems;track item.label){
+      <a class="nav-link" [routerLink]="item.route" routerLinkActive="on" [routerLinkActiveOptions]="{exact: true}">
+        <i [class]="'ti ' + item.icon" aria-hidden="true"></i> {{ item.label }}
+      </a>
+    }
+  </div>
+  <div class="actions">
+    <button class="icon-btn" aria-label="Change theme" (click)="themeService.toggle()">
+      <i class="ti" [class.ti-moon]="themeService.isDarkMode()" [class.ti-sun]="!themeService.isDarkMode()" aria-hidden="true"></i>
+    </button>
+    <!-- TODO: switch into a button based on the user logged in state-->
+    <span class="avatar">{{ userInitials }}</span>
+  </div>
+</div>
+
+<div class="bottom-tabbar">
+  @for (item of navItems; track item.label) {
+    <a class="tab-item" [routerLink]="item.route" routerLinkActive="on" [routerLinkActiveOptions]="{exact: true}">
+      <i [class]="'ti ' + item.icon" aria-hidden="true"></i>{{ item.label }}
+    </a>
+  }
+</div>

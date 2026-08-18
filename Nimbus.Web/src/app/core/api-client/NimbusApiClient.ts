@@ -3,14 +3,13 @@
 /* tslint:disable */
 /* eslint-disable */
 import { NgModule} from '@angular/core';
-import { HttpClientModule } from '@angular/common/http';
 import { AngularHttpRequest } from './core/AngularHttpRequest';
 import { BaseHttpRequest } from './core/BaseHttpRequest';
 import type { OpenAPIConfig } from './core/OpenAPI';
 import { OpenAPI } from './core/OpenAPI';
 import { AuthenticationService } from './services/AuthenticationService';
 @NgModule({
-    imports: [HttpClientModule],
+    imports: [],
     providers: [
         {
             provide: OpenAPI,
