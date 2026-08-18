@@ -20,5 +20,6 @@
         <Project Path="Nimbus.Application.Tests/Nimbus.Application.Tests.csproj" />
         <Project Path="Nimbus.Domain.Tests/Nimbus.Domain.Tests.csproj" />
         <Project Path="Nimbus.Infrastructure.Tests/Nimbus.Infrastructure.Tests.csproj" />
+        <Project Path="Nimbus.Mailing.Tests/Nimbus.Mailing.Tests.csproj" />
     </Folder>
 </Solution>
