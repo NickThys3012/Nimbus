@@ -32,6 +32,7 @@
         <ProjectReference Include="..\Nimbus.Application\Nimbus.Application.csproj"/>
         <ProjectReference Include="..\Nimbus.Infrastructure\Nimbus.Infrastructure.csproj"/>
         <ProjectReference Include="..\Nimbus.Logging\Nimbus.Logging.csproj"/>
+        <ProjectReference Include="..\Nimbus.Mailing\Nimbus.Mailing.csproj" />
         <ProjectReference Include="..\Nimbus.Observability\Nimbus.Observability.csproj"/>
     </ItemGroup>
 

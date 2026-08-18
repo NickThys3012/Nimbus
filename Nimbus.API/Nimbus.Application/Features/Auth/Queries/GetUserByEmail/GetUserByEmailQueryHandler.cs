@@ -1,4 +1,5 @@
 using MediatR;
+using Nimbus.Application.Abstraction;
 using Nimbus.Application.Common.Exceptions;
 using Nimbus.Application.Common.Interfaces;
 using Nimbus.Contracts.DTOs.Features.Auth;
@@ -13,16 +14,27 @@ public class GetUserByEmailQueryHandler : IRequestHandler<GetUserByEmailQuery, U
 {
     private readonly IBusinessMetrics _businessMetrics;
     private readonly IUserRepository _userRepository;
+    private readonly IEmailSender _mailService;
 
-    public GetUserByEmailQueryHandler(IUserRepository userRepository, IBusinessMetrics businessMetrics)
+    public GetUserByEmailQueryHandler(IUserRepository userRepository, IBusinessMetrics businessMetrics, IEmailSender mailService)
     {
         _userRepository = userRepository;
         _businessMetrics = businessMetrics;
+        _mailService = mailService;
     }
 
     public async Task<UserDto> Handle(GetUserByEmailQuery request, CancellationToken cancellationToken)
     {
         var user = await _userRepository.GetByEmailAsync(request.Email);
+
+        var mail = new EmailMessage()
+        {
+            ToAddress = "thysnic@cronos.be",
+            Subject = "Subject",
+            HtmlBody = "<h1>hey</h1>",
+            TextBody = "hey"
+        };
+        await _mailService.SendAsync(mail,cancellationToken);
         _businessMetrics.UserFetchedByEmail();
         return user == null ? throw new NotFoundException(nameof(User), request.Email) : user.MapToUserDto();
     }

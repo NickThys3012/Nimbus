@@ -11,6 +11,7 @@ using Nimbus.Infrastructure;
 using Nimbus.Infrastructure.Identity;
 using Nimbus.Infrastructure.Persistence;
 using Nimbus.Logging;
+using Nimbus.Mailing;
 using Nimbus.Observability;
 using Prometheus;
 using Scalar.AspNetCore;
@@ -86,7 +87,7 @@ try
         options.Preload = false; // Don't set true unless you're submitting to the HSTS preload list
     });
 
-
+    builder.Services.AddNimbusEmail(builder.Configuration);
     builder.Services.AddAuthorization();
     builder.Services.AddScoped<TokenService>();
     // Add services to the container.
