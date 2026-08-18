@@ -23,11 +23,24 @@ public static class EmailServiceCollectionExtensions
         if (enabled)
         {
             builder.ValidateDataAnnotations().ValidateOnStart();
-            services.AddScoped<IEmailSender, SmtpEmailSender>();
+            services.AddScoped<SmtpEmailSender>();
+            services.AddScoped<IEmailSender>(sp => new AuditingEmailSender(
+                sp.GetRequiredService<SmtpEmailSender>(),
+                sp.GetRequiredService<IEmailAuditLogger>()));
         }
         else
         {
-            services.AddScoped<IEmailSender, NullEmailSender>();
+            services.AddScoped<NullEmailSender>();
+            services.AddScoped<IEmailSender>(sp => new AuditingEmailSender(
+                sp.GetRequiredService<NullEmailSender>(),
+                sp.GetRequiredService<IEmailAuditLogger>()));
         }
+
+        // Public entry point for feature code (IEmailQueue) sits in front of IEmailSender:
+        // enqueueing returns as soon as the message is accepted, delivery/retry/audit
+        // happen on EmailDeliveryWorker so a slow SMTP handshake never blocks a request.
+        services.AddSingleton<EmailDeliveryQueue>();
+        services.AddSingleton<IEmailQueue>(sp => sp.GetRequiredService<EmailDeliveryQueue>());
+        services.AddHostedService<EmailDeliveryWorker>();
     }
 }
