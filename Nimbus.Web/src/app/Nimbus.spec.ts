@@ -1,10 +1,12 @@
 import { TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
 import { Nimbus } from './Nimbus';
 
 describe('App', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [Nimbus],
+      providers: [provideRouter([])],
     }).compileComponents();
   });
 
