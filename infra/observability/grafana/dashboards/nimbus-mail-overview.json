@@ -35,7 +35,7 @@
       "fieldConfig": { "defaults": { "unit": "percentunit" }, "overrides": [] },
       "targets": [
         {
-          "expr": "(sum(count_over_time({app=\"nimbus-api\"} |= \"EmailRejected \" [5m])) + sum(count_over_time({app=\"nimbus-api\"} |= \"EmailFailed \" [5m]))) / clamp_min(sum(count_over_time({app=\"nimbus-api\"} |= \"EmailSent \" [5m])) + sum(count_over_time({app=\"nimbus-api\"} |= \"EmailRejected \" [5m])) + sum(count_over_time({app=\"nimbus-api\"} |= \"EmailFailed \" [5m])), 1)",
+          "expr": "(sum(count_over_time({app=\"nimbus-api\"} |= \"EmailRejected \" [5m])) + sum(count_over_time({app=\"nimbus-api\"} |= \"EmailFailed \" [5m]))) / (sum(count_over_time({app=\"nimbus-api\"} |= \"EmailSent \" [5m])) + sum(count_over_time({app=\"nimbus-api\"} |= \"EmailRejected \" [5m])) + sum(count_over_time({app=\"nimbus-api\"} |= \"EmailFailed \" [5m])))",
           "legendFormat": "failure ratio"
         }
       ]
