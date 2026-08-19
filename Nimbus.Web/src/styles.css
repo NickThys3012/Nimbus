@@ -11,3 +11,9 @@ body {
     margin: 0; background: var(--bg); font-family: var(--sans); color: var(--tx);
     transition: background .15s ease, color .15s ease;
 }
+
+
+
+.body {
+    min-height: 100vh; display:flex; align-items:center; justify-content:center; padding:24px;
+}

@@ -1,8 +1,8 @@
 .field { margin-top:13px; }
 .field label { display:block; font-size:11px; color:var(--fnt); font-family:var(--mono); margin-bottom:5px; }
 .field .fi {
-    width:100%; background:var(--inp); border:0.5px solid var(--ln); border-radius:8px;
-    padding:9px 11px; font-size:13.5px; color:var(--tx); font-family:var(--sans);
+    width:100%; background:var(--inp); border:1px solid var(--ln); border-radius:8px;
+    padding:9px 11px; font-size:14px; color:var(--tx); font-family:var(--sans);
 }
 .field .fi:focus { outline:none; border-color:var(--ac); }
 .field.error .fi { border-color:var(--r); }

@@ -4,6 +4,7 @@
 }
 .app-topbar .brand { display:flex; align-items:center; gap:8px; }
 .app-topbar .actions { display:flex; align-items:center; gap:8px; justify-content:flex-end; }
+.app-topbar .actions { display:flex; align-items:center; gap:8px; justify-content:flex-end; }
 .app-topbar .wordmark { font-size:15px; font-weight:600; color:var(--tx); margin-right:6px; }
 
 .nav-links { display:flex; align-items:center; gap:2px; }
