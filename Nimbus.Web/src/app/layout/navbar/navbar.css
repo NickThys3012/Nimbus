@@ -4,8 +4,6 @@
 }
 .app-topbar .brand { display:flex; align-items:center; gap:8px; }
 .app-topbar .actions { display:flex; align-items:center; gap:8px; justify-content:flex-end; }
-.app-topbar .logo-tile { width:28px; height:28px; border-radius:6px; background:var(--ac); display:flex; align-items:center; justify-content:center; flex:0 0 auto; }
-.app-topbar .logo-tile svg { width:22px; height:22px; }
 .app-topbar .wordmark { font-size:15px; font-weight:600; color:var(--tx); margin-right:6px; }
 
 .nav-links { display:flex; align-items:center; gap:2px; }

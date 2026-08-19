@@ -1,11 +1,12 @@
 import { Component, inject } from '@angular/core';
 import { ThemeService } from '../../services/theme-service';
-import { CommonModule, NgOptimizedImage } from '@angular/common';
+import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
+import { Logo } from '../logo/logo';
 
 @Component({
   selector: 'Nimbus-navbar',
-  imports: [RouterModule, CommonModule, NgOptimizedImage],
+  imports: [RouterModule, CommonModule, Logo],
   templateUrl: './navbar.html',
   styleUrl: './navbar.css',
 })
