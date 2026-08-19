@@ -1,0 +1,6 @@
+<button class="btn-primary" [id]="id()">
+  @if (icon() != null) {
+    <i class="ti {{icon()}}" aria-hidden="true"></i>
+  }
+  {{ label() }}
+</button>
