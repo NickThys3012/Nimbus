@@ -8,6 +8,5 @@ import { Component, input } from '@angular/core';
 })
 export class Button {
   id = input.required<string>();
-  label = input.required<string>();
   icon = input<string>();
 }
