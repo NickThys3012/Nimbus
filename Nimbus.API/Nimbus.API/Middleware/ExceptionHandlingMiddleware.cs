@@ -1,4 +1,5 @@
 using System.Net;
+using System.Text.Encodings.Web;
 using System.Text.Json;
 using Nimbus.Application.Common.Exceptions;
 using Nimbus.Domain.Exceptions;
@@ -6,6 +7,11 @@ namespace Nimbus.API.Middleware;
 
 public class ExceptionHandlingMiddleware
 {
+    private static readonly JsonSerializerOptions ResponseJsonOptions = new()
+    {
+        Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping
+    };
+
     private readonly ILogger<ExceptionHandlingMiddleware> _logger;
     private readonly RequestDelegate _next;
 
@@ -25,14 +31,24 @@ public class ExceptionHandlingMiddleware
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Unhandled exception");
-            await HandleAsync(ctx, ex);
+            var (status, title, errors) = MapException(ex);
+
+            if (status == HttpStatusCode.InternalServerError)
+            {
+                _logger.LogError(ex, "Unhandled exception");
+            }
+            else
+            {
+                _logger.LogInformation(ex, "Handled exception mapped to HTTP {StatusCode}", (int)status);
+            }
+
+            await HandleAsync(ctx, status, title, errors);
         }
     }
 
-    private static async Task HandleAsync(HttpContext ctx, Exception ex)
+    private static (HttpStatusCode Status, string Title, IDictionary<string, string[]>? Errors) MapException(Exception ex)
     {
-        var (status, title, errors) = ex switch
+        return ex switch
         {
             ValidationException ve => (HttpStatusCode.UnprocessableEntity,
                 "Validation failed", ve.Errors),
@@ -43,13 +59,17 @@ public class ExceptionHandlingMiddleware
             _ => (HttpStatusCode.InternalServerError,
                 "An unexpected error occurred.", null)
         };
+    }
 
+    private static async Task HandleAsync(HttpContext ctx, HttpStatusCode status, string title,
+        IDictionary<string, string[]>? errors)
+    {
         ctx.Response.ContentType = "application/json";
         ctx.Response.StatusCode = (int)status;
 
         await ctx.Response.WriteAsync(JsonSerializer.Serialize(new
         {
             title, status = (int)status, errors
-        }));
+        }, ResponseJsonOptions));
     }
 }

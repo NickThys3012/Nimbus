@@ -13,7 +13,7 @@ public static class DependencyInjection
             cfg.RegisterServicesFromAssembly(typeof(DependencyInjection).Assembly));
 
         // Register validators from Contracts assembly (shared with Web)
-        services.AddValidatorsFromAssembly(typeof(ContractsMarker).Assembly);
+        services.AddValidatorsFromAssembly(typeof(DependencyInjection).Assembly);
 
         services.AddTransient(
             typeof(IPipelineBehavior<,>),

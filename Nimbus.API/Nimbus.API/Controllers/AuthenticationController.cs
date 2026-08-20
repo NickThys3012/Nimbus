@@ -1,8 +1,10 @@
 using MediatR;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Nimbus.Application.Features.Auth.Command.CreateUser;
 using Nimbus.Application.Features.Auth.Queries.GetUserByEmail;
 using Nimbus.Contracts.DTOs.Features.Auth;
+using Nimbus.Contracts.DTOs.Features.Auth.Register;
 using Nimbus.Domain.Enums;
 using Nimbus.Infrastructure.Identity;
 namespace Nimbus.API.Controllers;
@@ -45,6 +47,13 @@ public class AuthenticationController : ControllerBase
         SetRefreshCookie(rawRefresh);
 
         return Ok(new LoginResponseDto(accessToken, expiry, user.Email!, roles.FirstOrDefault()?? nameof(UserRole.Pilot)));
+    }
+
+    [HttpPost("register")]
+    public async Task<ActionResult> Register(RegisterRequestDto request)
+    {
+        await _mediator.Send(new CreateUserCommand(request));
+        return Created();
     }
     
     // ── POST /api/auth/refresh ──────────────────────────────────────

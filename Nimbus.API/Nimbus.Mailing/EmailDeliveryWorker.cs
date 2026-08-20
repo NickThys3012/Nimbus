@@ -10,7 +10,7 @@ namespace Nimbus.Mailing;
 /// what actually moves sending off the request thread for issue #128.
 ///
 /// Deliberately not a fire-and-forget <c>Task.Run</c> per request: that approach is lossy
-/// on app shutdown (flagged as a known trade-off on <c>LoginEvent</c> in FlightPrep), and a
+/// on app shutdown (flagged as a known trade-off on <c>LoginEvent</c> in FlightPrep), and 
 /// dropped mail is worse than a dropped login event since it's invisible to everyone,
 /// including the user waiting for it. Instead, on <see cref="IHostApplicationLifetime.ApplicationStopping"/>
 /// the queue stops accepting new work but this worker keeps draining what is already
@@ -61,7 +61,7 @@ public sealed class EmailDeliveryWorker : BackgroundService
             }
             catch (Exception ex)
             {
-                // SendAsync itself never throws for a rejected/failed send (see
+                // SendAsync itself never throws for a rejected/failed sending (see
                 // EmailSendResult) - this only catches something unexpected, e.g. a bug in
                 // the sender or a DI failure, so one bad message cannot silently kill the
                 // worker and strand everything queued behind it.

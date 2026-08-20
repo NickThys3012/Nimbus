@@ -119,8 +119,8 @@ try
     await app.Services.SeedUsers();
 
     // ── Middleware pipeline ───────────────────────────────────────────
-    app.UseMiddleware<ExceptionHandlingMiddleware>(); // ← must be first
     app.UseSerilogRequestLogging();                   // HTTP request logging (#48)
+    app.UseMiddleware<ExceptionHandlingMiddleware>(); // maps known exceptions to API responses
     app.UseHttpsRedirection();
     app.UseHsts(); // Only sends the header over HTTPS — correct behaviour
     app.UseStaticFiles();
