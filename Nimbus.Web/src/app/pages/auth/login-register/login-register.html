@@ -1,0 +1,41 @@
+<div class="body">
+  <div class="card">
+
+    <div class="brand">
+      <Nimbus-logo size="lg" />
+      <div class="nm">Nimbus</div>
+      <div class="sub">flight preparation</div>
+    </div>
+
+    <div class="tabs">
+      <div class="tab" [class.on]="showLogin()" (click)="activeTab.set('login')" data-panel="p-login">Sign in</div>
+      <div class="tab" [class.on]="!showLogin()" (click)="activeTab.set('register')" data-panel="p-register">Create account</div>
+    </div>
+
+    @if (showLogin()) {
+      <!-- login -->
+        <!-- TODO: this is the placeholder from the mockup needs to be extracted/optimized and implemented in #15-->
+      <div id="p-login">
+        <Nimbus-input-field label="EMAIL ADDRESS" placeholder="name@example.com" type="email"></Nimbus-input-field>
+        <Nimbus-password-field placeholder="••••••••"></Nimbus-password-field>
+
+        <div class="row-between">
+          <label class="check-inline"><span class="check-box"></span>Remember me</label>
+          <a href="#">Forgot password?</a>
+        </div>
+
+      <Nimbus-button id="login-btn" icon="ti-login-2">
+        Sign in
+      </Nimbus-button>
+      <!--TODO:  should be hidden behind a condition -->
+      <Nimbus-banner id="login-error" icon="ti-alert-triangle" type="warning">
+        Email address or password is incorrect.
+      </Nimbus-banner>
+      </div>
+    } @else {
+      <!-- register -->
+      <Nimbus-register></Nimbus-register>
+    }
+    <div class="footer-note">v1.0 · Nimbus</div>
+  </div>
+</div>

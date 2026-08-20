@@ -1,0 +1,15 @@
+:host {
+	display: block;
+	min-height: 100vh;
+}
+
+.app-shell {
+	min-height: 100vh;
+}
+
+.app-content {
+	min-height: calc(100vh - 55px);
+	overflow: auto;
+}
+
+

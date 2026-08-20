@@ -41,4 +41,8 @@ export const routes: Routes = [
     path: 'find-user',
     loadComponent: () => import('./pages/user-by-mail/user-by-mail'),
   },
+  {
+    path: 'login',
+    loadComponent: () => import('./pages/auth/login-register/login-register'),
+  },
 ];
