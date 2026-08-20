@@ -14,7 +14,7 @@ namespace Nimbus.Domain.ValueObjects;
 ///     <para>
 ///     This means any object's owner and originating flight can be recovered from its key alone,
 ///     without a database lookup — so an object whose owner/flight no longer exists (an orphan,
-///     e.g. after a flight is deleted but the delete of its objects failed) is identifiable purely
+///     e.g. after a flight is deleted but to delete of its objects failed) is identifiable purely
 ///     by listing a bucket and checking each prefix against the database.
 ///     </para>
 ///     <para>
@@ -53,7 +53,7 @@ public sealed class ObjectKey
     }
 
     /// <summary>
-    ///     Builds the key for a shared, non owner/flight-scoped asset (<c>map-cache</c>).
+    ///     Builds the key for a shared, non-owner/flight-scoped asset (<c>map-cache</c>).
     /// </summary>
     public static ObjectKey ForSharedAsset(string relativePath)
     {

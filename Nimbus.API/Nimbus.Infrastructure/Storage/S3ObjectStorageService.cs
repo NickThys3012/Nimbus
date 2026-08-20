@@ -36,6 +36,23 @@ public sealed class S3ObjectStorageService : IObjectStorageService
     {
         var bucketName = ResolveBucketName(bucket);
 
+        try
+        {
+            // A non-seekable stream cannot be retried safely (the stream may be partially consumed).
+            if (!upload.Content.CanSeek && _options.MaxRetryAttempts > 0)
+            {
+                await PutOnceAsync(cancellationToken);
+                return;
+            }
+
+            await _resiliencePipeline.ExecuteAsync(async ct => await PutOnceAsync(ct), cancellationToken);
+        }
+        catch (Exception ex) when (ex is not ObjectStorageException)
+        {
+            throw ToObjectStorageException("upload", bucket, key, ex);
+        }
+        return;
+
         Task PutOnceAsync(CancellationToken ct)
         {
             if (upload.Content.CanSeek)
@@ -58,22 +75,6 @@ public sealed class S3ObjectStorageService : IObjectStorageService
             };
 
             return _client.PutObjectAsync(request, ct);
-        }
-
-        try
-        {
-            // A non-seekable stream cannot be retried safely (the stream may be partially consumed).
-            if (!upload.Content.CanSeek && _options.MaxRetryAttempts > 0)
-            {
-                await PutOnceAsync(cancellationToken);
-                return;
-            }
-
-            await _resiliencePipeline.ExecuteAsync(async ct => await PutOnceAsync(ct), cancellationToken);
-        }
-        catch (Exception ex) when (ex is not ObjectStorageException)
-        {
-            throw ToObjectStorageException("upload", bucket, key, ex);
         }
     }
 

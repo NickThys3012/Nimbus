@@ -21,7 +21,7 @@ public sealed class StorageOptions
     public string SecretKey { get; init; } = string.Empty;
 
     /// <summary>Region sent on requests. MinIO ignores it but the SDK requires a value.</summary>
-    public string Region { get; init; } = "us-east-1";
+    public static string Region => "us-east-1";
 
     /// <summary>
     ///     Path-style addressing (<c>endpoint/bucket/key</c>) instead of virtual-hosted style

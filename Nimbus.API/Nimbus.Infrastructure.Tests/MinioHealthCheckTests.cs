@@ -72,9 +72,12 @@ public class MinioHealthCheckTests
 
         var result = await sut.CheckHealthAsync(new HealthCheckContext());
 
-        // No exception object, no description string — an anonymous caller of /health/ready
-        // must not learn anything about why or what infrastructure failed.
-        Assert.That(result.Exception, Is.Null);
-        Assert.That(result.Description, Is.Null.Or.Empty);
+        using (Assert.EnterMultipleScope())
+        {
+            // No exception object, no description string — an anonymous caller of /health/ready
+            // must not learn anything about why or what infrastructure failed.
+            Assert.That(result.Exception, Is.Null);
+            Assert.That(result.Description, Is.Null.Or.Empty);
+        }
     }
 }

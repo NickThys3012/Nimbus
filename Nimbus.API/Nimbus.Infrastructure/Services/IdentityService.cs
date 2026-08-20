@@ -16,7 +16,7 @@ public class IdentityService:IIdentityService
 
     public async Task<string> RegisterAsync(string email, string password, string firstName, string lastName)
     {
-        var user= new ApplicationUser()
+        var user= new ApplicationUser
         {
             UserName=email,
             Email=email,
@@ -30,15 +30,5 @@ public class IdentityService:IIdentityService
         }
         await _userManager.AddToRoleAsync(user, nameof(UserRole.Pilot));
         return user.Id;
-    }
-    
-    public async Task<string> GenerateEmailConfirmationUrl(string userId)
-    {
-        var user = await _userManager.FindByIdAsync(userId);
-        if (user == null)
-        {
-            throw new ProcessingException(nameof(ApplicationUser), userId);
-        }
-        return await _userManager.GenerateEmailConfirmationTokenAsync(user);
     }
 }

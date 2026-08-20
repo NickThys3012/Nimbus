@@ -93,7 +93,7 @@ public static void AddInfrastructure(this IServiceCollection services, IConfigur
             var options = sp.GetRequiredService<IOptions<StorageOptions>>().Value;
             var s3Config = new AmazonS3Config
             {
-                ServiceURL = options.Endpoint, ForcePathStyle = options.ForcePathStyle, UseHttp = !options.UseHttps, AuthenticationRegion = options.Region
+                ServiceURL = options.Endpoint, ForcePathStyle = options.ForcePathStyle, UseHttp = !options.UseHttps, AuthenticationRegion = StorageOptions.Region
             };
 
             return new AmazonS3Client(new BasicAWSCredentials(options.AccessKey, options.SecretKey), s3Config);

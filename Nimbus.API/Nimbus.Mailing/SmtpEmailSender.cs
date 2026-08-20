@@ -38,7 +38,7 @@ public sealed class SmtpEmailSender : IEmailSender
 
             if (result.Succeeded)
             {
-                _logger.LogInformation(
+                _logger.LogDebug(
                     "EmailSent {Template} to {Recipient} attempt {Attempt} id {MessageId}",
                     message.Template ?? "adhoc",
                     message.ToAddress,
