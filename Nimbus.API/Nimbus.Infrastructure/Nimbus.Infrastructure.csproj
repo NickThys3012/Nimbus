@@ -30,4 +30,8 @@
         <ProjectReference Include="..\Nimbus.Domain\Nimbus.Domain.csproj"/>
     </ItemGroup>
 
+    <ItemGroup>
+      <Folder Include="Persistence\EntityFramework\Migrations\" />
+    </ItemGroup>
+
 </Project>

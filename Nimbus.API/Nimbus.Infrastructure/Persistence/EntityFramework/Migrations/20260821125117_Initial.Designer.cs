@@ -12,7 +12,7 @@ using Nimbus.Infrastructure.Persistence;
 namespace Nimbus.Infrastructure.Persistence.EntityFramework.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260804130955_Initial")]
+    [Migration("20260821125117_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
@@ -158,27 +158,40 @@ namespace Nimbus.Infrastructure.Persistence.EntityFramework.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
-            modelBuilder.Entity("Nimbus.Domain.Entities.Base.BaseEntity", b =>
+            modelBuilder.Entity("Nimbus.Domain.Entities.SentEmail", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTime?>("CreatedDate")
+                    b.Property<string>("FailureReason")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<string>("ProviderMessageId")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("Recipient")
+                        .IsRequired()
+                        .HasMaxLength(320)
+                        .HasColumnType("nvarchar(320)");
+
+                    b.Property<DateTime>("SentAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<bool>("IsDeleted")
+                    b.Property<bool>("Succeeded")
                         .HasColumnType("bit");
 
-                    b.Property<DateTime?>("UpdatedDate")
-                        .HasColumnType("datetime2");
+                    b.Property<string>("Template")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("IsDeleted")
-                        .HasFilter("IsDeleted = 0");
+                    b.HasIndex("Recipient", "SentAt");
 
-                    b.ToTable("BaseEntity");
+                    b.ToTable("SentEmails");
                 });
 
             modelBuilder.Entity("Nimbus.Infrastructure.Identity.ApplicationUser", b =>
@@ -203,6 +216,9 @@ namespace Nimbus.Infrastructure.Persistence.EntityFramework.Migrations
                     b.Property<string>("FirstName")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsApproved")
+                        .HasColumnType("bit");
 
                     b.Property<bool>("LockoutEnabled")
                         .HasColumnType("bit");
@@ -243,6 +259,15 @@ namespace Nimbus.Infrastructure.Persistence.EntityFramework.Migrations
                     b.Property<string>("UserName")
                         .HasMaxLength(256)
                         .HasColumnType("nvarchar(256)");
+
+                    b.Property<DateTimeOffset?>("VerificationEmailCooldownEnd")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<bool>("VerificationEmailLocked")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("VerificationEmailSendCount")
+                        .HasColumnType("int");
 
                     b.HasKey("Id");
 

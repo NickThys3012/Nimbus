@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Nimbus.Domain.Entities;
 using Nimbus.Domain.Entities.Base;
 using Nimbus.Infrastructure.Identity;
+using System.Linq.Expressions;
 namespace Nimbus.Infrastructure.Persistence;
 
 public class AppDbContext : IdentityDbContext<ApplicationUser>
@@ -39,13 +40,25 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
         });
 
 
-        builder.Entity<BaseEntity>()
-            .HasQueryFilter(e => !e.IsDeleted);
-        builder.Entity<BaseEntity>()
-            .HasIndex(r => r.IsDeleted)
-            .HasFilter("IsDeleted = 0");
-
         builder.ApplyConfigurationsFromAssembly(typeof(AppDbContext).Assembly);
+        ApplySoftDeleteConvention(builder);
+    }
+
+    private static void ApplySoftDeleteConvention(ModelBuilder builder)
+    {
+        foreach (var entityType in builder.Model.GetEntityTypes()
+                     .Where(entityType => entityType.ClrType.IsAssignableTo(typeof(BaseEntity)) &&
+                                          entityType.ClrType != typeof(BaseEntity)))
+        {
+            var entity = builder.Entity(entityType.ClrType);
+            var parameter = Expression.Parameter(entityType.ClrType, "e");
+            var isDeleted = Expression.Property(parameter, nameof(BaseEntity.IsDeleted));
+            var filter = Expression.Lambda(Expression.Equal(isDeleted, Expression.Constant(false)), parameter);
+
+            entity.HasQueryFilter(filter);
+            entity.HasIndex(nameof(BaseEntity.IsDeleted))
+                .HasFilter("IsDeleted = 0");
+        }
     }
 
 

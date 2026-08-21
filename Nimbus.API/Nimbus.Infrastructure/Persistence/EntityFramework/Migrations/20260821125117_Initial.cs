@@ -33,6 +33,10 @@ namespace Nimbus.Infrastructure.Persistence.EntityFramework.Migrations
                     Role = table.Column<int>(type: "int", nullable: false),
                     FirstName = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     Name = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    IsApproved = table.Column<bool>(type: "bit", nullable: false),
+                    VerificationEmailCooldownEnd = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
+                    VerificationEmailSendCount = table.Column<int>(type: "int", nullable: false),
+                    VerificationEmailLocked = table.Column<bool>(type: "bit", nullable: false),
                     UserName = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
                     NormalizedUserName = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
                     Email = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
@@ -54,17 +58,20 @@ namespace Nimbus.Infrastructure.Persistence.EntityFramework.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "BaseEntity",
+                name: "SentEmails",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    CreatedDate = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    UpdatedDate = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    IsDeleted = table.Column<bool>(type: "bit", nullable: false)
+                    Recipient = table.Column<string>(type: "nvarchar(320)", maxLength: 320, nullable: false),
+                    Template = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: true),
+                    SentAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    Succeeded = table.Column<bool>(type: "bit", nullable: false),
+                    ProviderMessageId = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
+                    FailureReason = table.Column<string>(type: "nvarchar(2000)", maxLength: 2000, nullable: true)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_BaseEntity", x => x.Id);
+                    table.PrimaryKey("PK_SentEmails", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -237,12 +244,6 @@ namespace Nimbus.Infrastructure.Persistence.EntityFramework.Migrations
                 filter: "[NormalizedUserName] IS NOT NULL");
 
             migrationBuilder.CreateIndex(
-                name: "IX_BaseEntity_IsDeleted",
-                table: "BaseEntity",
-                column: "IsDeleted",
-                filter: "IsDeleted = 0");
-
-            migrationBuilder.CreateIndex(
                 name: "IX_RefreshTokens_TokenHash",
                 table: "RefreshTokens",
                 column: "TokenHash",
@@ -252,6 +253,11 @@ namespace Nimbus.Infrastructure.Persistence.EntityFramework.Migrations
                 name: "IX_RefreshTokens_UserId",
                 table: "RefreshTokens",
                 column: "UserId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_SentEmails_Recipient_SentAt",
+                table: "SentEmails",
+                columns: new[] { "Recipient", "SentAt" });
         }
 
         /// <inheritdoc />
@@ -273,10 +279,10 @@ namespace Nimbus.Infrastructure.Persistence.EntityFramework.Migrations
                 name: "AspNetUserTokens");
 
             migrationBuilder.DropTable(
-                name: "BaseEntity");
+                name: "RefreshTokens");
 
             migrationBuilder.DropTable(
-                name: "RefreshTokens");
+                name: "SentEmails");
 
             migrationBuilder.DropTable(
                 name: "AspNetRoles");
