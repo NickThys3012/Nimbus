@@ -1,7 +1,7 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { Banner } from '../../components/banner/banner';
-import { Button } from '../../components/button/button';
+import { Banner } from '../../../components/banner/banner';
+import { Button } from '../../../components/button/button';
 
 type VerificationStatus = 'success' | 'error';
 

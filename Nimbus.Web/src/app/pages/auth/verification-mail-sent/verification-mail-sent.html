@@ -1,0 +1,10 @@
+<div class="body">
+  <div class="card">
+    <Nimbus-glyph icon="ti-mail-opened"/>
+    <div class="hd">Verify your email address</div>
+    <div class="lede">We sent a confirmation link to <strong>{{ emailAddress }}</strong>. Please verify your address first, then an administrator will review your request.</div>
+
+    <Nimbus-button id="reverify-btn" icon="ti-refresh" variant="ghost" (click)="resendVerificationEmail()" [disabled]="authStore.isLoading()">Try again</Nimbus-button>
+    <div class="footer-note">Step 1 of 2 · Verify, then approval</div>
+  </div>
+</div>

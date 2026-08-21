@@ -1,0 +1,8 @@
+.glyph {
+    width:44px; height:44px; border-radius:10px; margin:0 auto 14px;
+    display:flex; align-items:center; justify-content:center; font-size:21px;
+    background:var(--acbg); color:var(--ac);
+}
+.glyph.warn { background:var(--ab); color:var(--a); }
+.glyph.bad { background:var(--rb); color:var(--r); }
+.glyph.ok { background:var(--gb); color:var(--g); }

@@ -6,6 +6,7 @@ import {
   AuthenticationService,
   type LoginRequestDto,
   type LoginResponseDto,
+  RegisterRequestDto,
 } from '../api-client';
 
 /**
@@ -65,6 +66,32 @@ export class AuthStore {
       .subscribe({
         next: (response) => this.applyLoginResponse(response),
         error: (err) => this._error.set(err?.message ?? 'Login failed'),
+      });
+  }
+
+  register(request: RegisterRequestDto): void {
+    this._isLoading.set(true);
+    this._error.set(null);
+
+    this.authApi
+      .postApiAuthenticationRegister({ requestBody: request })
+      .pipe(finalize(() => this._isLoading.set(false)))
+      .subscribe({
+        error: (err) => this._error.set(err?.message ?? 'Registration failed'),
+      });
+  }
+
+  requestNewVerificationEmail(email: string): void {
+    this._isLoading.set(true);
+    this._error.set(null);
+
+    this.authApi
+      .postApiAuthenticationResendVerificationEmail({ requestBody: { email } })
+      .pipe(finalize(() => this._isLoading.set(false)))
+      .subscribe({
+        error: (err) =>{
+          this._error.set(err?.body.title ?? 'Request failed');
+          },
       });
   }
 

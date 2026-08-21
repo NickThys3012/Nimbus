@@ -47,6 +47,10 @@ export const routes: Routes = [
   },
   {
     path: 'email-verification',
-    loadComponent: () => import('./pages/email-verification/email-verification'),
+    loadComponent: () => import('./pages/auth/email-verification/email-verification'),
+  },
+  {
+    path: 'verification-email-sent',
+    loadComponent: () => import('./pages/auth/verification-mail-sent/verification-mail-sent'),
   },
 ];

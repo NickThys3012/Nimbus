@@ -56,6 +56,8 @@ public class ExceptionHandlingMiddleware
                 ex.Message, null),
             NotFoundException => (HttpStatusCode.NotFound,
                 ex.Message, null),
+            ProcessingException => (HttpStatusCode.BadRequest,
+                ex.Message, null),
             _ => (HttpStatusCode.InternalServerError,
                 "An unexpected error occurred.", null)
         };

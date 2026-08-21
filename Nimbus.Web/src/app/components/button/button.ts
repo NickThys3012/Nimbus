@@ -1,5 +1,7 @@
 import { Component, input } from '@angular/core';
 
+type ButtonVariant = 'primary' | 'ghost';
+
 @Component({
   selector: 'Nimbus-button',
   imports: [],
@@ -9,4 +11,6 @@ import { Component, input } from '@angular/core';
 export class Button {
   id = input.required<string>();
   icon = input<string>();
+  variant = input<ButtonVariant>('primary');
+  disabled = input<boolean>(false);
 }

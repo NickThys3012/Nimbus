@@ -1,4 +1,10 @@
-<button class="btn-primary" [id]="id()">
+<button
+  class="btn"
+  [class.btn-primary]="variant() === 'primary'"
+  [class.btn-ghost]="variant() === 'ghost'"
+  [id]="id()"
+  [disabled]="disabled()"
+>
   @if (icon() != null) {
     <i class="ti {{icon()}}" aria-hidden="true"></i>
   }
