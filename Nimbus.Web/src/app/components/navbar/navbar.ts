@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, ChangeDetectionStrategy } from '@angular/core';
 import { ThemeService } from '../../services/theme-service';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
@@ -8,6 +8,7 @@ import { Logo } from '../logo/logo';
   selector: 'Nimbus-navbar',
   imports: [RouterModule, CommonModule, Logo],
   templateUrl: './navbar.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './navbar.css',
 })
 export class Navbar {

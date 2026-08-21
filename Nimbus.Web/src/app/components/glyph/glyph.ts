@@ -1,10 +1,11 @@
-import { Component, input } from '@angular/core';
+import { Component, input, ChangeDetectionStrategy } from '@angular/core';
 type GlyphVariant = 'Primary' | 'Ok' | 'Warning' | 'Error';
 
 @Component({
   selector: 'Nimbus-glyph',
   imports: [],
   templateUrl: './glyph.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './glyph.css',
 })
 export class Glyph {

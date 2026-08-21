@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { Banner } from '../../../components/banner/banner';
 import { Button } from '../../../components/button/button';
@@ -9,6 +9,7 @@ type VerificationStatus = 'success' | 'error';
   selector: 'Nimbus-email-verification',
   imports: [Banner, Button, RouterLink],
   templateUrl: './email-verification.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './email-verification.css',
 })
 export default class EmailVerification {
@@ -30,4 +31,3 @@ export default class EmailVerification {
     void this.router.navigate(['/login']);
   }
 }
-

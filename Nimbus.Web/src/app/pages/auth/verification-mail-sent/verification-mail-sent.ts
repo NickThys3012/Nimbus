@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, ChangeDetectionStrategy } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { Button } from '../../../components/button/button';
 import { Glyph } from '../../../components/glyph/glyph';
@@ -8,13 +8,14 @@ import { AuthStore } from '../../../core/auth/auth.store';
   selector: 'Nimbus-verification-mail-sent',
   imports: [Button, Glyph],
   templateUrl: './verification-mail-sent.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './verification-mail-sent.css',
 })
 export default class VerificationMailSent {
   sendAgain = false;
-  emailAddress:string |null = null;
+  emailAddress: string | null = null;
 
-  protected readonly authStore= inject(AuthStore)
+  protected readonly authStore = inject(AuthStore);
   constructor(private route: ActivatedRoute) {}
 
   ngOnInit() {

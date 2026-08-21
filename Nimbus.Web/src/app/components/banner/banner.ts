@@ -1,10 +1,11 @@
-import { Component, computed, input } from '@angular/core';
+import { Component, computed, input, ChangeDetectionStrategy } from '@angular/core';
 
 @Component({
   selector: 'Nimbus-banner',
   imports: [],
   templateUrl: './banner.html',
   styleUrl: './banner.css',
+  changeDetection: ChangeDetectionStrategy.Eager,
   host: {
     '[style.--background-color]': 'backgroundColor()',
     '[style.--color]': 'color()',

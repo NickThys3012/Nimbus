@@ -1,5 +1,11 @@
-import { ApplicationConfig, ErrorHandler, inject, isDevMode, provideAppInitializer } from '@angular/core';
-import { provideHttpClient, withInterceptors } from '@angular/common/http';
+import {
+  ApplicationConfig,
+  ErrorHandler,
+  inject,
+  isDevMode,
+  provideAppInitializer,
+} from '@angular/core';
+import { provideHttpClient, withInterceptors, withXhr } from '@angular/common/http';
 import { provideRouter, Router, NavigationEnd } from '@angular/router';
 import { filter, firstValueFrom } from 'rxjs';
 
@@ -24,7 +30,7 @@ OpenAPI.WITH_CREDENTIALS = true;
 export const nimbusConfig: ApplicationConfig = {
   providers: [
     provideRouter(routes),
-    provideHttpClient(withInterceptors([authInterceptor])),
+    provideHttpClient(withXhr(), withInterceptors([authInterceptor])),
     // Generated services (e.g. AuthenticationService) depend on
     // `BaseHttpRequest`, which in turn depends on the `OpenAPI` config
     // object as an injection token. The generated `NimbusApiClient`
@@ -39,7 +45,7 @@ export const nimbusConfig: ApplicationConfig = {
     // cookie on app start, since the access token itself only lives in
     // memory and is lost on every full page reload.
     provideAppInitializer(() => firstValueFrom(inject(AuthStore).restoreSession())),
-  ]
+  ],
 };
 
 /**
@@ -54,4 +60,3 @@ export function reportPageViews(router: Router, telemetry: TelemetryService): vo
       telemetry.reportPageView(url);
     });
 }
-

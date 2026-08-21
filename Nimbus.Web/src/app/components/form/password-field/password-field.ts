@@ -1,9 +1,10 @@
-import { Component, computed, input, output, signal } from '@angular/core';
+import { Component, computed, input, output, signal, ChangeDetectionStrategy } from '@angular/core';
 
 @Component({
   selector: 'Nimbus-password-field',
   imports: [],
   templateUrl: './password-field.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './password-field.css',
 })
 export class PasswordField {

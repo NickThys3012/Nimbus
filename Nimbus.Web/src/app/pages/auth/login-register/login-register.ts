@@ -1,4 +1,4 @@
-import { Component, computed, signal } from '@angular/core';
+import { Component, computed, signal, ChangeDetectionStrategy } from '@angular/core';
 import { Logo } from '../../../components/logo/logo';
 import { Register } from './components/register/register';
 import { Banner } from '../../../components/banner/banner';
@@ -10,6 +10,7 @@ import { InputField } from '../../../components/form/input-field/input-field';
   selector: 'Nimbus-login-register',
   imports: [Logo, Register, Banner, Button, PasswordField, InputField],
   templateUrl: './login-register.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './login-register.css',
 })
 export default class LoginRegister {

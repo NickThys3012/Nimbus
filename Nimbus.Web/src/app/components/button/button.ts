@@ -1,4 +1,4 @@
-import { Component, input } from '@angular/core';
+import { Component, input, ChangeDetectionStrategy } from '@angular/core';
 
 type ButtonVariant = 'primary' | 'ghost';
 
@@ -6,6 +6,7 @@ type ButtonVariant = 'primary' | 'ghost';
   selector: 'Nimbus-button',
   imports: [],
   templateUrl: './button.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './button.css',
 })
 export class Button {
