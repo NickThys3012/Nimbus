@@ -13,7 +13,6 @@ namespace Nimbus.Infrastructure.Tests;
 [TestFixture]
 public class MinioHealthCheckTests
 {
-    private MinioContainer _minio = null!;
 
     [SetUp]
     public async Task SetUpAsync()
@@ -27,6 +26,7 @@ public class MinioHealthCheckTests
     {
         await _minio.DisposeAsync();
     }
+    private MinioContainer _minio = null!;
 
     private IAmazonS3 CreateClient()
     {

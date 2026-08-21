@@ -15,7 +15,7 @@
             <PrivateAssets>all</PrivateAssets>
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
-        <PackageReference Include="Microsoft.OpenApi" Version="2.11.0" />
+        <PackageReference Include="Microsoft.OpenApi" Version="2.11.0"/>
         <PackageReference Include="Scalar.AspNetCore" Version="2.16.17"/>
         <!-- Trajectory/PDF map rendering (issues #57, #62) needs SkiaSharp at runtime.
              Brought in now (issue #96) so the production image's native dependencies
@@ -24,15 +24,15 @@
              dynamically linking the host's — the dynamic variant hits undefined-symbol
              failures against Ubuntu 24.04's fontconfig/libuuid ABI (verified against the
              `mcr.microsoft.com/dotnet/aspnet:10.0` image while building this image). -->
-        <PackageReference Include="SkiaSharp" Version="3.119.1" />
-        <PackageReference Include="SkiaSharp.NativeAssets.Linux.NoDependencies" Version="3.119.1" />
+        <PackageReference Include="SkiaSharp" Version="3.119.1"/>
+        <PackageReference Include="SkiaSharp.NativeAssets.Linux.NoDependencies" Version="3.119.1"/>
     </ItemGroup>
 
     <ItemGroup>
         <ProjectReference Include="..\Nimbus.Application\Nimbus.Application.csproj"/>
         <ProjectReference Include="..\Nimbus.Infrastructure\Nimbus.Infrastructure.csproj"/>
         <ProjectReference Include="..\Nimbus.Logging\Nimbus.Logging.csproj"/>
-        <ProjectReference Include="..\Nimbus.Mailing\Nimbus.Mailing.csproj" />
+        <ProjectReference Include="..\Nimbus.Mailing\Nimbus.Mailing.csproj"/>
         <ProjectReference Include="..\Nimbus.Observability\Nimbus.Observability.csproj"/>
     </ItemGroup>
 
@@ -43,10 +43,10 @@
 
     <Target Name="PublishAngular" AfterTargets="ComputeFilesToPublish"
             Condition="'$(SkipSpaBuild)' != 'true'">
-        <Exec WorkingDirectory="$(SpaRoot)" Command="npm ci" />
-        <Exec WorkingDirectory="$(SpaRoot)" Command="npm run build -- --configuration production" />
+        <Exec WorkingDirectory="$(SpaRoot)" Command="npm ci"/>
+        <Exec WorkingDirectory="$(SpaRoot)" Command="npm run build -- --configuration production"/>
         <ItemGroup>
-            <SpaFiles Include="$(SpaDist)**\*" />
+            <SpaFiles Include="$(SpaDist)**\*"/>
             <ResolvedFileToPublish Include="@(SpaFiles->'%(FullPath)')" Exclude="@(ResolvedFileToPublish)">
                 <RelativePath>wwwroot\%(RecursiveDir)%(Filename)%(Extension)</RelativePath>
                 <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>

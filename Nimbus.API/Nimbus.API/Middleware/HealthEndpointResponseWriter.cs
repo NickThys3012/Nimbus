@@ -1,5 +1,4 @@
 using Microsoft.Extensions.Diagnostics.HealthChecks;
-
 namespace Nimbus.API.Middleware;
 
 /// <summary>

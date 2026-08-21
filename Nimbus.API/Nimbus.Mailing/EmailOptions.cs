@@ -6,8 +6,8 @@ public sealed class EmailOptions
     public const string SectionName = "Email";
 
     /// <summary>
-    /// When false, <see cref="NullEmailSender"/> is registered instead and
-    /// messages are logged rather than sent.
+    ///     When false, <see cref="NullEmailSender" /> is registered instead and
+    ///     messages are logged rather than sent.
     /// </summary>
     public bool Enabled { get; init; }
 
@@ -25,7 +25,7 @@ public sealed class EmailOptions
     /// <summary>STARTTLS on 587. Set false only for local Mailpit.</summary>
     public bool UseStartTls { get; init; } = true;
 
-    [Required, EmailAddress]
+    [Required] [EmailAddress]
     public string FromAddress { get; init; } = string.Empty;
 
     public string FromName { get; init; } = "Nimbus";

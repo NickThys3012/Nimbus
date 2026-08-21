@@ -11,9 +11,9 @@ public interface IBusinessMetrics
     ///     Increment the counter for the number of times users are fetched by email
     /// </summary>
     void UserFetchedByEmail();
-    
+
     /// <summary>
-    /// Increment the counter for the number users are registered
+    ///     Increment the counter for the number users are registered
     /// </summary>
     void UsersRegistered();
 }

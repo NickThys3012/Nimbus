@@ -26,9 +26,9 @@ public sealed class AppDbContextFactory : IDesignTimeDbContextFactory<AppDbConte
         var optionsBuilder = new DbContextOptionsBuilder<AppDbContext>();
         optionsBuilder.UseSqlServer(connectionString, sql =>
             sql.EnableRetryOnFailure(
-                maxRetryCount: 5,
-                maxRetryDelay: TimeSpan.FromSeconds(10),
-                errorNumbersToAdd: null));
+                5,
+                TimeSpan.FromSeconds(10),
+                null));
 
         return new AppDbContext(optionsBuilder.Options);
     }

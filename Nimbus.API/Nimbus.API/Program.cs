@@ -90,6 +90,8 @@ try
     builder.Services.AddNimbusEmail(builder.Configuration);
     builder.Services.AddAuthorization();
     builder.Services.AddScoped<TokenService>();
+    builder.Services.AddSingleton(TimeProvider.System);
+
     // Add services to the container.
     builder.Services.AddControllers();
     // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
@@ -109,7 +111,7 @@ try
             builder.Environment.WebRootFileProvider = new PhysicalFileProvider(dist);
         }
     }
-    
+
     var app = builder.Build();
 
     // Schema migrations are applied by the dedicated `migrator` container (an EF Core

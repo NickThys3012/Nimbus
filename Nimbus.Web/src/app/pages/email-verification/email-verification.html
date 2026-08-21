@@ -1,0 +1,20 @@
+<section id="p-email-verification">
+  <h1>Email verification</h1>
+
+  @if (isSuccess()) {
+    <Nimbus-banner id="verification-success" icon="ti-circle-check" type="info">
+      Your email address is verified. You can now sign in to Nimbus.
+    </Nimbus-banner>
+  } @else {
+    <Nimbus-banner id="verification-error" icon="ti-alert-circle" type="warning">
+      We could not verify your email link. Please request a new verification email and try again.
+    </Nimbus-banner>
+
+    <a id="resend-verification-link" routerLink="/login">Resend verification email</a>
+  }
+
+  <Nimbus-button id="go-login-btn" icon="ti-login" (click)="goToLogin()">
+    Go to login
+  </Nimbus-button>
+</section>
+

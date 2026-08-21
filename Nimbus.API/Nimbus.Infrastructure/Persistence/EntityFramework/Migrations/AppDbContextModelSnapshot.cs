@@ -240,6 +240,9 @@ namespace Nimbus.Infrastructure.Persistence.EntityFramework.Migrations
                     b.Property<bool>("IsApproved")
                         .HasColumnType("bit");
 
+                    b.Property<DateTimeOffset?>("VerificationEmailCooldownEnd")
+                        .HasColumnType("datetimeoffset");
+
                     b.Property<bool>("LockoutEnabled")
                         .HasColumnType("bit");
 
@@ -268,6 +271,12 @@ namespace Nimbus.Infrastructure.Persistence.EntityFramework.Migrations
                         .HasColumnType("bit");
 
                     b.Property<int>("Role")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("VerificationEmailLocked")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("VerificationEmailSendCount")
                         .HasColumnType("int");
 
                     b.Property<string>("SecurityStamp")

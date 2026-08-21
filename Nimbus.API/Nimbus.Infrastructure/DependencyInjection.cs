@@ -22,7 +22,7 @@ public static class DependencyInjection
     /// <param name="services"></param>
     /// <param name="config"></param>
     /// <exception cref="ArgumentNullException"></exception>
-public static void AddInfrastructure(this IServiceCollection services, IConfiguration config)
+    public static void AddInfrastructure(this IServiceCollection services, IConfiguration config)
     {
         var connectionString = config.GetConnectionString("Database") ?? throw new InvalidOperationException("Connection string 'Database' is not configured.");
 
@@ -34,9 +34,9 @@ public static void AddInfrastructure(this IServiceCollection services, IConfigur
                 // fault here, not exotic network partitions — retry a handful of times
                 // with EF Core's built-in exponential backoff before giving up.
                 sql.EnableRetryOnFailure(
-                    maxRetryCount: 5,
-                    maxRetryDelay: TimeSpan.FromSeconds(10),
-                    errorNumbersToAdd: null);
+                    5,
+                    TimeSpan.FromSeconds(10),
+                    null);
             });
         });
 
@@ -50,7 +50,7 @@ public static void AddInfrastructure(this IServiceCollection services, IConfigur
             options.Password.RequiredLength = 8;
             options.Password.RequiredUniqueChars = 1;
 
-            options.SignIn.RequireConfirmedAccount = true; 
+            options.SignIn.RequireConfirmedAccount = true;
             // Lockout settings.
             options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(15);
             options.Lockout.MaxFailedAccessAttempts = 5;
@@ -61,7 +61,7 @@ public static void AddInfrastructure(this IServiceCollection services, IConfigur
                 "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-._@+";
             options.User.RequireUniqueEmail = false;
         });
-        
+
         services.AddScoped<IUserRepository, UserRepository>();
         services.AddHttpContextAccessor();
         services.AddScoped<ICurrentUserService, CurrentUserService>();

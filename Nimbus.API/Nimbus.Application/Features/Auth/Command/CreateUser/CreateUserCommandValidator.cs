@@ -1,7 +1,6 @@
 using FluentValidation;
 namespace Nimbus.Application.Features.Auth.Command.CreateUser;
 
-
 public sealed class CreateUserCommandValidator : AbstractValidator<CreateUserCommand>
 {
     public CreateUserCommandValidator()

@@ -32,7 +32,10 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
             e.Property(s => s.FailureReason).HasMaxLength(2000);
             // Recent-attempts-for-a-recipient is the query the "did the reset email
             // actually go out" support question always turns into.
-            e.HasIndex(s => new { s.Recipient, s.SentAt });
+            e.HasIndex(s => new
+            {
+                s.Recipient, s.SentAt
+            });
         });
 
 

@@ -1,3 +1,4 @@
+using System.Net;
 using Amazon.Runtime;
 using Amazon.S3;
 using Amazon.S3.Model;
@@ -87,7 +88,10 @@ public sealed class S3ObjectStorageService : IObjectStorageService
             var response = await _resiliencePipeline.ExecuteAsync(
                 async ct =>
                 {
-                    var request = new GetObjectRequest { BucketName = bucketName, Key = key.Value };
+                    var request = new GetObjectRequest
+                    {
+                        BucketName = bucketName, Key = key.Value
+                    };
                     return await _client.GetObjectAsync(request, ct);
                 },
                 cancellationToken);
@@ -106,7 +110,10 @@ public sealed class S3ObjectStorageService : IObjectStorageService
 
     public async Task DeleteAsync(StorageBucket bucket, ObjectKey key, CancellationToken cancellationToken = default)
     {
-        var request = new DeleteObjectRequest { BucketName = ResolveBucketName(bucket), Key = key.Value };
+        var request = new DeleteObjectRequest
+        {
+            BucketName = ResolveBucketName(bucket), Key = key.Value
+        };
 
         // DeleteObject on S3/MinIO is already idempotent (a delete of a missing key succeeds), so no
         // special-casing of "not found" is needed here.
@@ -127,7 +134,10 @@ public sealed class S3ObjectStorageService : IObjectStorageService
             await _resiliencePipeline.ExecuteAsync(
                 async ct =>
                 {
-                    var request = new GetObjectMetadataRequest { BucketName = bucketName, Key = key.Value };
+                    var request = new GetObjectMetadataRequest
+                    {
+                        BucketName = bucketName, Key = key.Value
+                    };
                     return await _client.GetObjectMetadataAsync(request, ct);
                 },
                 cancellationToken);
@@ -212,7 +222,7 @@ public sealed class S3ObjectStorageService : IObjectStorageService
     {
         // Only treat missing object keys as "not found"; missing buckets are configuration errors.
         return string.Equals(ex.ErrorCode, "NoSuchKey", StringComparison.OrdinalIgnoreCase)
-               || string.Equals(ex.ErrorCode, "NotFound", StringComparison.OrdinalIgnoreCase);
+            || string.Equals(ex.ErrorCode, "NotFound", StringComparison.OrdinalIgnoreCase);
     }
 
     /// <summary>
@@ -246,7 +256,7 @@ public sealed class S3ObjectStorageService : IObjectStorageService
     {
         return ex switch
         {
-            AmazonS3Exception s3Ex => (int)s3Ex.StatusCode >= 500 || s3Ex.StatusCode == System.Net.HttpStatusCode.RequestTimeout,
+            AmazonS3Exception s3Ex => (int)s3Ex.StatusCode >= 500 || s3Ex.StatusCode == HttpStatusCode.RequestTimeout,
             AmazonServiceException => true,
             TaskCanceledException => false,
             OperationCanceledException => false,

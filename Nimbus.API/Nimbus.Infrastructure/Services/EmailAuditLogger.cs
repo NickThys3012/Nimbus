@@ -6,11 +6,11 @@ using Nimbus.Infrastructure.Persistence;
 namespace Nimbus.Infrastructure.Services;
 
 /// <summary>
-/// EF Core-backed <see cref="IEmailAuditLogger"/>. Persists a <see cref="SentEmail"/> row
-/// per send attempt so a lost password reset or notification stays visible after the
-/// fact (issue #128). Deliberately swallows persistence failures: the audit trail must
-/// never turn an otherwise-successful (or already-logged-elsewhere) email send into a
-/// 500 for the caller.
+///     EF Core-backed <see cref="IEmailAuditLogger" />. Persists a <see cref="SentEmail" /> row
+///     per send attempt so a lost password reset or notification stays visible after the
+///     fact (issue #128). Deliberately swallows persistence failures: the audit trail must
+///     never turn an otherwise-successful (or already-logged-elsewhere) email send into a
+///     500 for the caller.
 /// </summary>
 public sealed class EmailAuditLogger : IEmailAuditLogger
 {

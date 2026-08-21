@@ -5,7 +5,7 @@ using Nimbus.Domain.Interfaces;
 using Nimbus.Infrastructure.Identity;
 namespace Nimbus.Infrastructure.Services;
 
-public class IdentityService:IIdentityService
+public class IdentityService : IIdentityService
 {
     private readonly UserManager<ApplicationUser> _userManager;
 
@@ -16,12 +16,9 @@ public class IdentityService:IIdentityService
 
     public async Task<string> RegisterAsync(string email, string password, string firstName, string lastName)
     {
-        var user= new ApplicationUser
+        var user = new ApplicationUser
         {
-            UserName=email,
-            Email=email,
-            FirstName=firstName,
-            Name=lastName
+            UserName = email, Email = email, FirstName = firstName, Name = lastName
         };
         var result = await _userManager.CreateAsync(user, password);
         if (!result.Succeeded)

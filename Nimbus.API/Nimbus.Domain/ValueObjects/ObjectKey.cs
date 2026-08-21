@@ -5,21 +5,23 @@ namespace Nimbus.Domain.ValueObjects;
 ///     A validated object-storage key.
 /// </summary>
 /// <remarks>
-///     <para><b>Convention</b></para>
 ///     <para>
-///     Every object stored in an owner/flight-scoped bucket (<c>flight-images</c>,
-///     <c>flight-tracks</c>, <c>flight-exports</c>) uses the key shape:
+///         <b>Convention</b>
+///     </para>
+///     <para>
+///         Every object stored in an owner/flight-scoped bucket (<c>flight-images</c>,
+///         <c>flight-tracks</c>, <c>flight-exports</c>) uses the key shape:
 ///     </para>
 ///     <code>{ownerId}/{flightId}/{fileName}</code>
 ///     <para>
-///     This means any object's owner and originating flight can be recovered from its key alone,
-///     without a database lookup — so an object whose owner/flight no longer exists (an orphan,
-///     e.g. after a flight is deleted but to delete of its objects failed) is identifiable purely
-///     by listing a bucket and checking each prefix against the database.
+///         This means any object's owner and originating flight can be recovered from its key alone,
+///         without a database lookup — so an object whose owner/flight no longer exists (an orphan,
+///         e.g. after a flight is deleted but to delete of its objects failed) is identifiable purely
+///         by listing a bucket and checking each prefix against the database.
 ///     </para>
 ///     <para>
-///     <c>map-cache</c> is not owner/flight scoped — it holds shared, content-addressable tiles
-///     that outlive any single flight — so it uses <see cref="ForSharedAsset" /> instead.
+///         <c>map-cache</c> is not owner/flight scoped — it holds shared, content-addressable tiles
+///         that outlive any single flight — so it uses <see cref="ForSharedAsset" /> instead.
 ///     </para>
 /// </remarks>
 public sealed class ObjectKey

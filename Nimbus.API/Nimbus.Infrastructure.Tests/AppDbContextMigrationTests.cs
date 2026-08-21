@@ -12,7 +12,6 @@ namespace Nimbus.Infrastructure.Tests;
 [TestFixture]
 public class AppDbContextMigrationTests
 {
-    private MsSqlContainer _sqlServer = null!;
 
     [OneTimeSetUp]
     public async Task OneTimeSetUpAsync()
@@ -26,6 +25,7 @@ public class AppDbContextMigrationTests
     {
         await _sqlServer.DisposeAsync();
     }
+    private MsSqlContainer _sqlServer = null!;
 
     private AppDbContext CreateContext()
     {

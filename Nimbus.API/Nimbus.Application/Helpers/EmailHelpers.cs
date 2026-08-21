@@ -6,11 +6,12 @@ namespace Nimbus.Application.Helpers;
 public class EmailHelpers
 {
     private readonly IIdentityService _identityService;
-    
-    public EmailHelpers(IIdentityService identityService) {
+
+    public EmailHelpers(IIdentityService identityService)
+    {
         _identityService = identityService;
     }
-    
+
     public async Task<EmailMessage> CreateEmailVerificationAsync(
         string id,
         string baseUrl,

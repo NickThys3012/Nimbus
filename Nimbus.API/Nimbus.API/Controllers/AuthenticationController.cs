@@ -15,10 +15,10 @@ namespace Nimbus.API.Controllers;
 public class AuthenticationController : ControllerBase
 {
     private readonly ISender _mediator;
+    private readonly SignInManager<ApplicationUser> _signInManager;
     private readonly TokenService _tokens;
     private readonly UserManager<ApplicationUser> _users;
-    private readonly SignInManager<ApplicationUser> _signInManager;
-    
+
     public AuthenticationController(
         ISender mediator,
         TokenService tokens,
@@ -30,7 +30,7 @@ public class AuthenticationController : ControllerBase
         _users = users;
         _signInManager = signInManager;
     }
-    
+
     [HttpPost("login")]
     public async Task<ActionResult<LoginResponseDto>> Login(LoginRequestDto request)
     {
@@ -40,7 +40,7 @@ public class AuthenticationController : ControllerBase
             return Unauthorized("Invalid credentials");
         }
 
-        var signInResult = await _signInManager.CheckPasswordSignInAsync(user, request.Password, lockoutOnFailure: true);
+        var signInResult = await _signInManager.CheckPasswordSignInAsync(user, request.Password, true);
         if (signInResult.IsNotAllowed)
         {
             return Unauthorized("Please verify your email before logging in.");
@@ -62,7 +62,7 @@ public class AuthenticationController : ControllerBase
 
         SetRefreshCookie(rawRefresh);
 
-        return Ok(new LoginResponseDto(accessToken, expiry, user.Email!, roles.FirstOrDefault()?? nameof(UserRole.Pilot)));
+        return Ok(new LoginResponseDto(accessToken, expiry, user.Email!, roles.FirstOrDefault() ?? nameof(UserRole.Pilot)));
     }
 
     [HttpPost("register")]
@@ -93,7 +93,7 @@ public class AuthenticationController : ControllerBase
         var result = await _users.ConfirmEmailAsync(user, token);
         return Redirect(!result.Succeeded ? $"{handoffPath}?status=error" : $"{handoffPath}?status=success");
     }
-    
+
     // ── POST /api/auth/refresh ──────────────────────────────────────
     [HttpPost("refresh")]
     public async Task<ActionResult<LoginResponseDto>> Refresh()
@@ -126,7 +126,7 @@ public class AuthenticationController : ControllerBase
 
         return Ok(new LoginResponseDto(newAccess, expiry, user.Email!, roles.FirstOrDefault() ?? nameof(UserRole.Pilot)));
     }
-    
+
     // ── POST /api/auth/logout ───────────────────────────────────────
     [HttpPost("logout")]
     public async Task<ActionResult> Logout()
@@ -144,15 +144,15 @@ public class AuthenticationController : ControllerBase
         Response.Cookies.Delete("refreshToken");
         return Ok();
     }
-    
+
     [HttpGet]
     public async Task<ActionResult<UserDto>> Get([FromQuery] string email)
     {
         var user = await _mediator.Send(new GetUserByEmailQuery(email));
         return Ok(user);
     }
-    
-    
+
+
     // ── Cookie helper ───────────────────────────────────────────────
     private void SetRefreshCookie(string raw)
     {

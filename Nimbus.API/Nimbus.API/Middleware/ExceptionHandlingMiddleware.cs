@@ -61,7 +61,10 @@ public class ExceptionHandlingMiddleware
         };
     }
 
-    private static async Task HandleAsync(HttpContext ctx, HttpStatusCode status, string title,
+    private static async Task HandleAsync(
+        HttpContext ctx,
+        HttpStatusCode status,
+        string title,
         IDictionary<string, string[]>? errors)
     {
         ctx.Response.ContentType = "application/json";
