@@ -31,4 +31,14 @@ public class IdentityService:IIdentityService
         await _userManager.AddToRoleAsync(user, nameof(UserRole.Pilot));
         return user.Id;
     }
+    public async Task<string> GenerateEmailConfrimTokenAsync(string id)
+    {
+        var user = await _userManager.FindByIdAsync(id);
+        if (user == null)
+        {
+            throw new NotFoundException(nameof(ApplicationUser), id);
+        }
+        var token = await _userManager.GenerateEmailConfirmationTokenAsync(user);
+        return token;
+    }
 }

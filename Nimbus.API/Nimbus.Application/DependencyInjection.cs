@@ -2,7 +2,7 @@ using FluentValidation;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection;
 using Nimbus.Application.Common.Behaviours;
-using Nimbus.Contracts;
+using Nimbus.Application.Helpers;
 namespace Nimbus.Application;
 
 public static class DependencyInjection
@@ -15,6 +15,7 @@ public static class DependencyInjection
         // Register validators from Contracts assembly (shared with Web)
         services.AddValidatorsFromAssembly(typeof(DependencyInjection).Assembly);
 
+        services.AddScoped<EmailHelpers>();
         services.AddTransient(
             typeof(IPipelineBehavior<,>),
             typeof(ValidationBehaviour<,>));

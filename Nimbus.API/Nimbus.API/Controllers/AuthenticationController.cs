@@ -1,10 +1,8 @@
-using System.Net;
 using MediatR;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using Nimbus.Application.Abstraction;
-using Nimbus.Application.Common.Interfaces;
 using Nimbus.Application.Features.Auth.Command.CreateUser;
+using Nimbus.Application.Features.Auth.Command.ResendVerificationEmail;
 using Nimbus.Application.Features.Auth.Queries.GetUserByEmail;
 using Nimbus.Contracts.DTOs.Features.Auth;
 using Nimbus.Contracts.DTOs.Features.Auth.Register;
@@ -20,20 +18,17 @@ public class AuthenticationController : ControllerBase
     private readonly TokenService _tokens;
     private readonly UserManager<ApplicationUser> _users;
     private readonly SignInManager<ApplicationUser> _signInManager;
-    private readonly IEmailQueue _emailQueue;
     
     public AuthenticationController(
         ISender mediator,
         TokenService tokens,
         UserManager<ApplicationUser> users,
-        SignInManager<ApplicationUser> signInManager,
-        IEmailQueue emailQueue)
+        SignInManager<ApplicationUser> signInManager)
     {
         _mediator = mediator;
         _tokens = tokens;
         _users = users;
         _signInManager = signInManager;
-        _emailQueue = emailQueue;
     }
     
     [HttpPost("login")]
@@ -73,15 +68,15 @@ public class AuthenticationController : ControllerBase
     [HttpPost("register")]
     public async Task<ActionResult> Register(RegisterRequestDto request, CancellationToken ct)
     {
-        var userId = await _mediator.Send(new CreateUserCommand(request), ct);
-        var user = await _users.FindByIdAsync(userId);
-        if (user is null)
-        {
-            return Problem(statusCode: StatusCodes.Status500InternalServerError, detail: "User was created but could not be loaded.");
-        }
-
-        await SendEmailVerificationAsync(user, ct);
+        await _mediator.Send(new CreateUserCommand(request, $"{Request.Scheme}://{Request.Host}"), ct);
         return Created();
+    }
+
+    [HttpPost("resend-verification-email")]
+    public async Task<ActionResult> ResendVerificationEmail(ResendVerificationEmailCommandDto request, CancellationToken ct)
+    {
+        await _mediator.Send(new ResendVerificationEmailCommand(request, $"{Request.Scheme}://{Request.Host}"), ct);
+        return Ok();
     }
 
     [HttpGet("confirm-email")]
@@ -165,35 +160,5 @@ public class AuthenticationController : ControllerBase
         {
             HttpOnly = true, Secure = true, SameSite = SameSiteMode.Strict, Expires = DateTimeOffset.UtcNow.AddDays(7)
         });
-    }
-
-    private async Task SendEmailVerificationAsync(ApplicationUser user, CancellationToken ct)
-    {
-        var token = await _users.GenerateEmailConfirmationTokenAsync(user);
-        var confirmUrl = Url.ActionLink(
-            action: nameof(ConfirmEmail),
-            controller: "Authentication",
-            values: new { userId = user.Id, token },
-            protocol: Request.Scheme);
-
-        if (confirmUrl is null)
-        {
-            throw new InvalidOperationException("Could not generate email verification link.");
-        }
-
-        var firstName = string.IsNullOrWhiteSpace(user.FirstName) ? "there" : user.FirstName;
-        var safeFirstName = WebUtility.HtmlEncode(firstName);
-
-        await _emailQueue.EnqueueAsync(new EmailMessage
-        {
-            ToAddress = user.Email!,
-            ToName = firstName,
-            Subject = "Verify your Nimbus email address",
-            Template = "email-confirmation",
-            TextBody =
-                $"Hello {firstName},\n\nThanks for registering with Nimbus.\nPlease verify your email by visiting this link:\n{confirmUrl}\n\nIf you did not create this account, you can ignore this email.",
-            HtmlBody =
-                $"<p>Hello {safeFirstName},</p><p>Thanks for registering with Nimbus.</p><p>Please verify your email by clicking <a href=\"{confirmUrl}\">this link</a>.</p><p>If you did not create this account, you can ignore this email.</p>"
-        }, ct);
     }
 }
