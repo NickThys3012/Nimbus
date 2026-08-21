@@ -6,6 +6,8 @@ import { Injectable } from '@angular/core';
 import type { Observable } from 'rxjs';
 import type { LoginRequestDto } from '../models/LoginRequestDto';
 import type { LoginResponseDto } from '../models/LoginResponseDto';
+import type { RegisterRequestDto } from '../models/RegisterRequestDto';
+import type { ResendVerificationEmailCommandDto } from '../models/ResendVerificationEmailCommandDto';
 import type { UserDto } from '../models/UserDto';
 import { BaseHttpRequest } from '../core/BaseHttpRequest';
 @Injectable({
@@ -27,6 +29,58 @@ export class AuthenticationService {
             url: '/api/Authentication/login',
             body: requestBody,
             mediaType: 'application/json',
+        });
+    }
+    /**
+     * @returns any OK
+     * @throws ApiError
+     */
+    public postApiAuthenticationRegister({
+        requestBody,
+    }: {
+        requestBody: RegisterRequestDto,
+    }): Observable<any> {
+        return this.httpRequest.request({
+            method: 'POST',
+            url: '/api/Authentication/register',
+            body: requestBody,
+            mediaType: 'application/json',
+        });
+    }
+    /**
+     * @returns any OK
+     * @throws ApiError
+     */
+    public postApiAuthenticationResendVerificationEmail({
+        requestBody,
+    }: {
+        requestBody: ResendVerificationEmailCommandDto,
+    }): Observable<any> {
+        return this.httpRequest.request({
+            method: 'POST',
+            url: '/api/Authentication/resend-verification-email',
+            body: requestBody,
+            mediaType: 'application/json',
+        });
+    }
+    /**
+     * @returns any OK
+     * @throws ApiError
+     */
+    public getApiAuthenticationConfirmEmail({
+        userId,
+        token,
+    }: {
+        userId?: string,
+        token?: string,
+    }): Observable<any> {
+        return this.httpRequest.request({
+            method: 'GET',
+            url: '/api/Authentication/confirm-email',
+            query: {
+                'userId': userId,
+                'token': token,
+            },
         });
     }
     /**
