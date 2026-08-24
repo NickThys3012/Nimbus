@@ -69,16 +69,20 @@ export class AuthStore {
       });
   }
 
-  register(request: RegisterRequestDto): void {
+  register(request: RegisterRequestDto): Observable<void> {
     this._isLoading.set(true);
     this._error.set(null);
 
-    this.authApi
+    return this.authApi
       .postApiAuthenticationRegister({ requestBody: request })
-      .pipe(finalize(() => this._isLoading.set(false)))
-      .subscribe({
-        error: (err) => this._error.set(err?.message ?? 'Registration failed'),
-      });
+      .pipe(
+        finalize(() => this._isLoading.set(false)),
+        tap(() => this._error.set(null)),
+        catchError((err) => {
+          this._error.set(err?.message ?? 'Registration failed');
+          throw err;
+        }),
+      );
   }
 
   requestNewVerificationEmail(email: string): void {
