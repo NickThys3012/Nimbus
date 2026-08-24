@@ -13,6 +13,7 @@ export class InputField {
   placeholder = input.required<string>();
   type = input.required<'text' | 'email'>();
   control = input<FormControl<string> | null>(null);
+  inputId = computed(() => `field-${this.label().toLowerCase().replace(/\s+/g, '-')}`);
 
   value = input<string>('');
   valueChange = output<string>();

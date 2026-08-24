@@ -54,7 +54,6 @@ export class TelemetryErrorHandler implements ErrorHandler {
       err.message,
       err.stack,
     );
-    // eslint-disable-next-line no-console
     console.error(error);
   }
 }

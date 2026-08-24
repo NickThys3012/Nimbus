@@ -8,8 +8,8 @@
     </div>
 
     <div class="tabs">
-      <div (click)="activeTab.set('login')" [class.on]="showLogin()" class="tab" data-panel="p-login">Sign in</div>
-      <div (click)="activeTab.set('register')" [class.on]="!showLogin()" class="tab" data-panel="p-register">Create account</div>
+      <button (click)="activeTab.set('login')" [class.on]="showLogin()" class="tab" data-panel="p-login" type="button">Sign in</button>
+      <button (click)="activeTab.set('register')" [class.on]="!showLogin()" class="tab" data-panel="p-register" type="button">Create account</button>
     </div>
 
     @if (showLogin()) {
@@ -20,7 +20,7 @@
         <Nimbus-password-field placeholder="••••••••"></Nimbus-password-field>
 
         <div class="row-between">
-          <label class="check-inline"><span class="check-box"></span>Remember me</label>
+          <label class="check-inline" for="remember-me"><input class="check-box" id="remember-me" type="checkbox" />Remember me</label>
           <a href="#">Forgot password?</a>
         </div>
 
