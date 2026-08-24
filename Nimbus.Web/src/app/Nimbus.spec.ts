@@ -5,9 +5,6 @@ import { LOCAL_STORAGE } from './services/theme-service';
 
 const mockStorage = {
   getItem: () => null,
-  setItem: () => {},
-  removeItem: () => {},
-  clear: () => {},
   length: 0,
   key: () => null,
 } as unknown as Storage;
@@ -16,10 +13,7 @@ describe('App', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [Nimbus],
-      providers: [
-        provideRouter([]),
-        { provide: LOCAL_STORAGE, useValue: mockStorage },
-      ],
+      providers: [provideRouter([]), { provide: LOCAL_STORAGE, useValue: mockStorage }],
     }).compileComponents();
   });
 
