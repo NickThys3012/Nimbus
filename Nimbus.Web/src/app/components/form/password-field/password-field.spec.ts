@@ -13,6 +13,7 @@ describe('PasswordField', () => {
 
     fixture = TestBed.createComponent(PasswordField);
     component = fixture.componentInstance;
+    fixture.componentRef.setInput('placeholder', '••••••••');
     await fixture.whenStable();
   });
 

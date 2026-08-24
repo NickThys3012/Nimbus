@@ -1,12 +1,25 @@
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { Nimbus } from './Nimbus';
+import { LOCAL_STORAGE } from './services/theme-service';
+
+const mockStorage = {
+  getItem: () => null,
+  setItem: () => {},
+  removeItem: () => {},
+  clear: () => {},
+  length: 0,
+  key: () => null,
+} as unknown as Storage;
 
 describe('App', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [Nimbus],
-      providers: [provideRouter([])],
+      providers: [
+        provideRouter([]),
+        { provide: LOCAL_STORAGE, useValue: mockStorage },
+      ],
     }).compileComponents();
   });
 

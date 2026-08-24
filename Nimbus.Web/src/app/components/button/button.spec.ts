@@ -1,5 +1,4 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-
 import { Button } from './button';
 
 describe('Button', () => {
@@ -13,6 +12,8 @@ describe('Button', () => {
 
     fixture = TestBed.createComponent(Button);
     component = fixture.componentInstance;
+    fixture.componentRef.setInput('id', 'test-btn');
+    fixture.componentRef.setInput('type', 'button');
     await fixture.whenStable();
   });
 

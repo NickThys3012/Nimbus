@@ -1,5 +1,4 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-
 import { Glyph } from './glyph';
 
 describe('Glyph', () => {
@@ -13,6 +12,7 @@ describe('Glyph', () => {
 
     fixture = TestBed.createComponent(Glyph);
     component = fixture.componentInstance;
+    fixture.componentRef.setInput('icon', 'ti-star');
     await fixture.whenStable();
   });
 

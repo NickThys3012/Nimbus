@@ -1,5 +1,4 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-
 import { Banner } from './banner';
 
 describe('Banner', () => {
@@ -13,6 +12,7 @@ describe('Banner', () => {
 
     fixture = TestBed.createComponent(Banner);
     component = fixture.componentInstance;
+    fixture.componentRef.setInput('id', 'test-banner');
     await fixture.whenStable();
   });
 
