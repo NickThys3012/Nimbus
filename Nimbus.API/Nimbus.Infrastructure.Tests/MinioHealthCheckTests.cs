@@ -13,7 +13,6 @@ namespace Nimbus.Infrastructure.Tests;
 [TestFixture]
 public class MinioHealthCheckTests
 {
-    private MinioContainer _minio = null!;
 
     [SetUp]
     public async Task SetUpAsync()
@@ -27,6 +26,7 @@ public class MinioHealthCheckTests
     {
         await _minio.DisposeAsync();
     }
+    private MinioContainer _minio = null!;
 
     private IAmazonS3 CreateClient()
     {
@@ -72,9 +72,12 @@ public class MinioHealthCheckTests
 
         var result = await sut.CheckHealthAsync(new HealthCheckContext());
 
-        // No exception object, no description string — an anonymous caller of /health/ready
-        // must not learn anything about why or what infrastructure failed.
-        Assert.That(result.Exception, Is.Null);
-        Assert.That(result.Description, Is.Null.Or.Empty);
+        using (Assert.EnterMultipleScope())
+        {
+            // No exception object, no description string — an anonymous caller of /health/ready
+            // must not learn anything about why or what infrastructure failed.
+            Assert.That(result.Exception, Is.Null);
+            Assert.That(result.Description, Is.Null.Or.Empty);
+        }
     }
 }

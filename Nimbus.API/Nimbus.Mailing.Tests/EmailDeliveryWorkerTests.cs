@@ -16,14 +16,17 @@ namespace Nimbus.Mailing.Tests;
 [TestFixture]
 public class EmailDeliveryWorkerTests
 {
-    private static EmailMessage Message(string to) => new()
+    private static EmailMessage Message(string to)
     {
-        ToAddress = to,
-        Subject = "Test",
-        HtmlBody = "<p>hi</p>",
-        TextBody = "hi",
-        Template = "test"
-    };
+        return new EmailMessage
+        {
+            ToAddress = to,
+            Subject = "Test",
+            HtmlBody = "<p>hi</p>",
+            TextBody = "hi",
+            Template = "test"
+        };
+    }
 
     private static (EmailDeliveryWorker Worker, EmailDeliveryQueue Queue, FakeHostApplicationLifetime Lifetime, ConcurrentQueue<EmailMessage> Sent)
         CreateSut()
@@ -114,13 +117,19 @@ public class EmailDeliveryWorkerTests
     ///     long after the worker is up — so tests give the thread pool a moment to actually
     ///     start the work item before simulating <c>ApplicationStopping</c>.
     /// </summary>
-    private static Task WaitUntilWorkerHasStartedAsync() => Task.Delay(100);
+    private static Task WaitUntilWorkerHasStartedAsync()
+    {
+        return Task.Delay(100);
+    }
 
     private sealed class RecordingEmailSender : IEmailSender
     {
         private readonly ConcurrentQueue<EmailMessage> _sent;
 
-        public RecordingEmailSender(ConcurrentQueue<EmailMessage> sent) => _sent = sent;
+        public RecordingEmailSender(ConcurrentQueue<EmailMessage> sent)
+        {
+            _sent = sent;
+        }
 
         public Task<EmailSendResult> SendAsync(EmailMessage message, CancellationToken cancellationToken = default)
         {
@@ -133,12 +142,18 @@ public class EmailDeliveryWorkerTests
     {
         private readonly CancellationTokenSource _stopping = new();
 
+        public void Dispose()
+        {
+            _stopping.Dispose();
+        }
+
         public CancellationToken ApplicationStarted => CancellationToken.None;
         public CancellationToken ApplicationStopping => _stopping.Token;
         public CancellationToken ApplicationStopped => CancellationToken.None;
 
-        public void StopApplication() => _stopping.Cancel();
-
-        public void Dispose() => _stopping.Dispose();
+        public void StopApplication()
+        {
+            _stopping.Cancel();
+        }
     }
 }

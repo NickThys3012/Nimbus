@@ -41,4 +41,16 @@ export const routes: Routes = [
     path: 'find-user',
     loadComponent: () => import('./pages/user-by-mail/user-by-mail'),
   },
+  {
+    path: 'login',
+    loadComponent: () => import('./pages/auth/login-register/login-register'),
+  },
+  {
+    path: 'email-verification',
+    loadComponent: () => import('./pages/auth/email-verification/email-verification'),
+  },
+  {
+    path: 'verification-email-sent',
+    loadComponent: () => import('./pages/auth/verification-mail-sent/verification-mail-sent'),
+  },
 ];

@@ -1,0 +1,21 @@
+#p-email-verification {
+    display: grid;
+    gap: 14px;
+    max-width: 560px;
+}
+
+#p-email-verification h1 {
+    margin: 0;
+}
+
+#resend-verification-link {
+    width: fit-content;
+    color: var(--ac);
+    font-size: 14px;
+    text-decoration: underline;
+}
+
+#p-email-verification Nimbus-button {
+    width: fit-content;
+}
+

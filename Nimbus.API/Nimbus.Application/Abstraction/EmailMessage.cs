@@ -1,10 +1,9 @@
 namespace Nimbus.Application.Abstraction;
 
-
 /// <summary>
-/// A single outbound message. Both an HTML and a plain-text body are required:
-/// HTML-only messages score badly with spam filters and render as empty in
-/// text-only clients.
+///     A single outbound message. Both an HTML and a plain-text body are required:
+///     HTML-only messages score badly with spam filters and render as empty in
+///     text-only clients.
 /// </summary>
 public sealed record EmailMessage
 {

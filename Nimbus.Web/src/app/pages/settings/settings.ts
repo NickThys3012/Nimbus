@@ -1,9 +1,10 @@
-import { Component } from '@angular/core';
+import { Component, ChangeDetectionStrategy } from '@angular/core';
 
 @Component({
   selector: 'Nimbus-settings',
   imports: [],
   templateUrl: './settings.html',
+  changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrl: './settings.css',
 })
 export default class Settings {}

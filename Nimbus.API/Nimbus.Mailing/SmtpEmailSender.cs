@@ -8,15 +8,14 @@ using Nimbus.Application.Abstraction;
 using Nimbus.Application.Common.Interfaces;
 namespace Nimbus.Mailing;
 
-
 /// <summary>
-/// MailKit-backed sender. A fresh SmtpClient is created per mail: MailKit's
-/// client is not thread-safe and must never be registered as a singleton.
+///     MailKit-backed sender. A fresh SmtpClient is created per mail: MailKit's
+///     client is not thread-safe and must never be registered as a singleton.
 /// </summary>
 public sealed class SmtpEmailSender : IEmailSender
 {
-    private readonly EmailOptions _options;
     private readonly ILogger<SmtpEmailSender> _logger;
+    private readonly EmailOptions _options;
 
     public SmtpEmailSender(
         IOptions<EmailOptions> options,
@@ -38,7 +37,7 @@ public sealed class SmtpEmailSender : IEmailSender
 
             if (result.Succeeded)
             {
-                _logger.LogInformation(
+                _logger.LogDebug(
                     "EmailSent {Template} to {Recipient} attempt {Attempt} id {MessageId}",
                     message.Template ?? "adhoc",
                     message.ToAddress,
@@ -61,7 +60,7 @@ public sealed class SmtpEmailSender : IEmailSender
             {
                 continue;
             }
-            
+
             var delay = TimeSpan.FromMilliseconds(
                 _options.RetryBaseDelayMs * Math.Pow(2, attempt - 1));
 
@@ -161,20 +160,22 @@ public sealed class SmtpEmailSender : IEmailSender
 
         mime.Body = new BodyBuilder
         {
-            HtmlBody = message.HtmlBody,
-            TextBody = message.TextBody
+            HtmlBody = message.HtmlBody, TextBody = message.TextBody
         }.ToMessageBody();
 
         return mime;
     }
 
     /// <summary>
-    /// Brevo returns the queued id in its 250 response, roughly
-    /// "250 2.0.0 OK: queued as &lt;id&gt;". Anything unparseable is not an error.
+    ///     Brevo returns the queued id in its 250 response, roughly
+    ///     "250 2.0.0 OK: queued as &lt;id&gt;". Anything unparseable is not an error.
     /// </summary>
     private static string? ExtractMessageId(string? response)
     {
-        if (string.IsNullOrWhiteSpace(response)) return null;
+        if (string.IsNullOrWhiteSpace(response))
+        {
+            return null;
+        }
 
         const string marker = "queued as ";
         var index = response.IndexOf(marker, StringComparison.OrdinalIgnoreCase);

@@ -1,8 +1,11 @@
 using MediatR;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Nimbus.Application.Features.Auth.Command.CreateUser;
+using Nimbus.Application.Features.Auth.Command.ResendVerificationEmail;
 using Nimbus.Application.Features.Auth.Queries.GetUserByEmail;
 using Nimbus.Contracts.DTOs.Features.Auth;
+using Nimbus.Contracts.DTOs.Features.Auth.Register;
 using Nimbus.Domain.Enums;
 using Nimbus.Infrastructure.Identity;
 namespace Nimbus.API.Controllers;
@@ -12,17 +15,22 @@ namespace Nimbus.API.Controllers;
 public class AuthenticationController : ControllerBase
 {
     private readonly ISender _mediator;
+    private readonly SignInManager<ApplicationUser> _signInManager;
     private readonly TokenService _tokens;
-
     private readonly UserManager<ApplicationUser> _users;
-    
-    public AuthenticationController(ISender mediator, TokenService tokens, UserManager<ApplicationUser> users)
+
+    public AuthenticationController(
+        ISender mediator,
+        TokenService tokens,
+        UserManager<ApplicationUser> users,
+        SignInManager<ApplicationUser> signInManager)
     {
         _mediator = mediator;
         _tokens = tokens;
         _users = users;
+        _signInManager = signInManager;
     }
-    
+
     [HttpPost("login")]
     public async Task<ActionResult<LoginResponseDto>> Login(LoginRequestDto request)
     {
@@ -32,8 +40,18 @@ public class AuthenticationController : ControllerBase
             return Unauthorized("Invalid credentials");
         }
 
-        var valid = await _users.CheckPasswordAsync(user, request.Password);
-        if (!valid)
+        var signInResult = await _signInManager.CheckPasswordSignInAsync(user, request.Password, true);
+        if (signInResult.IsNotAllowed)
+        {
+            return Unauthorized("Please verify your email before logging in.");
+        }
+
+        if (signInResult.IsLockedOut)
+        {
+            return Unauthorized("Account temporarily locked. Try again later.");
+        }
+
+        if (!signInResult.Succeeded)
         {
             return Unauthorized("Invalid credentials");
         }
@@ -44,9 +62,38 @@ public class AuthenticationController : ControllerBase
 
         SetRefreshCookie(rawRefresh);
 
-        return Ok(new LoginResponseDto(accessToken, expiry, user.Email!, roles.FirstOrDefault()?? nameof(UserRole.Pilot)));
+        return Ok(new LoginResponseDto(accessToken, expiry, user.Email!, roles.FirstOrDefault() ?? nameof(UserRole.Pilot)));
     }
-    
+
+    [HttpPost("register")]
+    public async Task<ActionResult> Register(RegisterRequestDto request, CancellationToken ct)
+    {
+        await _mediator.Send(new CreateUserCommand(request, $"{Request.Scheme}://{Request.Host}"), ct);
+        return Created();
+    }
+
+    [HttpPost("resend-verification-email")]
+    public async Task<ActionResult> ResendVerificationEmail(ResendVerificationEmailCommandDto request, CancellationToken ct)
+    {
+        await _mediator.Send(new ResendVerificationEmailCommand(request, $"{Request.Scheme}://{Request.Host}"), ct);
+        return Ok();
+    }
+
+    [HttpGet("confirm-email")]
+    public async Task<ActionResult> ConfirmEmail([FromQuery] string userId, [FromQuery] string token)
+    {
+        const string handoffPath = "/email-verification";
+
+        var user = await _users.FindByIdAsync(userId);
+        if (user is null)
+        {
+            return Redirect($"{handoffPath}?status=error");
+        }
+
+        var result = await _users.ConfirmEmailAsync(user, token);
+        return Redirect(!result.Succeeded ? $"{handoffPath}?status=error" : $"{handoffPath}?status=success");
+    }
+
     // ── POST /api/auth/refresh ──────────────────────────────────────
     [HttpPost("refresh")]
     public async Task<ActionResult<LoginResponseDto>> Refresh()
@@ -79,7 +126,7 @@ public class AuthenticationController : ControllerBase
 
         return Ok(new LoginResponseDto(newAccess, expiry, user.Email!, roles.FirstOrDefault() ?? nameof(UserRole.Pilot)));
     }
-    
+
     // ── POST /api/auth/logout ───────────────────────────────────────
     [HttpPost("logout")]
     public async Task<ActionResult> Logout()
@@ -97,15 +144,15 @@ public class AuthenticationController : ControllerBase
         Response.Cookies.Delete("refreshToken");
         return Ok();
     }
-    
+
     [HttpGet]
     public async Task<ActionResult<UserDto>> Get([FromQuery] string email)
     {
         var user = await _mediator.Send(new GetUserByEmailQuery(email));
         return Ok(user);
     }
-    
-    
+
+
     // ── Cookie helper ───────────────────────────────────────────────
     private void SetRefreshCookie(string raw)
     {

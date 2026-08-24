@@ -1,0 +1,18 @@
+@if (status() === 'success') {
+  <div id="verification-success" class="card">
+    <Nimbus-glyph icon="ti-mail-check" variant="Ok"></Nimbus-glyph>
+    <div class="hd">E-mail address confirmed</div>
+    <div class="lede">Your request is now with the administrator. You will receive an email once you can log in.</div>
+    <Nimbus-button (click)="goToLogin()" id="goto-login-btn" type="button">Go to login</Nimbus-button>
+    <div class="footer-note">step 2 of 2  wait on approval</div>
+  </div>
+} @else {
+  <div id="verification-error" class="card">
+    <Nimbus-glyph icon="ti-mail-x" variant="Error"></Nimbus-glyph>
+    <div class="hd">Verification failed</div>
+    <div class="lede">The verification link may have expired or already been used.</div>
+    <button id="resend-verification-link" class="btn-ghost" type="button">Resend verification email</button>
+    <Nimbus-button (click)="goToLogin()" id="goto-login-btn" type="button">Go to login</Nimbus-button>
+    <div class="footer-note">step 2 of 2  verify your email</div>
+  </div>
+}

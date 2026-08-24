@@ -8,13 +8,6 @@ namespace Nimbus.Domain.Entities;
 /// </summary>
 public class SentEmail
 {
-    public Guid Id { get; private set; }
-    public string Recipient { get; private set; }
-    public string? Template { get; private set; }
-    public DateTime SentAt { get; private set; }
-    public bool Succeeded { get; private set; }
-    public string? ProviderMessageId { get; private set; }
-    public string? FailureReason { get; private set; }
 
     private SentEmail()
     {
@@ -38,10 +31,21 @@ public class SentEmail
         ProviderMessageId = providerMessageId;
         FailureReason = failureReason;
     }
+    public Guid Id { get; private set; }
+    public string Recipient { get; private set; }
+    public string? Template { get; private set; }
+    public DateTime SentAt { get; private set; }
+    public bool Succeeded { get; private set; }
+    public string? ProviderMessageId { get; private set; }
+    public string? FailureReason { get; private set; }
 
-    public static SentEmail ForSuccess(string recipient, string? template, string? providerMessageId) =>
-        new(recipient, template, DateTime.UtcNow, succeeded: true, providerMessageId, failureReason: null);
+    public static SentEmail ForSuccess(string recipient, string? template, string? providerMessageId)
+    {
+        return new SentEmail(recipient, template, DateTime.UtcNow, true, providerMessageId, null);
+    }
 
-    public static SentEmail ForFailure(string recipient, string? template, string? failureReason) =>
-        new(recipient, template, DateTime.UtcNow, succeeded: false, providerMessageId: null, failureReason);
+    public static SentEmail ForFailure(string recipient, string? template, string? failureReason)
+    {
+        return new SentEmail(recipient, template, DateTime.UtcNow, false, null, failureReason);
+    }
 }

@@ -1,0 +1,9 @@
+<div [id]="id()" class="banner" >
+  @if (icon() !== null)
+  {
+    <i aria-hidden="true" class="ti {{icon()}}"></i>
+  }
+  <span>
+    <ng-content/>
+  </span>
+</div>

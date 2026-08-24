@@ -1,5 +1,6 @@
 using FluentValidation;
 using MediatR;
+using ValidationException=Nimbus.Application.Common.Exceptions.ValidationException;
 namespace Nimbus.Application.Common.Behaviours;
 
 public class ValidationBehaviour<TRequest, TResponse>

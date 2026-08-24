@@ -1,9 +1,7 @@
-
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Nimbus.Application.Common.Interfaces;
 namespace Nimbus.Mailing;
-
 
 public static class EmailServiceCollectionExtensions
 {

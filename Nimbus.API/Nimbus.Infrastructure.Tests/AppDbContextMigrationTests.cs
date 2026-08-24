@@ -12,7 +12,6 @@ namespace Nimbus.Infrastructure.Tests;
 [TestFixture]
 public class AppDbContextMigrationTests
 {
-    private MsSqlContainer _sqlServer = null!;
 
     [OneTimeSetUp]
     public async Task OneTimeSetUpAsync()
@@ -26,6 +25,7 @@ public class AppDbContextMigrationTests
     {
         await _sqlServer.DisposeAsync();
     }
+    private MsSqlContainer _sqlServer = null!;
 
     private AppDbContext CreateContext()
     {
@@ -46,8 +46,11 @@ public class AppDbContextMigrationTests
         var applied = (await db.Database.GetAppliedMigrationsAsync()).ToList();
         var pending = (await db.Database.GetPendingMigrationsAsync()).ToList();
 
-        Assert.That(applied, Is.Not.Empty, "The initial migration should have been applied.");
-        Assert.That(pending, Is.Empty, "No migrations should be pending after MigrateAsync completes.");
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(applied, Is.Not.Empty, "The initial migration should have been applied.");
+            Assert.That(pending, Is.Empty, "No migrations should be pending after MigrateAsync completes.");
+        }
     }
 
     [Test]

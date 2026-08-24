@@ -1,0 +1,15 @@
+.logo-tile {
+    width: var(--logo-tile-size, 28px);
+    height: var(--logo-tile-size, 28px);
+    border-radius: 6px;
+    background: var(--ac);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
+}
+
+.logo-tile svg {
+    width: var(--logo-svg-size, 22px);
+    height: var(--logo-svg-size, 22px);
+}

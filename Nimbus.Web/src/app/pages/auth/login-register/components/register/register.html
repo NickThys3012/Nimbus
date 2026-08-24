@@ -1,0 +1,17 @@
+<div id="p-register">
+  <form (ngSubmit)="onSubmit()" [formGroup]="registerForm">
+    <div class="g2" style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+      <Nimbus-input-field [control]="registerForm.controls.firstName" label="FIRST NAME" placeholder="First name" type="text"></Nimbus-input-field>
+      <Nimbus-input-field [control]="registerForm.controls.lastName" label="LAST NAME" placeholder="Last name" type="text"></Nimbus-input-field>
+    </div>
+    <Nimbus-input-field [control]="registerForm.controls.email" label="EMAIL ADDRESS" placeholder="name@example.com" type="email"></Nimbus-input-field>
+    <Nimbus-password-field [control]="registerForm.controls.password" placeholder="min. 8 characters"></Nimbus-password-field>
+
+    <Nimbus-button [disabled]="!registerForm.valid" icon="ti-user-plus" id="register-btn" type="submit">
+      Request Account
+    </Nimbus-button>
+  </form>
+  <Nimbus-banner icon="ti-clock" id="pending-note" type="info">
+    New accounts are manually approved by an administrator before you can sign in. This may take a few days. You will receive an email when your account is approved.
+  </Nimbus-banner>
+</div>

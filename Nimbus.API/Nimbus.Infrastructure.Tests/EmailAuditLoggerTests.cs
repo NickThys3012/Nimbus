@@ -14,7 +14,6 @@ namespace Nimbus.Infrastructure.Tests;
 [TestFixture]
 public class EmailAuditLoggerTests
 {
-    private MsSqlContainer _sqlServer = null!;
 
     [OneTimeSetUp]
     public async Task OneTimeSetUpAsync()
@@ -31,6 +30,7 @@ public class EmailAuditLoggerTests
     {
         await _sqlServer.DisposeAsync();
     }
+    private MsSqlContainer _sqlServer = null!;
 
     private AppDbContext CreateContext()
     {

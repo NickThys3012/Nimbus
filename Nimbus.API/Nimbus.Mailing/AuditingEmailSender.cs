@@ -3,15 +3,15 @@ using Nimbus.Application.Common.Interfaces;
 namespace Nimbus.Mailing;
 
 /// <summary>
-/// Wraps the real <see cref="IEmailSender"/> (SMTP or Null) and writes a <c>SentEmail</c>
-/// audit row after every attempt, success or failure (issue #128). Auditing is
-/// best-effort: a failure to write the audit row must never turn a send that already
-/// succeeded (or failed) on the wire into an unhandled exception for the caller.
+///     Wraps the real <see cref="IEmailSender" /> (SMTP or Null) and writes a <c>SentEmail</c>
+///     audit row after every attempt, success or failure (issue #128). Auditing is
+///     best-effort: a failure to write the audit row must never turn a send that already
+///     succeeded (or failed) on the wire into an unhandled exception for the caller.
 /// </summary>
 public sealed class AuditingEmailSender : IEmailSender
 {
-    private readonly IEmailSender _inner;
     private readonly IEmailAuditLogger _auditLogger;
+    private readonly IEmailSender _inner;
 
     public AuditingEmailSender(IEmailSender inner, IEmailAuditLogger auditLogger)
     {

@@ -3,13 +3,16 @@
 /* tslint:disable */
 /* eslint-disable */
 import { NgModule} from '@angular/core';
+import { HttpClientModule } from '@angular/common/http';
 import { AngularHttpRequest } from './core/AngularHttpRequest';
 import { BaseHttpRequest } from './core/BaseHttpRequest';
 import type { OpenAPIConfig } from './core/OpenAPI';
 import { OpenAPI } from './core/OpenAPI';
+import { AdminService } from './services/AdminService';
 import { AuthenticationService } from './services/AuthenticationService';
+import { TelemetryService } from './services/TelemetryService';
 @NgModule({
-    imports: [],
+    imports: [HttpClientModule],
     providers: [
         {
             provide: OpenAPI,
@@ -29,7 +32,9 @@ import { AuthenticationService } from './services/AuthenticationService';
             provide: BaseHttpRequest,
             useClass: AngularHttpRequest,
         },
+        AdminService,
         AuthenticationService,
+        TelemetryService,
     ]
 })
 export class NimbusApiClient {}

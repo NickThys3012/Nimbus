@@ -155,29 +155,6 @@ namespace Nimbus.Infrastructure.Persistence.EntityFramework.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
-            modelBuilder.Entity("Nimbus.Domain.Entities.Base.BaseEntity", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<DateTime?>("CreatedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("bit");
-
-                    b.Property<DateTime?>("UpdatedDate")
-                        .HasColumnType("datetime2");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("IsDeleted")
-                        .HasFilter("IsDeleted = 0");
-
-                    b.ToTable("BaseEntity");
-                });
-
             modelBuilder.Entity("Nimbus.Domain.Entities.SentEmail", b =>
                 {
                     b.Property<Guid>("Id")
@@ -237,6 +214,9 @@ namespace Nimbus.Infrastructure.Persistence.EntityFramework.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<bool>("IsApproved")
+                        .HasColumnType("bit");
+
                     b.Property<bool>("LockoutEnabled")
                         .HasColumnType("bit");
 
@@ -276,6 +256,15 @@ namespace Nimbus.Infrastructure.Persistence.EntityFramework.Migrations
                     b.Property<string>("UserName")
                         .HasMaxLength(256)
                         .HasColumnType("nvarchar(256)");
+
+                    b.Property<DateTimeOffset?>("VerificationEmailCooldownEnd")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<bool>("VerificationEmailLocked")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("VerificationEmailSendCount")
+                        .HasColumnType("int");
 
                     b.HasKey("Id");
 

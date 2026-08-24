@@ -533,3 +533,10 @@ resharper_class_never_instantiated_global_highlighting = none
 
 [Nimbus.Domain/Entities/**/*.cs]
 resharper_unused_auto_property_accessor_global_highlighting = none
+
+[Nimbus.Mailing/EmailOptions.cs]
+resharper_auto_property_can_be_made_get_only_global_highlighting = none
+resharper_unused_auto_property_accessor_global_highlighting = none
+
+[Nimbus.Domain/Exceptions/**/*Exception.cs]
+resharper_unused_member_global_highlighting = none

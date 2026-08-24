@@ -1,16 +1,24 @@
-import { effect, Injectable, signal } from '@angular/core';
+import { effect, inject, Injectable, InjectionToken, signal } from '@angular/core';
+
+export const LOCAL_STORAGE = new InjectionToken<Storage | null>('LocalStorage', {
+  providedIn: 'root',
+  factory: () => (typeof localStorage !== 'undefined' ? localStorage : null),
+});
 
 @Injectable({
   providedIn: 'root',
 })
 export class ThemeService {
-  readonly isDarkMode = signal<boolean>(localStorage.getItem('darkMode') === 'true');
+  private readonly storage = inject(LOCAL_STORAGE);
+  readonly isDarkMode = signal<boolean>(this.storage?.getItem('darkMode') === 'true');
 
   constructor() {
     effect(() => {
       const dark = this.isDarkMode();
-      localStorage.setItem('darkMode', String(dark));
-      document.documentElement.classList.toggle('lt', !dark);
+      this.storage?.setItem('darkMode', String(dark));
+      if (typeof document !== 'undefined') {
+        document.documentElement.classList.toggle('lt', !dark);
+      }
     });
   }
 

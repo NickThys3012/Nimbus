@@ -1,3 +1,4 @@
+using System.Linq.Expressions;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Nimbus.Domain.Entities;
@@ -32,17 +33,32 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
             e.Property(s => s.FailureReason).HasMaxLength(2000);
             // Recent-attempts-for-a-recipient is the query the "did the reset email
             // actually go out" support question always turns into.
-            e.HasIndex(s => new { s.Recipient, s.SentAt });
+            e.HasIndex(s => new
+            {
+                s.Recipient, s.SentAt
+            });
         });
 
 
-        builder.Entity<BaseEntity>()
-            .HasQueryFilter(e => !e.IsDeleted);
-        builder.Entity<BaseEntity>()
-            .HasIndex(r => r.IsDeleted)
-            .HasFilter("IsDeleted = 0");
-
         builder.ApplyConfigurationsFromAssembly(typeof(AppDbContext).Assembly);
+        ApplySoftDeleteConvention(builder);
+    }
+
+    private static void ApplySoftDeleteConvention(ModelBuilder builder)
+    {
+        foreach (var entityType in builder.Model.GetEntityTypes()
+                     .Where(entityType => entityType.ClrType.IsAssignableTo(typeof(BaseEntity)) &&
+                         entityType.ClrType != typeof(BaseEntity)))
+        {
+            var entity = builder.Entity(entityType.ClrType);
+            var parameter = Expression.Parameter(entityType.ClrType, "e");
+            var isDeleted = Expression.Property(parameter, nameof(BaseEntity.IsDeleted));
+            var filter = Expression.Lambda(Expression.Equal(isDeleted, Expression.Constant(false)), parameter);
+
+            entity.HasQueryFilter(filter);
+            entity.HasIndex(nameof(BaseEntity.IsDeleted))
+                .HasFilter("IsDeleted = 0");
+        }
     }
 
 

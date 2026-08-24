@@ -1,0 +1,28 @@
+<div class="app-topbar">
+  <div class="brand">
+    <Nimbus-logo></Nimbus-logo>
+    <span class="wordmark">Nimbus</span>
+  </div>
+  <div class="nav-links desktop-only">
+    @for (item of navItems;track item.label){
+      <a [routerLinkActiveOptions]="{exact: true}" [routerLink]="item.route" class="nav-link" routerLinkActive="on">
+        <i [class]="'ti ' + item.icon" aria-hidden="true"></i> {{ item.label }}
+      </a>
+    }
+  </div>
+  <div class="actions">
+    <button (click)="themeService.toggle()" aria-label="Change theme" class="icon-btn">
+      <i [class.ti-moon]="themeService.isDarkMode()" [class.ti-sun]="!themeService.isDarkMode()" aria-hidden="true" class="ti"></i>
+    </button>
+    <!-- TODO: switch into a button based on the user logged in state-->
+    <span class="avatar">{{ userInitials }}</span>
+  </div>
+</div>
+
+<div class="bottom-tabbar">
+  @for (item of navItems; track item.label) {
+    <a [routerLinkActiveOptions]="{exact: true}" [routerLink]="item.route" class="tab-item" routerLinkActive="on">
+      <i [class]="'ti ' + item.icon" aria-hidden="true"></i>{{ item.label }}
+    </a>
+  }
+</div>

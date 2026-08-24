@@ -10,4 +10,12 @@ public class ApplicationUser : IdentityUser
     public string FirstName { get; set; } = string.Empty;
 
     public string Name { get; set; } = string.Empty;
+
+    public bool IsApproved { get; set; }
+
+    public DateTimeOffset? VerificationEmailCooldownEnd { get; set; }
+
+    public int VerificationEmailSendCount { get; set; }
+
+    public bool VerificationEmailLocked { get; set; }
 }

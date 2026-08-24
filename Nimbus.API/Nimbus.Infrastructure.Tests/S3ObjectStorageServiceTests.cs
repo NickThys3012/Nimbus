@@ -18,13 +18,6 @@ namespace Nimbus.Infrastructure.Tests;
 [TestFixture]
 public class S3ObjectStorageServiceTests
 {
-    private static readonly HttpClient HttpClient = new();
-    private const string BucketImages = "flight-images";
-    private const string BucketTracks = "flight-tracks";
-
-    private MinioContainer _minio = null!;
-    private IAmazonS3 _adminClient = null!;
-    private IObjectStorageService _sut = null!;
 
     [OneTimeSetUp]
     public async Task OneTimeSetUpAsync()
@@ -36,15 +29,16 @@ public class S3ObjectStorageServiceTests
 
         var config = new AmazonS3Config
         {
-            ServiceURL = _minio.GetConnectionString(),
-            ForcePathStyle = true,
-            UseHttp = true
+            ServiceURL = _minio.GetConnectionString(), ForcePathStyle = true, UseHttp = true
         };
 
         var credentials = new BasicAWSCredentials(_minio.GetAccessKey(), _minio.GetSecretKey());
         _adminClient = new AmazonS3Client(credentials, config);
 
-        foreach (var bucket in new[] { BucketImages, BucketTracks, "flight-exports", "map-cache" })
+        foreach (var bucket in new[]
+                 {
+                     BucketImages, BucketTracks, "flight-exports", "map-cache"
+                 })
         {
             await _adminClient.PutBucketAsync(bucket);
         }
@@ -60,10 +54,7 @@ public class S3ObjectStorageServiceTests
             MaxRetryAttempts = 2,
             Buckets = new StorageBucketNames
             {
-                FlightImages = BucketImages,
-                FlightTracks = BucketTracks,
-                FlightExports = "flight-exports",
-                MapCache = "map-cache"
+                FlightImages = BucketImages, FlightTracks = BucketTracks, FlightExports = "flight-exports", MapCache = "map-cache"
             }
         });
 
@@ -76,6 +67,13 @@ public class S3ObjectStorageServiceTests
         _adminClient.Dispose();
         await _minio.DisposeAsync();
     }
+    private static readonly HttpClient HttpClient = new();
+    private const string BucketImages = "flight-images";
+    private const string BucketTracks = "flight-tracks";
+
+    private MinioContainer _minio = null!;
+    private IAmazonS3 _adminClient = null!;
+    private IObjectStorageService _sut = null!;
 
     private static ObjectKey NewKey(string fileName = "photo.jpg")
     {
@@ -180,10 +178,16 @@ public class S3ObjectStorageServiceTests
             ForcePathStyle = true,
             UseHttps = false,
             MaxRetryAttempts = 1,
-            Buckets = new StorageBucketNames { FlightImages = BucketImages }
+            Buckets = new StorageBucketNames
+            {
+                FlightImages = BucketImages
+            }
         });
 
-        var config = new AmazonS3Config { ServiceURL = _minio.GetConnectionString(), ForcePathStyle = true, UseHttp = true };
+        var config = new AmazonS3Config
+        {
+            ServiceURL = _minio.GetConnectionString(), ForcePathStyle = true, UseHttp = true
+        };
         using var client = new AmazonS3Client(new BasicAWSCredentials(_minio.GetAccessKey(), "wrong-secret-key"), config);
         var service = new S3ObjectStorageService(client, brokenOptions, NullLogger<S3ObjectStorageService>.Instance);
 

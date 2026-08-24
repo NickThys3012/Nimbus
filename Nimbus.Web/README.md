@@ -12,6 +12,40 @@ ng serve
 
 Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
 
+## Debugging in WebStorm (current setup)
+
+The frontend is typically served by the backend process in this setup.
+
+### WebStorm + backend-hosted SPA (primary flow)
+
+1. Build the frontend:
+   ```bash
+   npm run build
+   ```
+2. Ensure the backend serves the Angular build from its `wwwroot`.
+3. Start/debug the backend from your backend IDE.
+4. In WebStorm, create a **JavaScript Debug** configuration:
+   - **Run | Edit Configurations...**
+   - **+** -> **JavaScript Debug**
+   - **URL**: your backend URL (for example `https://localhost:5214`)
+5. Start that WebStorm debug configuration.
+6. Set breakpoints in TypeScript files (for example `src/app/Nimbus.ts` or files under `src/app/pages/`) and reproduce the issue in the browser window opened by WebStorm.
+
+Notes:
+
+- In production mode the frontend uses same-origin API calls (`OpenAPI.BASE = ''`) in `src/app/Nimbus.config.ts`.
+- If breakpoints do not bind, hard-refresh and restart the WebStorm debug session.
+
+### WebStorm + `ng serve` (optional fallback)
+
+Use this when you specifically want frontend-only hot reload:
+
+```bash
+npm start
+```
+
+Then create a WebStorm **JavaScript Debug** config with URL `http://localhost:4200/` and start debugging there.
+
 ## Code scaffolding
 
 Angular CLI includes powerful code scaffolding tools. To generate a new component, run:

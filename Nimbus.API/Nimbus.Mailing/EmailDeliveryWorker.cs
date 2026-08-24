@@ -5,25 +5,24 @@ using Nimbus.Application.Common.Interfaces;
 namespace Nimbus.Mailing;
 
 /// <summary>
-/// Drains <see cref="EmailDeliveryQueue"/> and hands each message to the real
-/// <see cref="IEmailSender"/> (SMTP/Null, wrapped with retry and audit logging) — this is
-/// what actually moves sending off the request thread for issue #128.
-///
-/// Deliberately not a fire-and-forget <c>Task.Run</c> per request: that approach is lossy
-/// on app shutdown (flagged as a known trade-off on <c>LoginEvent</c> in FlightPrep), and a
-/// dropped mail is worse than a dropped login event since it's invisible to everyone,
-/// including the user waiting for it. Instead, on <see cref="IHostApplicationLifetime.ApplicationStopping"/>
-/// the queue stops accepting new work but this worker keeps draining what is already
-/// queued — using <see cref="CancellationToken.None"/> for the read/send loop rather than
-/// the host's stopping token — so in-flight and already-queued sends get to finish inside
-/// the host's shutdown grace period instead of being cancelled mid-send.
+///     Drains <see cref="EmailDeliveryQueue" /> and hands each message to the real
+///     <see cref="IEmailSender" /> (SMTP/Null, wrapped with retry and audit logging) — this is
+///     what actually moves sending off the request thread for issue #128.
+///     Deliberately not a fire-and-forget <c>Task.Run</c> per request: that approach is lossy
+///     on app shutdown (flagged as a known trade-off on <c>LoginEvent</c> in FlightPrep), and
+///     dropped mail is worse than a dropped login event since it's invisible to everyone,
+///     including the user waiting for it. Instead, on <see cref="IHostApplicationLifetime.ApplicationStopping" />
+///     the queue stops accepting new work but this worker keeps draining what is already
+///     queued — using <see cref="CancellationToken.None" /> for the read/send loop rather than
+///     the host's stopping token — so in-flight and already-queued sends get to finish inside
+///     the host's shutdown grace period instead of being cancelled mid-send.
 /// </summary>
 public sealed class EmailDeliveryWorker : BackgroundService
 {
-    private readonly EmailDeliveryQueue _queue;
-    private readonly IServiceScopeFactory _scopeFactory;
     private readonly IHostApplicationLifetime _lifetime;
     private readonly ILogger<EmailDeliveryWorker> _logger;
+    private readonly EmailDeliveryQueue _queue;
+    private readonly IServiceScopeFactory _scopeFactory;
 
     public EmailDeliveryWorker(
         EmailDeliveryQueue queue,
@@ -61,7 +60,7 @@ public sealed class EmailDeliveryWorker : BackgroundService
             }
             catch (Exception ex)
             {
-                // SendAsync itself never throws for a rejected/failed send (see
+                // SendAsync itself never throws for a rejected/failed sending (see
                 // EmailSendResult) - this only catches something unexpected, e.g. a bug in
                 // the sender or a DI failure, so one bad message cannot silently kill the
                 // worker and strand everything queued behind it.

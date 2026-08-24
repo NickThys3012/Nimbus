@@ -1,11 +1,13 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
-import { Observable, catchError, finalize, map, of, tap } from 'rxjs';
+import { Observable, catchError, finalize, map, of, tap, throwError } from 'rxjs';
 
 import {
   AuthenticationService,
+  ApiError,
   type LoginRequestDto,
   type LoginResponseDto,
+  RegisterRequestDto,
 } from '../api-client';
 
 /**
@@ -65,6 +67,61 @@ export class AuthStore {
       .subscribe({
         next: (response) => this.applyLoginResponse(response),
         error: (err) => this._error.set(err?.message ?? 'Login failed'),
+      });
+  }
+
+  register(request: RegisterRequestDto): Observable<void> {
+    this._isLoading.set(true);
+    this._error.set(null);
+
+    return this.authApi
+      .postApiAuthenticationRegister({ requestBody: request })
+      .pipe(
+        finalize(() => this._isLoading.set(false)),
+        tap(() => this._error.set(null)),
+        catchError((err) => {
+          if (this.isDuplicateRegistrationError(err)) {
+            this._error.set(null);
+            return of(void 0);
+          }
+
+          this._error.set('Registration failed. Please try again.');
+          return throwError(() => err);
+        }),
+      );
+  }
+
+  private isDuplicateRegistrationError(err: unknown): boolean {
+    const apiError = err as Partial<ApiError> | null;
+    if (!apiError) {
+      return false;
+    }
+
+    if (apiError.status === 409) {
+      return true;
+    }
+
+    const bodyTitle =
+      typeof apiError.body?.title === 'string' ? apiError.body.title.toLowerCase() : '';
+    const message = typeof apiError.message === 'string' ? apiError.message.toLowerCase() : '';
+
+    return (
+      (bodyTitle.includes('email') && bodyTitle.includes('already')) ||
+      (message.includes('email') && message.includes('already'))
+    );
+  }
+
+  requestNewVerificationEmail(email: string): void {
+    this._isLoading.set(true);
+    this._error.set(null);
+
+    this.authApi
+      .postApiAuthenticationResendVerificationEmail({ requestBody: { email } })
+      .pipe(finalize(() => this._isLoading.set(false)))
+      .subscribe({
+        error: (err) =>{
+          this._error.set(err?.body?.title ?? err?.message ?? 'Request failed');
+          },
       });
   }
 
