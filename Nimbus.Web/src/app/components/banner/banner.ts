@@ -5,7 +5,7 @@ import { ChangeDetectionStrategy, Component, computed, input } from '@angular/co
   imports: [],
   templateUrl: './banner.html',
   styleUrl: './banner.css',
-  changeDetection: ChangeDetectionStrategy.Eager,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     '[style.--background-color]': 'backgroundColor()',
     '[style.--color]': 'color()',

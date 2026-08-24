@@ -4,7 +4,7 @@ import { Component, ChangeDetectionStrategy } from '@angular/core';
   selector: 'Nimbus-logbook',
   imports: [],
   templateUrl: './logbook.html',
-  changeDetection: ChangeDetectionStrategy.Eager,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrl: './logbook.css',
 })
 export default class Logbook {}

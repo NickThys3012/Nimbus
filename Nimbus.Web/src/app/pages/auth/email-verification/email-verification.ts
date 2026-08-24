@@ -9,7 +9,7 @@ type VerificationStatus = 'success' | 'error';
   selector: 'Nimbus-email-verification',
   imports: [Glyph, Button],
   templateUrl: './email-verification.html',
-  changeDetection: ChangeDetectionStrategy.Eager,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrl: './email-verification.css',
 })
 export default class EmailVerification {

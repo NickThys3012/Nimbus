@@ -8,7 +8,7 @@ import { Logo } from '../logo/logo';
   selector: 'Nimbus-navbar',
   imports: [RouterModule, CommonModule, Logo],
   templateUrl: './navbar.html',
-  changeDetection: ChangeDetectionStrategy.Eager,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrl: './navbar.css',
 })
 export class Navbar {

@@ -6,7 +6,7 @@ import { Navbar } from './components/navbar/navbar';
   selector: 'Nimbus-root',
   imports: [RouterOutlet, Navbar],
   templateUrl: './Nimbus.html',
-  changeDetection: ChangeDetectionStrategy.Eager,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrl: './Nimbus.css',
 })
 export class Nimbus {}

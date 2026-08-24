@@ -5,7 +5,7 @@ import { FormControl, ReactiveFormsModule } from '@angular/forms';
   selector: 'Nimbus-input-field',
   imports: [ReactiveFormsModule],
   templateUrl: './input-field.html',
-  changeDetection: ChangeDetectionStrategy.Eager,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrl: './input-field.css',
 })
 export class InputField {

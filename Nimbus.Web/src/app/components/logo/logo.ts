@@ -4,7 +4,7 @@ import { ChangeDetectionStrategy, Component, computed, input } from '@angular/co
   selector: 'Nimbus-logo',
   templateUrl: './logo.html',
   styleUrl: './logo.css',
-  changeDetection: ChangeDetectionStrategy.Eager,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     '[style.--logo-tile-size]': 'tileSize()',
     '[style.--logo-svg-size]': 'svgSize()',

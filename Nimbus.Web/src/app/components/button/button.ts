@@ -6,7 +6,7 @@ type ButtonVariant = 'primary' | 'ghost';
   selector: 'Nimbus-button',
   imports: [],
   templateUrl: './button.html',
-  changeDetection: ChangeDetectionStrategy.Eager,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrl: './button.css',
 })
 export class Button {

@@ -10,7 +10,7 @@ import { InputField } from '../../../components/form/input-field/input-field';
   selector: 'Nimbus-login-register',
   imports: [Logo, Register, Banner, Button, PasswordField, InputField],
   templateUrl: './login-register.html',
-  changeDetection: ChangeDetectionStrategy.Eager,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrl: './login-register.css',
 })
 export default class LoginRegister {

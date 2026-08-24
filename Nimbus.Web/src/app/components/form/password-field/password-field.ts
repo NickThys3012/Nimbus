@@ -5,7 +5,7 @@ import { FormControl, ReactiveFormsModule } from '@angular/forms';
   selector: 'Nimbus-password-field',
   imports: [ReactiveFormsModule],
   templateUrl: './password-field.html',
-  changeDetection: ChangeDetectionStrategy.Eager,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrl: './password-field.css',
 })
 export class PasswordField {

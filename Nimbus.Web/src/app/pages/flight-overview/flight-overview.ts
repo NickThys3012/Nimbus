@@ -4,7 +4,7 @@ import { Component, ChangeDetectionStrategy } from '@angular/core';
   selector: 'Nimbus-flight-overview',
   imports: [],
   templateUrl: './flight-overview.html',
-  changeDetection: ChangeDetectionStrategy.Eager,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrl: './flight-overview.css',
 })
 export default class FlightOverview {}

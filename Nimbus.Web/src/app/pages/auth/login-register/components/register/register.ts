@@ -12,7 +12,7 @@ import { MatSnackBar } from '@angular/material/snack-bar';
   selector: 'Nimbus-register',
   imports: [Button, Banner, InputField, PasswordField, ReactiveFormsModule],
   templateUrl: './register.html',
-  changeDetection: ChangeDetectionStrategy.Eager,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrl: './register.css',
 })
 export class Register {

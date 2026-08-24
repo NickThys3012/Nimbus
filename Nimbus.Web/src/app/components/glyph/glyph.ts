@@ -6,7 +6,7 @@ type GlyphVariant = 'Primary' | 'Ok' | 'Warning' | 'Error';
   selector: 'Nimbus-glyph',
   imports: [],
   templateUrl: './glyph.html',
-  changeDetection: ChangeDetectionStrategy.Eager,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrl: './glyph.css',
 })
 export class Glyph {
