@@ -1,9 +1,9 @@
+using System.Linq.Expressions;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Nimbus.Domain.Entities;
 using Nimbus.Domain.Entities.Base;
 using Nimbus.Infrastructure.Identity;
-using System.Linq.Expressions;
 namespace Nimbus.Infrastructure.Persistence;
 
 public class AppDbContext : IdentityDbContext<ApplicationUser>
@@ -48,7 +48,7 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
     {
         foreach (var entityType in builder.Model.GetEntityTypes()
                      .Where(entityType => entityType.ClrType.IsAssignableTo(typeof(BaseEntity)) &&
-                                          entityType.ClrType != typeof(BaseEntity)))
+                         entityType.ClrType != typeof(BaseEntity)))
         {
             var entity = builder.Entity(entityType.ClrType);
             var parameter = Expression.Parameter(entityType.ClrType, "e");

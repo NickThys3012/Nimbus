@@ -1,4 +1,3 @@
-using FluentValidation.Results;
 using MediatR;
 using Nimbus.Application.Common.Exceptions;
 using Nimbus.Application.Common.Interfaces;
@@ -35,9 +34,7 @@ public sealed class CreateUserCommandHandler : IRequestHandler<CreateUserCommand
         var existing = await _userRepository.GetByEmailAsync(request.Request.Email);
         if (existing is not null)
         {
-            throw new ValidationException([
-                new ValidationFailure("Email", "Email already exists")
-            ]);
+            throw new DuplicateException("Email", "Email already exists");
         }
 
         var id = await _identityService.RegisterAsync(

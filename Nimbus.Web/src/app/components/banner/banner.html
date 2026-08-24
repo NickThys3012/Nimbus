@@ -1,7 +1,7 @@
-<div class="banner" [id]="id()" >
+<div [id]="id()" class="banner" >
   @if (icon() !=null)
   {
-    <i class="ti {{icon()}}" aria-hidden="true"></i>
+    <i aria-hidden="true" class="ti {{icon()}}"></i>
   }
   <span>
     <ng-content/>

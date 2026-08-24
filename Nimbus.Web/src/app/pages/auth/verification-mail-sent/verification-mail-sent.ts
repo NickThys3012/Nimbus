@@ -1,16 +1,9 @@
-import {
-  Component,
-  inject,
-  ChangeDetectionStrategy,
-  effect,
-  OnInit,
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, effect, inject, OnInit } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { Button } from '../../../components/button/button';
 import { Glyph } from '../../../components/glyph/glyph';
 import { AuthStore } from '../../../core/auth/auth.store';
 import { MatSnackBar } from '@angular/material/snack-bar';
-
 
 @Component({
   selector: 'Nimbus-verification-mail-sent',
@@ -22,11 +15,11 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 export default class VerificationMailSent implements OnInit {
   sendAgain = false;
   emailAddress: string | null = null;
+  protected readonly authStore = inject(AuthStore);
   private lastShownError: string | null = null;
   private snackbar = inject(MatSnackBar);
   private route = inject(ActivatedRoute);
 
-  protected readonly authStore = inject(AuthStore);
   constructor() {
     effect(() => {
       const error = this.authStore.error();

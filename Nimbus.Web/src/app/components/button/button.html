@@ -1,13 +1,13 @@
 <button
-  class="btn"
-  [class.btn-primary]="variant() === 'primary'"
   [class.btn-ghost]="variant() === 'ghost'"
-  [id]="id()"
+  [class.btn-primary]="variant() === 'primary'"
   [disabled]="disabled()"
+  [id]="id()"
   [type]="type()"
+  class="btn"
 >
   @if (icon() != null) {
-    <i class="ti {{icon()}}" aria-hidden="true"></i>
+    <i aria-hidden="true" class="ti {{icon()}}"></i>
   }
   <ng-content/>
 </button>

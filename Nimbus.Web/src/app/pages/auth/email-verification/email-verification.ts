@@ -1,23 +1,21 @@
-import { Component, computed, inject, signal, ChangeDetectionStrategy } from '@angular/core';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { Banner } from '../../../components/banner/banner';
+import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ActivatedRoute, Router } from '@angular/router';
+import { Glyph } from '../../../components/glyph/glyph';
 import { Button } from '../../../components/button/button';
 
 type VerificationStatus = 'success' | 'error';
 
 @Component({
   selector: 'Nimbus-email-verification',
-  imports: [Banner, Button, RouterLink],
+  imports: [Glyph, Button],
   templateUrl: './email-verification.html',
   changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './email-verification.css',
 })
 export default class EmailVerification {
+  status = signal<VerificationStatus>('error');
   private readonly activatedRoute = inject(ActivatedRoute);
   private readonly router = inject(Router);
-
-  status = signal<VerificationStatus>('error');
-  isSuccess = computed(() => this.status() === 'success');
 
   constructor() {
     const status = this.activatedRoute.snapshot.queryParamMap.get('status');

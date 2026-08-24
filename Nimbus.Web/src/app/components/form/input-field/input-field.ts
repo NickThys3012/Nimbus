@@ -1,4 +1,4 @@
-import { Component, input, output, ChangeDetectionStrategy, computed, signal, effect } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, input, output, signal } from '@angular/core';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 
 @Component({
@@ -19,27 +19,12 @@ export class InputField {
 
   // Signal to track control state changes
   controlStateVersion = signal(0);
-
-  constructor() {
-    effect(() => {
-      const ctrl = this.control();
-      if (!ctrl) return;
-
-      const sub = ctrl.statusChanges.subscribe(() => {
-        this.controlStateVersion.update(v => v + 1);
-      });
-
-      return () => sub.unsubscribe();
-    });
-  }
-
   showError = computed(() => {
     // Access controlStateVersion to make this reactive to control changes
     this.controlStateVersion();
     const control = this.control();
     return control?.invalid && (control?.touched || control?.dirty);
   });
-
   errorMessage = computed(() => {
     // Access controlStateVersion to make this reactive to control changes
     this.controlStateVersion();
@@ -63,6 +48,19 @@ export class InputField {
 
     return 'Invalid value.';
   });
+
+  constructor() {
+    effect(() => {
+      const ctrl = this.control();
+      if (!ctrl) return;
+
+      const sub = ctrl.statusChanges.subscribe(() => {
+        this.controlStateVersion.update((v) => v + 1);
+      });
+
+      return () => sub.unsubscribe();
+    });
+  }
 
   onInput(event: Event) {
     const value = (event.target as HTMLInputElement | null)?.value ?? '';

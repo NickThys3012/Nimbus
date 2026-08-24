@@ -1,4 +1,4 @@
-import { Component, computed, input, output, signal, ChangeDetectionStrategy, effect } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, input, output, signal } from '@angular/core';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 
 @Component({
@@ -17,27 +17,12 @@ export class PasswordField {
 
   // Signal to track control state changes
   controlStateVersion = signal(0);
-
-  constructor() {
-    effect(() => {
-      const ctrl = this.control();
-      if (!ctrl) return;
-
-      const sub = ctrl.statusChanges.subscribe(() => {
-        this.controlStateVersion.update(v => v + 1);
-      });
-
-      return () => sub.unsubscribe();
-    });
-  }
-
   showError = computed(() => {
     // Access controlStateVersion to make this reactive to control changes
     this.controlStateVersion();
     const control = this.control();
     return control?.invalid && (control?.touched || control?.dirty);
   });
-
   errorMessage = computed(() => {
     // Access controlStateVersion to make this reactive to control changes
     this.controlStateVersion();
@@ -61,23 +46,24 @@ export class PasswordField {
 
     return 'Invalid value.';
   });
+  showPassword = signal(false);
+  fieldType = computed(() => (this.showPassword() ? 'text' : 'password'));
+
+  constructor() {
+    effect(() => {
+      const ctrl = this.control();
+      if (!ctrl) return;
+
+      const sub = ctrl.statusChanges.subscribe(() => {
+        this.controlStateVersion.update((v) => v + 1);
+      });
+
+      return () => sub.unsubscribe();
+    });
+  }
 
   onInput(event: Event) {
     const value = (event.target as HTMLInputElement | null)?.value ?? '';
     this.valueChange.emit(value);
   }
-
-  onInputDebug(event: Event) {
-    const input = event.target as HTMLInputElement;
-    console.log('PasswordField input event fired - value:', input.value);
-    console.log('Current control state:', {
-      controlValue: this.control()?.value,
-      controlTouched: this.control()?.touched,
-      controlDirty: this.control()?.dirty,
-    });
-  }
-
-  showPassword = signal(false);
-
-  fieldType = computed(() => (this.showPassword() ? 'text' : 'password'));
 }

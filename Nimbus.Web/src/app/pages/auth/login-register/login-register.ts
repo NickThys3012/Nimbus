@@ -1,4 +1,4 @@
-import { Component, computed, signal, ChangeDetectionStrategy } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, signal } from '@angular/core';
 import { Logo } from '../../../components/logo/logo';
 import { Register } from './components/register/register';
 import { Banner } from '../../../components/banner/banner';

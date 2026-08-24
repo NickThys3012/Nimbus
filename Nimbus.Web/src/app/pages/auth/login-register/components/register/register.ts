@@ -1,4 +1,4 @@
-import { Component, ChangeDetectionStrategy, inject, effect } from '@angular/core';
+import { ChangeDetectionStrategy, Component, effect, inject } from '@angular/core';
 import { Button } from '../../../../../components/button/button';
 import { Banner } from '../../../../../components/banner/banner';
 import { InputField } from '../../../../../components/form/input-field/input-field';
@@ -17,12 +17,6 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 })
 export class Register {
   private fb = inject(NonNullableFormBuilder);
-  private authClient = inject(AuthStore);
-  private router = inject(Router);
-  private snackbar = inject(MatSnackBar);
-
-  private lastShownError: string | null = null;
-
   registerForm = this.fb.group({
     firstName: ['', Validators.required],
     lastName: ['', Validators.required],
@@ -32,12 +26,15 @@ export class Register {
       [
         Validators.required,
         Validators.minLength(8),
-        Validators.pattern(
-          /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&,.<>])[A-Za-z\d@$!%*?&,.<>]{8,}$/,
-        ),
+        Validators.pattern(/^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[^A-Za-z0-9]).{8,}$/),
       ],
     ],
   });
+  private authClient = inject(AuthStore);
+  private router = inject(Router);
+  private snackbar = inject(MatSnackBar);
+  private lastShownError: string | null = null;
+
   constructor() {
     effect(() => {
       const error = this.authClient.error();
@@ -73,7 +70,8 @@ export class Register {
         password: password!,
       })
       .subscribe({
-        next: () => this.router.navigate(['/verification-email-sent'], { queryParams: { email: email } }),
+        next: () =>
+          this.router.navigate(['/verification-email-sent'], { queryParams: { email: email } }),
       });
   }
 }

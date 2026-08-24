@@ -8,8 +8,8 @@
     </div>
 
     <div class="tabs">
-      <div class="tab" [class.on]="showLogin()" (click)="activeTab.set('login')" data-panel="p-login">Sign in</div>
-      <div class="tab" [class.on]="!showLogin()" (click)="activeTab.set('register')" data-panel="p-register">Create account</div>
+      <div (click)="activeTab.set('login')" [class.on]="showLogin()" class="tab" data-panel="p-login">Sign in</div>
+      <div (click)="activeTab.set('register')" [class.on]="!showLogin()" class="tab" data-panel="p-register">Create account</div>
     </div>
 
     @if (showLogin()) {
@@ -24,11 +24,11 @@
           <a href="#">Forgot password?</a>
         </div>
 
-      <Nimbus-button type="submit" id="login-btn" icon="ti-login-2">
+      <Nimbus-button icon="ti-login-2" id="login-btn" type="submit">
         Sign in
       </Nimbus-button>
       <!--TODO:  should be hidden behind a condition -->
-      <Nimbus-banner id="login-error" icon="ti-alert-triangle" type="warning">
+      <Nimbus-banner icon="ti-alert-triangle" id="login-error" type="warning">
         Email address or password is incorrect.
       </Nimbus-banner>
       </div>

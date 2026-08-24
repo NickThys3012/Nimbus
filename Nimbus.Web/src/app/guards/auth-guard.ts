@@ -19,7 +19,12 @@ export const authGuard: CanActivateFn = (_route, state) => {
     return of(true);
   }
 
-  return authStore.restoreSession().pipe(
-    map((restored) => restored || router.createUrlTree(['/home'], { queryParams: { redirectTo: state.url } })),
-  );
+  return authStore
+    .restoreSession()
+    .pipe(
+      map(
+        (restored) =>
+          restored || router.createUrlTree(['/home'], { queryParams: { redirectTo: state.url } }),
+      ),
+    );
 };

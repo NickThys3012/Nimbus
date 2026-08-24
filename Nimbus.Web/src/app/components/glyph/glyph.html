@@ -1,7 +1,7 @@
-<div class="glyph"
+<div [class.bad]="variant() === 'Error'"
      [class.ok]="variant() === 'Ok'"
      [class.warn]="variant() === 'Warning'"
-     [class.bad]="variant() === 'Error'"
+     class="glyph"
 >
-  <i class="ti {{icon()}}" aria-hidden="true"></i>
+  <i aria-hidden="true" class="ti {{icon()}}"></i>
 </div>

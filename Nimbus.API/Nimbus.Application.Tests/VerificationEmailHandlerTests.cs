@@ -52,8 +52,7 @@ public class VerificationEmailHandlerTests
             UserRole.Pilot,
             false,
             fakeTimeProvider.GetUtcNow().AddMinutes(5),
-            1,
-            false);
+            1);
 
         var users = new FakeUserRepository(user);
         var identity = new FakeIdentityService(users);
@@ -80,8 +79,7 @@ public class VerificationEmailHandlerTests
             UserRole.Pilot,
             false,
             fakeTimeProvider.GetUtcNow().AddMinutes(-1),
-            4,
-            false);
+            4);
 
         var users = new FakeUserRepository(user);
         var identity = new FakeIdentityService(users);

@@ -1,20 +1,12 @@
-<section id="p-email-verification">
-  <h1>Email verification</h1>
+<div class="body">
+  <div class="card">
+    <Nimbus-glyph icon="ti-mail-check" variant="Ok"></Nimbus-glyph>
+    <div class="hd">E-mail address confirmed</div>
+    <div class="lede">Your request is now with the administrator. You will receive an email once you can log in.</div>
 
-  @if (isSuccess()) {
-    <Nimbus-banner id="verification-success" icon="ti-circle-check" type="info">
-      Your email address is verified. You can now sign in to Nimbus.
-    </Nimbus-banner>
-  } @else {
-    <Nimbus-banner id="verification-error" icon="ti-alert-circle" type="warning">
-      We could not verify your email link. Please request a new verification email and try again.
-    </Nimbus-banner>
-
-    <a id="resend-verification-link" routerLink="/login">Resend verification email</a>
-  }
-
-  <Nimbus-button type="button" id="go-login-btn" icon="ti-login" (click)="goToLogin()">
-    Go to login
-  </Nimbus-button>
-</section>
-
+    <!-- TODO: Check later stories if we want this functionality -->
+    <!--<button class="btn-ghost" data-goto="s-pending"><i class="ti ti-clock" aria-hidden="true"></i> check status</button>-->
+    <Nimbus-button (click)="goToLogin()" id="goto-login-btn" type="button">Go to login</Nimbus-button>
+    <div class="footer-note">step 2 of 2 · wait on approval</div>
+  </div>
+</div>
