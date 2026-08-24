@@ -90,7 +90,7 @@ export class AuthStore {
       .pipe(finalize(() => this._isLoading.set(false)))
       .subscribe({
         error: (err) =>{
-          this._error.set(err?.body.title ?? 'Request failed');
+          this._error.set(err?.body?.title ?? err?.message ?? 'Request failed');
           },
       });
   }

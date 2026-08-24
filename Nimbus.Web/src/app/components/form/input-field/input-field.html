@@ -1,4 +1,9 @@
-<div class="field">
+<div class="field" [class.error]="showError()">
   <label>{{label()}}</label>
-  <input class="fi" [type]="type()" [placeholder]="placeholder()" [value]="value()" (input)="onInput($event)" />
+  @if (control()) {
+    <input class="fi" [formControl]="control()!" [type]="type()" [placeholder]="placeholder()" [value]="value()" (input)="onInput($event)" />
+  } @else {
+    <input class="fi" [type]="type()" [placeholder]="placeholder()" [value]="value()" (input)="onInput($event)" />
+  }
+  <div class="err-msg">{{ errorMessage() }}</div>
 </div>

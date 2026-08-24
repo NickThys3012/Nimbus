@@ -4,6 +4,7 @@
   [class.btn-ghost]="variant() === 'ghost'"
   [id]="id()"
   [disabled]="disabled()"
+  [type]="type()"
 >
   @if (icon() != null) {
     <i class="ti {{icon()}}" aria-hidden="true"></i>

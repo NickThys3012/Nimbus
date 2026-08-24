@@ -12,6 +12,7 @@ type ButtonVariant = 'primary' | 'ghost';
 export class Button {
   id = input.required<string>();
   icon = input<string>();
+  type = input.required<'button' | 'submit' | 'reset'>();
   variant = input<ButtonVariant>('primary');
   disabled = input<boolean>(false);
 }

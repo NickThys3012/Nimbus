@@ -4,6 +4,7 @@
 :root {
     --mono: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
     --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    --mobile-bottom-nav-height: 68px;
 }
 
 * { box-sizing: border-box; }
@@ -26,3 +27,58 @@ body {
     border-radius: 14px;
     padding: 28px 26px 24px;
 }
+
+.mat-mdc-snack-bar-container.nimbus-snackbar-error {
+    --mdc-snackbar-container-color: color-mix(in srgb, var(--pan) 92%, var(--r) 8%);
+    --mdc-snackbar-supporting-text-color: var(--tx);
+    --mat-snack-bar-button-color: var(--r);
+    border: 1px solid color-mix(in srgb, var(--r) 55%, var(--ln) 45%);
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+}
+
+.mat-mdc-snack-bar-container.nimbus-snackbar-error .mdc-snackbar__label {
+    font-size: 13px;
+    line-height: 1.45;
+    font-weight: 500;
+    letter-spacing: 0.01em;
+}
+
+.mat-mdc-snack-bar-container.nimbus-snackbar-error .mdc-button__label {
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+}
+
+.mat-mdc-snack-bar-container.nimbus-snackbar-error .mat-mdc-button {
+    --mat-text-button-state-layer-color: var(--r);
+    --mat-text-button-hover-state-layer-opacity: 0.08;
+    --mat-text-button-focus-state-layer-opacity: 0.1;
+    --mat-text-button-pressed-state-layer-opacity: 0.12;
+    border-radius: 8px;
+    background: transparent;
+}
+
+.mat-mdc-snack-bar-container.nimbus-snackbar-error .mat-mdc-button:hover,
+.mat-mdc-snack-bar-container.nimbus-snackbar-error .mat-mdc-button:focus-visible {
+    background: var(--rb) !important;
+}
+
+.mat-mdc-snack-bar-container.nimbus-snackbar-error .mat-mdc-button:active {
+    background: var(--rb) !important;
+}
+
+.mat-mdc-snack-bar-container.nimbus-snackbar-error .mat-mdc-button .mdc-button__ripple::before,
+.mat-mdc-snack-bar-container.nimbus-snackbar-error .mat-mdc-button .mdc-button__ripple::after {
+    background-color: var(--r);
+    opacity: 0 !important;
+}
+
+@media (max-width: 640px) {
+    .mat-mdc-snack-bar-container.nimbus-snackbar-error {
+        border-radius: 10px;
+        margin: 0 10px calc(var(--mobile-bottom-nav-height) + env(safe-area-inset-bottom));
+    }
+}
+
