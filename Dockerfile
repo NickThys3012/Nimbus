@@ -16,7 +16,7 @@
 # string from the environment at container start (docs/configuration.md §7).
 
 # ---------------------------------------------------------------- web (Angular)
-FROM node:22-alpine AS web-build
+ FROM node:26-alpine AS web-build
 WORKDIR /src/Nimbus.Web
 COPY Nimbus.Web/package.json Nimbus.Web/package-lock.json ./
 RUN npm ci
