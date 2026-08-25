@@ -43,7 +43,7 @@ body {
     --mat-snack-bar-button-color: var(--r);
     border: 1px solid color-mix(in srgb, var(--r) 55%, var(--ln) 45%);
     border-radius: 12px;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+    box-shadow: 0 8px 24px var(--shadow-md);
 }
 
 .mat-mdc-snack-bar-container.nimbus-snackbar-error .mdc-snackbar__label {
@@ -120,4 +120,3 @@ body {
     margin-top: 16px;
     font-family: var(--mono);
 }
-

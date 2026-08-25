@@ -3,7 +3,31 @@
     <Nimbus-glyph icon="ti-mail-opened"/>
     <div class="hd">Verify your email address</div>
     <div class="lede">We sent a confirmation link to <strong>{{ emailAddress }}</strong>. Please verify your address first, then an administrator will review your request.</div>
-    <Nimbus-button (click)="resendVerificationEmail()" [disabled]="authStore.isLoading()" icon="ti-refresh" id="reverify-btn" type="button" variant="ghost">Try again</Nimbus-button>
+    @if (sendAgain || resendCompleted) {
+      <div class="lede">Still nothing in your inbox? We can send a fresh verification email.</div>
+    }
+    <Nimbus-button (click)="openResendModal()" [disabled]="authStore.isLoading()" icon="ti-refresh" id="reverify-btn" type="button" variant="ghost">
+      {{ sendAgain || resendCompleted ? 'Send again' : 'Try again' }}
+    </Nimbus-button>
     <div class="footer-note">Step 1 of 2 · Verify, then approval</div>
   </div>
 </div>
+
+<Nimbus-modal
+  (closed)="closeResendModal()"
+  [description]="'Enter the email address where we should send the new verification link.'"
+  [isOpen]="isEmailModalOpen"
+  [title]="'Resend verification email'"
+>
+  <Nimbus-input-field
+    [control]="emailControl"
+    label="EMAIL ADDRESS"
+    modal-body
+    placeholder="name@example.com"
+    type="email"
+  ></Nimbus-input-field>
+  <div modal-actions>
+    <Nimbus-button (click)="closeResendModal()" id="cancel-resend-btn" type="button" variant="ghost">Cancel</Nimbus-button>
+    <Nimbus-button (click)="submitResendEmail()" [disabled]="authStore.isLoading()" id="send-resend-btn" type="button">Send email</Nimbus-button>
+  </div>
+</Nimbus-modal>

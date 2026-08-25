@@ -1,0 +1,25 @@
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: var(--overlay);
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  z-index: 1200;
+}
+
+.modal {
+  width: min(520px, 100%);
+  background: var(--pan);
+  border: 1px solid var(--ln);
+  border-radius: var(--r);
+  box-shadow: 0 16px 48px var(--shadow-sm);
+  padding: 20px;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 14px;
+}

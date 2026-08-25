@@ -8,8 +8,8 @@
     </div>
 
     <div class="tabs">
-      <button (click)="activeTab.set('login')" [class.on]="showLogin()" class="tab" data-panel="p-login" type="button">Sign in</button>
-      <button (click)="activeTab.set('register')" [class.on]="!showLogin()" class="tab" data-panel="p-register" type="button">Create account</button>
+      <div (click)="activeTab.set('login')" [class.on]="showLogin()" class="tab" data-panel="p-login" type="button">Sign in</div>
+      <div (click)="activeTab.set('register')" [class.on]="!showLogin()" class="tab" data-panel="p-register" type="button">Create account</div>
     </div>
 
     @if (showLogin()) {

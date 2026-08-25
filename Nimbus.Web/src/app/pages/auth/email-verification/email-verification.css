@@ -10,12 +10,8 @@
 
 #resend-verification-link {
     width: fit-content;
-    color: var(--ac);
-    font-size: 14px;
-    text-decoration: underline;
 }
 
 #p-email-verification Nimbus-button {
     width: fit-content;
 }
-
