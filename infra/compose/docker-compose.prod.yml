@@ -46,6 +46,10 @@ services:
       # nimbus_app: db_datareader/db_datawriter only, created by sqlserver-init
       # (issue #2) — the API never connects as sa and never gets DDL rights.
       ConnectionStrings__Database: "Server=sqlserver;Database=Nimbus;User Id=nimbus_app;Password=${MSSQL_APP_PASSWORD};TrustServerCertificate=True;"
+      # Without this the Serilog GrafanaLoki sink is never configured (Loki:Url defaults to
+      # "" in appsettings.json) and no logs ever reach Loki — the Grafana log-based dashboards
+      # (e.g. nimbus-mail-overview) then always show no data, not just for recent events.
+      Loki__Url: http://loki:3100
     # /health/live performs no dependency checks (issue #97) — this only confirms the process
     # itself is up and answering, which is exactly what a container orchestrator should use to
     # decide whether to keep routing traffic here. Deploy-gating on SQL Server/MinIO reachability
