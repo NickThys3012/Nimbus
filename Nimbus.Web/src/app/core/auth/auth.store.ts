@@ -111,18 +111,45 @@ export class AuthStore {
     );
   }
 
-  requestNewVerificationEmail(email: string): void {
+  private isUserNotFoundError(err: unknown): boolean {
+    const apiError = err as Partial<ApiError> | null;
+    if (!apiError) {
+      return false;
+    }
+
+    if (apiError.status === 404) {
+      return true;
+    }
+
+    const bodyTitle =
+      typeof apiError.body?.title === 'string' ? apiError.body.title.toLowerCase() : '';
+    const message = typeof apiError.message === 'string' ? apiError.message.toLowerCase() : '';
+
+    return (
+      (bodyTitle.includes('user') && bodyTitle.includes('not found')) ||
+      (message.includes('user') && message.includes('not found'))
+    );
+  }
+
+  requestNewVerificationEmail(email: string): Observable<void> {
     this._isLoading.set(true);
     this._error.set(null);
 
-    this.authApi
+    return this.authApi
       .postApiAuthenticationResendVerificationEmail({ requestBody: { email } })
-      .pipe(finalize(() => this._isLoading.set(false)))
-      .subscribe({
-        error: (err) =>{
+      .pipe(
+        map(() => void 0),
+        catchError((err) => {
+          if (this.isUserNotFoundError(err)) {
+            this._error.set(null);
+            return of(void 0);
+          }
+
           this._error.set(err?.body?.title ?? err?.message ?? 'Request failed');
-          },
-      });
+          return throwError(() => err);
+        }),
+        finalize(() => this._isLoading.set(false)),
+      );
   }
 
   refresh(): void {
