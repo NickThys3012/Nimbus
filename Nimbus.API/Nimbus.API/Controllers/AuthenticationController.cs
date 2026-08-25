@@ -21,19 +21,22 @@ public class AuthenticationController : ControllerBase
     private readonly TokenService _tokens;
     private readonly UserManager<ApplicationUser> _users;
     private readonly ILogger<AuthenticationController> _logger;
+    private readonly IWebHostEnvironment _environment;
 
     public AuthenticationController(
         ISender mediator,
         TokenService tokens,
         UserManager<ApplicationUser> users,
         SignInManager<ApplicationUser> signInManager,
-        ILogger<AuthenticationController> logger)
+        ILogger<AuthenticationController> logger,
+        IWebHostEnvironment environment)
     {
         _mediator = mediator;
         _tokens = tokens;
         _users = users;
         _signInManager = signInManager;
         _logger = logger;
+        _environment = environment;
     }
 
     [HttpPost("login")]
@@ -185,9 +188,21 @@ public class AuthenticationController : ControllerBase
     // ── Cookie helper ───────────────────────────────────────────────
     private void SetRefreshCookie(string raw)
     {
+        // Secure=true requires the cookie to actually travel over HTTPS. In every real
+        // deployment that's true (Caddy/VPS terminate TLS), but a plain `dotnet run`/
+        // docker compose local dev loop (ASPNETCORE_ENVIRONMENT=Development) is typically
+        // served over plain HTTP. Chrome/Firefox special-case `localhost` as a "secure
+        // context" and still store/send Secure cookies there, but Safari does not — the
+        // cookie is silently dropped by the browser, login "succeeds" (access token comes
+        // back fine), and the very next /refresh call 401s because no refreshToken cookie
+        // was ever actually stored. Only relax Secure in Development so production keeps
+        // the hardened cookie.
         Response.Cookies.Append("refreshToken", raw, new CookieOptions
         {
-            HttpOnly = true, Secure = true, SameSite = SameSiteMode.Strict, Expires = DateTimeOffset.UtcNow.AddDays(7)
+            HttpOnly = true,
+            Secure = !_environment.IsDevelopment(),
+            SameSite = SameSiteMode.Strict,
+            Expires = DateTimeOffset.UtcNow.AddDays(7)
         });
     }
 }
