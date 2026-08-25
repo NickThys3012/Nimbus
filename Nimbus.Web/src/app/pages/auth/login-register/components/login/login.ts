@@ -1,4 +1,4 @@
-import { Component, effect, inject } from '@angular/core';
+import { Component, effect, inject, signal } from '@angular/core';
 import { InputField } from '../../../../../components/form/input-field/input-field';
 import { PasswordField } from '../../../../../components/form/password-field/password-field';
 import { Button } from '../../../../../components/button/button';
@@ -14,7 +14,7 @@ import { Router } from '@angular/router';
   templateUrl: './login.html',
 })
 export class Login {
-  hasError = false;
+  hasError = signal(false);
   private fb = inject(NonNullableFormBuilder);
   loginForm = this.fb.group({
     email: ['', [Validators.required, Validators.email]],
@@ -33,14 +33,7 @@ export class Login {
   constructor() {
     effect(() => {
       const error = this.authClient.error();
-
-      if (error) {
-        this.hasError = true;
-      }
-
-      if (!error) {
-        this.hasError = false;
-      }
+      this.hasError.set(!!error);
     });
   }
 

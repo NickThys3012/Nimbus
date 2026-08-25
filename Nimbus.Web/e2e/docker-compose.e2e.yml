@@ -1,0 +1,24 @@
+# Override merged on top of the root docker-compose.yml when running the
+# Playwright e2e suite (see global-setup.ts). Not used for regular
+# `docker compose up` local dev — it only changes two things:
+#
+#   1. Points the API's email sender at mailpit instead of the default
+#      NullEmailSender, so registration e2e tests can pull the real
+#      confirmation link out of a captured message (see e2e/mailpit.ts).
+#   2. Makes the api service actually wait on mailpit, since the base
+#      compose file has no reason to couple them together otherwise.
+#
+# Mailpit itself still needs `--profile dev` passed on the CLI to be started
+# at all (see the root compose file) — this override doesn't change that.
+services:
+  api:
+    environment:
+      Email__Enabled: "true"
+      Email__SmtpHost: mailpit
+      Email__SmtpPort: "1025"
+      Email__UseStartTls: "false"
+      Email__FromAddress: noreply@nimbus.e2e
+      Email__FromName: "Nimbus E2E"
+    depends_on:
+      mailpit:
+        condition: service_started
