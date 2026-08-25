@@ -15,4 +15,5 @@ export class Button {
   type = input.required<'button' | 'submit' | 'reset'>();
   variant = input<ButtonVariant>('primary');
   disabled = input<boolean>(false);
+  fullWidth = input<boolean>(true);
 }

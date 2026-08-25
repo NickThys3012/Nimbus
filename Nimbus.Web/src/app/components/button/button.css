@@ -13,6 +13,10 @@
     gap: 7px;
 }
 
+.btn-auto {
+    width: auto;
+}
+
 .btn-primary {
     border: none;
     background: var(--g);

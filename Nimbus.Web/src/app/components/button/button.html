@@ -1,4 +1,5 @@
 <button
+  [class.btn-auto]="!fullWidth()"
   [class.btn-ghost]="variant() === 'ghost'"
   [class.btn-primary]="variant() === 'primary'"
   [disabled]="disabled()"

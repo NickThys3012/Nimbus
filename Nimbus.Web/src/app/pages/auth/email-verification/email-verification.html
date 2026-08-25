@@ -33,7 +33,7 @@
     type="email"
   ></Nimbus-input-field>
   <div modal-actions>
-    <Nimbus-button (click)="closeResendModal()" id="cancel-resend-btn" type="button" variant="ghost">Cancel</Nimbus-button>
-    <Nimbus-button (click)="submitResendEmail()" [disabled]="authStore.isLoading()" id="send-resend-btn" type="button">Send email</Nimbus-button>
+    <Nimbus-button (click)="closeResendModal()" [fullWidth]="false" id="cancel-resend-btn" type="button" variant="ghost">Cancel</Nimbus-button>
+    <Nimbus-button (click)="submitResendEmail()" [disabled]="authStore.isLoading()" [fullWidth]="false" id="send-resend-btn" type="button">Send email</Nimbus-button>
   </div>
 </Nimbus-modal>
