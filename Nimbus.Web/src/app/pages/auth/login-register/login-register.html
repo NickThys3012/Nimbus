@@ -1,6 +1,5 @@
 <div class="body">
   <div class="card">
-
     <div class="brand">
       <Nimbus-logo size="lg" />
       <div class="nm">Nimbus</div>
@@ -14,24 +13,7 @@
 
     @if (showLogin()) {
       <!-- login -->
-        <!-- TODO: this is the placeholder from the mockup needs to be extracted/optimized and implemented in #15-->
-      <div id="p-login">
-        <Nimbus-input-field label="EMAIL ADDRESS" placeholder="name@example.com" type="email"></Nimbus-input-field>
-        <Nimbus-password-field placeholder="••••••••"></Nimbus-password-field>
-
-        <div class="row-between">
-          <label class="check-inline" for="remember-me"><input class="check-box" id="remember-me" type="checkbox" />Remember me</label>
-          <a href="#">Forgot password?</a>
-        </div>
-
-      <Nimbus-button icon="ti-login-2" id="login-btn" type="submit">
-        Sign in
-      </Nimbus-button>
-      <!--TODO:  should be hidden behind a condition -->
-      <Nimbus-banner icon="ti-alert-triangle" id="login-error" type="warning">
-        Email address or password is incorrect.
-      </Nimbus-banner>
-      </div>
+      <Nimbus-login></Nimbus-login>
     } @else {
       <!-- register -->
       <Nimbus-register></Nimbus-register>

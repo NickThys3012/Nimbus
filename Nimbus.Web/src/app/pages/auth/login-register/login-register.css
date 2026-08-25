@@ -42,31 +42,3 @@
     font-weight: 600;
 }
 
-.row-between {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-top: 10px;
-    font-size: 12px;
-}
-
-.row-between a {
-    color: var(--ac);
-    text-decoration: none;
-}
-
-.check-inline {
-    display: flex;
-    align-items: center;
-    gap: 7px;
-    color: var(--dim);
-    cursor: pointer;
-}
-
-.check-box {
-    width: 15px;
-    height: 15px;
-    border-radius: 4px;
-    border: 2px solid var(--ln2);
-    flex: 0 0 auto;
-}

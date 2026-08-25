@@ -1,24 +1,23 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { importProvidersFrom } from '@angular/core';
 import { provideRouter } from '@angular/router';
+import { Login } from './login';
+import { NimbusApiClient } from '../../../../../core/api-client';
 
-import LoginRegister  from './login-register';
-import { NimbusApiClient } from '../../../core/api-client';
-
-describe('LoginRegister', () => {
-  let component: LoginRegister;
-  let fixture: ComponentFixture<LoginRegister>;
+describe('Login', () => {
+  let component: Login;
+  let fixture: ComponentFixture<Login>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [LoginRegister],
+      imports: [Login],
       providers: [
         provideRouter([]),
         importProvidersFrom(NimbusApiClient),
       ],
     }).compileComponents();
 
-    fixture = TestBed.createComponent(LoginRegister);
+    fixture = TestBed.createComponent(Login);
     component = fixture.componentInstance;
     await fixture.whenStable();
   });
