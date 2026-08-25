@@ -37,7 +37,11 @@ public sealed class SmtpEmailSender : IEmailSender
 
             if (result.Succeeded)
             {
-                _logger.LogDebug(
+                // Must be Information, not Debug: the "Serilog":"MinimumLevel":"Default" in
+                // production is Information, so a Debug-level EmailSent never reaches any
+                // sink (console/file/Loki) -- the nimbus-mail-overview dashboard's send-rate
+                // panel would then only ever show failures/retries, never successes.
+                _logger.LogInformation(
                     "EmailSent {Template} to {Recipient} attempt {Attempt} id {MessageId}",
                     message.Template ?? "adhoc",
                     message.ToAddress,
