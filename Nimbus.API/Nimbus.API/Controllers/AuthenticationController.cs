@@ -20,17 +20,20 @@ public class AuthenticationController : ControllerBase
     private readonly SignInManager<ApplicationUser> _signInManager;
     private readonly TokenService _tokens;
     private readonly UserManager<ApplicationUser> _users;
+    private readonly ILogger<AuthenticationController> _logger;
 
     public AuthenticationController(
         ISender mediator,
         TokenService tokens,
         UserManager<ApplicationUser> users,
-        SignInManager<ApplicationUser> signInManager)
+        SignInManager<ApplicationUser> signInManager,
+        ILogger<AuthenticationController> logger)
     {
         _mediator = mediator;
         _tokens = tokens;
         _users = users;
         _signInManager = signInManager;
+        _logger = logger;
     }
 
     [HttpPost("login")]
@@ -103,18 +106,22 @@ public class AuthenticationController : ControllerBase
         var raw = Request.Cookies["refreshToken"];
         if (raw is null)
         {
+            _logger.LogInformation("Refresh rejected: no refreshToken cookie on the request.");
             return Unauthorized();
         }
 
         var existing = await _tokens.ValidateRefreshTokenAsync(raw);
         if (existing is null)
         {
+            _logger.LogInformation(
+                "Refresh rejected: refreshToken cookie did not match a valid, non-expired token (unknown, expired, or reuse of an already-rotated/revoked token).");
             return Unauthorized();
         }
 
         var user = await _users.FindByIdAsync(existing.UserId);
         if (user is null)
         {
+            _logger.LogInformation("Refresh rejected: token was valid but its UserId {UserId} no longer exists.", existing.UserId);
             return Unauthorized();
         }
 
