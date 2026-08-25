@@ -8,7 +8,8 @@
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
     "generate:api": "curl -sf http://localhost:5214/openapi/v1.json -o .openapi-spec.json && openapi --input .openapi-spec.json --output src/app/core/api-client --client angular --useOptions --name NimbusApiClient && rm -f .openapi-spec.json",
-    "lint": "ng lint"
+    "lint": "ng lint",
+    "test:e2e": "playwright test"
   },
   "private": true,
   "packageManager": "npm@11.19.0",
@@ -29,6 +30,7 @@
     "@angular/cli": "^22.1.5",
     "@angular/compiler-cli": "^22.1.3",
     "@eslint/js": "^10.0.1",
+    "@playwright/test": "^1.62.1",
     "@vitest/coverage-v8": "^4.1.10",
     "angular-eslint": "22.1.0",
     "eslint": "^10.3.0",

@@ -154,6 +154,53 @@ jobs:
           path: Nimbus.Web/dist/Nimbus.Web/browser
           retention-days: 1
 
+  e2e:
+    name: End-to-end (Playwright)
+    # Only runs once both sides are known-good — this job spins up the full
+    # Docker stack (API + SQL Server + MinIO + Mailpit), which is by far the
+    # slowest job here, so a broken dotnet/angular build fails fast instead
+    # of also paying for this.
+    needs: [dotnet, angular]
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: Nimbus.Web
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: Nimbus.Web/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      # global-setup.ts also does this if missing, but doing it explicitly
+      # here keeps the "throwaway local-only secrets" comment in
+      # .env.example visibly true even in CI.
+      - name: Prepare .env
+        working-directory: .
+        run: cp .env.example .env
+
+      - name: Run e2e suite
+        # Brings the Docker stack up itself (see e2e/global-setup.ts) —
+        # ubuntu-latest runners have Docker preinstalled, no separate setup
+        # needed. Slower than the unit suites (real SQL Server cold start +
+        # image builds), hence its own job gated behind dotnet/angular.
+        run: npm run test:e2e
+
+      - uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: playwright-report
+          path: Nimbus.Web/playwright-report
+          retention-days: 7
+
   publish:
     name: Publish combined artifact
     needs: [dotnet, angular]

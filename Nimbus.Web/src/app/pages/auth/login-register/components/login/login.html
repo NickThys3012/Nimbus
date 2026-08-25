@@ -13,7 +13,7 @@
     Sign in
   </Nimbus-button>
   </form>
-  @if (hasError) {
+  @if (hasError()) {
     <Nimbus-banner icon="ti-alert-triangle" id="login-error" type="warning">
       Email address or password is incorrect.
     </Nimbus-banner>
