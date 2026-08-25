@@ -6,6 +6,7 @@
     --a: #ef9f27; --ab: rgba(239,159,39,.14);
     --r: #f09595; --rb: rgba(240,149,149,.14);
     --chip: #1e242e; --inp: #0e1218;
+    --overlay: rgba(0,0,0,.45); --shadow-sm: rgba(0,0,0,.28); --shadow-md: rgba(0,0,0,.35);
 }
 
 html.lt {
@@ -14,5 +15,5 @@ html.lt {
     --ac: #0f6e56; --acbg: #e1f5ee; --g: #0f6e56; --gb: #e1f5ee;
     --a: #854f0b; --ab: #faeeda; --r: #a32d2d; --rb: #fcebeb;
     --chip: #edebe4; --inp: #faf9f6;
+    --overlay: rgba(0,0,0,.45); --shadow-sm: rgba(0,0,0,.28); --shadow-md: rgba(0,0,0,.35);
 }
-

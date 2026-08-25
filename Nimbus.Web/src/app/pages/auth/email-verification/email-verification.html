@@ -19,16 +19,21 @@
   }
 </div>
 
-@if (isResendModalOpen) {
-  <div (click)="closeResendModal()" class="modal-backdrop">
-    <div (click)="$event.stopPropagation()" aria-modal="true" class="modal" role="dialog">
-      <div class="hd">Resend verification email</div>
-      <div class="lede">Enter the email address where we should send the new verification link.</div>
-      <Nimbus-input-field [control]="emailControl" label="EMAIL ADDRESS" placeholder="name@example.com" type="email"></Nimbus-input-field>
-      <div class="modal-actions">
-        <Nimbus-button (click)="closeResendModal()" id="cancel-resend-btn" type="button" variant="ghost">Cancel</Nimbus-button>
-        <Nimbus-button (click)="submitResendEmail()" [disabled]="authStore.isLoading()" id="send-resend-btn" type="button">Send email</Nimbus-button>
-      </div>
-    </div>
+<Nimbus-modal
+  (closed)="closeResendModal()"
+  [description]="'Enter the email address where we should send the new verification link.'"
+  [isOpen]="isResendModalOpen"
+  [title]="'Resend verification email'"
+>
+  <Nimbus-input-field
+    [control]="emailControl"
+    label="EMAIL ADDRESS"
+    modal-body
+    placeholder="name@example.com"
+    type="email"
+  ></Nimbus-input-field>
+  <div modal-actions>
+    <Nimbus-button (click)="closeResendModal()" id="cancel-resend-btn" type="button" variant="ghost">Cancel</Nimbus-button>
+    <Nimbus-button (click)="submitResendEmail()" [disabled]="authStore.isLoading()" id="send-resend-btn" type="button">Send email</Nimbus-button>
   </div>
-}
+</Nimbus-modal>

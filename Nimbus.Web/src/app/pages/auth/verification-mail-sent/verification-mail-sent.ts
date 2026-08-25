@@ -3,13 +3,14 @@ import { FormControl, Validators } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { Button } from '../../../components/button/button';
 import { InputField } from '../../../components/form/input-field/input-field';
+import { Modal } from '../../../components/modal/modal';
 import { Glyph } from '../../../components/glyph/glyph';
 import { AuthStore } from '../../../core/auth/auth.store';
 import { MatSnackBar } from '@angular/material/snack-bar';
 
 @Component({
   selector: 'Nimbus-verification-mail-sent',
-  imports: [Button, Glyph, InputField],
+  imports: [Button, Glyph, InputField, Modal],
   templateUrl: './verification-mail-sent.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrl: './verification-mail-sent.css',

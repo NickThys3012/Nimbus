@@ -4,6 +4,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { Glyph } from '../../../components/glyph/glyph';
 import { Button } from '../../../components/button/button';
 import { InputField } from '../../../components/form/input-field/input-field';
+import { Modal } from '../../../components/modal/modal';
 import { AuthStore } from '../../../core/auth/auth.store';
 import { MatSnackBar } from '@angular/material/snack-bar';
 
@@ -11,7 +12,7 @@ type VerificationStatus = 'success' | 'error';
 
 @Component({
   selector: 'Nimbus-email-verification',
-  imports: [Glyph, Button, InputField],
+  imports: [Glyph, Button, InputField, Modal],
   templateUrl: './email-verification.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrl: './email-verification.css',
