@@ -20,6 +20,14 @@
 .modal-actions {
   display: flex;
   justify-content: flex-end;
-  gap: 10px;
   margin-top: 14px;
 }
+
+:host ::ng-deep [modal-actions] {
+  display: flex;
+  flex-direction: row;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 10px;
+}
+
