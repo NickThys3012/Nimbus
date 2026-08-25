@@ -1,4 +1,6 @@
+using System.Security.Claims;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Nimbus.Application.Features.Auth.Command.CreateUser;
@@ -150,6 +152,26 @@ public class AuthenticationController : ControllerBase
     {
         var user = await _mediator.Send(new GetUserByEmailQuery(email));
         return Ok(user);
+    }
+
+    // ── GET /api/authentication/me ───────────────────────────────────
+    // Reports identity, roles and approval state for the signed-in user so the Angular shell
+    // can decide what to render (issue #15) — separate from login/refresh so the app can
+    // re-check approval state at any point during an active session, not only right after
+    // authenticating.
+    [Authorize]
+    [HttpGet("me")]
+    public async Task<ActionResult<CurrentUserDto>> Me()
+    {
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var user = userId is null ? null : await _users.FindByIdAsync(userId);
+        if (user is null)
+        {
+            return Unauthorized();
+        }
+
+        var roles = await _users.GetRolesAsync(user);
+        return Ok(new CurrentUserDto(user.Id, user.Email!, user.FirstName, user.Name, roles.ToList(), user.IsApproved));
     }
 
 

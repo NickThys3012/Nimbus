@@ -12,6 +12,7 @@ export type { OpenAPIConfig } from './core/OpenAPI';
 
 export type { ClientTelemetryEventDto } from './models/ClientTelemetryEventDto';
 export { ClientTelemetryEventType } from './models/ClientTelemetryEventType';
+export type { CurrentUserDto } from './models/CurrentUserDto';
 export type { LoginRequestDto } from './models/LoginRequestDto';
 export type { LoginResponseDto } from './models/LoginResponseDto';
 export type { RegisterRequestDto } from './models/RegisterRequestDto';

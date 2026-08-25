@@ -5,6 +5,7 @@ import { Observable, catchError, finalize, map, of, tap, throwError } from 'rxjs
 import {
   AuthenticationService,
   ApiError,
+  type CurrentUserDto,
   type LoginRequestDto,
   type LoginResponseDto,
   RegisterRequestDto,
@@ -56,6 +57,21 @@ export class AuthStore {
     stream: ({ params: email }) =>
       this.authApi.getApiAuthentication({ email: email ?? undefined }),
   });
+
+  /**
+   * Identity, roles and approval state for the signed-in user (issue #15) — refetches
+   * automatically whenever `_accessToken` changes (login/refresh/restoreSession), and is
+   * skipped entirely while signed out since `params` resolves to `undefined` then. This is
+   * what lets guards/the shell tell an approved pilot apart from one still pending admin
+   * approval, without that state ever being trusted from the client-only route guard.
+   */
+  readonly currentUser = rxResource<CurrentUserDto, string | undefined>({
+    params: () => this._accessToken() ?? undefined,
+    stream: () => this.authApi.getApiAuthenticationMe(),
+  });
+
+  readonly roles = computed(() => this.currentUser.value()?.roles ?? []);
+  readonly isApproved = computed(() => this.currentUser.value()?.isApproved ?? false);
 
   login(request: LoginRequestDto): void {
     this._isLoading.set(true);
