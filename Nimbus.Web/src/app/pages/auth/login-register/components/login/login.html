@@ -4,8 +4,7 @@
   <Nimbus-password-field [control]="loginForm.controls.password" placeholder="••••••••"></Nimbus-password-field>
 
   <div class="row-between">
-    <label class="check-inline" for="remember-me"><input class="check-box" id="remember-me" type="checkbox" />Remember me</label>
-    <!--TODO needs to be implemented-->
+    <label class="check-inline" for="remember-me"><input class="check-box" [formControl]="loginForm.controls.rememberMe" id="remember-me" type="checkbox" />Remember me</label>
     <a href="#">Forgot password?</a>
   </div>
 

@@ -26,6 +26,7 @@ export class Login {
         Validators.pattern(/^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[^A-Za-z0-9]).{8,}$/),
       ],
     ],
+    rememberMe: [false],
   });
   private authClient = inject(AuthStore);
   private router = inject(Router);
@@ -42,12 +43,13 @@ export class Login {
       this.loginForm.markAllAsTouched();
       return;
     }
-    const { email, password } = this.loginForm.value;
+    const { email, password, rememberMe } = this.loginForm.value;
 
     this.authClient
       .login({
         email: email!,
         password: password!,
+        rememberMe: rememberMe ?? false,
       })
       .subscribe({
         next: () => this.router.navigate(['/home'], { queryParams: { email: email } }),

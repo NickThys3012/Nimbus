@@ -113,6 +113,57 @@ public class LoginFlowTests
         Assert.That(setCookieHeader, Does.Contain("samesite=strict").IgnoreCase);
     }
 
+    // ── Remember me ──────────────────────────────────────────────────
+    [Test]
+    public async Task Login_WithoutRememberMe_SetsSessionCookie_WithNoExpiresAttribute()
+    {
+        using var client = _factory.CreateClient();
+        var email = await RegisterConfirmedUserAsync(client);
+
+        var response = await client.PostAsJsonAsync("/api/authentication/login",
+            new LoginRequestDto(email, Password, RememberMe: false));
+
+        var setCookieHeader = GetSetCookieHeader(response);
+        Assert.That(setCookieHeader, Is.Not.Null);
+        Assert.That(setCookieHeader, Does.Not.Contain("expires=").IgnoreCase,
+            "unchecked 'remember me' must produce a session cookie (cleared on browser close), not a persistent one");
+    }
+
+    [Test]
+    public async Task Login_WithRememberMe_SetsPersistentCookie_WithExpiresAttribute()
+    {
+        using var client = _factory.CreateClient();
+        var email = await RegisterConfirmedUserAsync(client);
+
+        var response = await client.PostAsJsonAsync("/api/authentication/login",
+            new LoginRequestDto(email, Password, RememberMe: true));
+
+        var setCookieHeader = GetSetCookieHeader(response);
+        Assert.That(setCookieHeader, Is.Not.Null);
+        Assert.That(setCookieHeader, Does.Contain("expires=").IgnoreCase,
+            "checked 'remember me' must produce a persistent cookie surviving browser restarts");
+    }
+
+    [Test]
+    public async Task Refresh_PreservesRememberMeChoice_AcrossRotation()
+    {
+        using var client = _factory.CreateClient();
+        var email = await RegisterConfirmedUserAsync(client);
+
+        var loginResponse = await client.PostAsJsonAsync("/api/authentication/login",
+            new LoginRequestDto(email, Password, RememberMe: true));
+        var refreshCookie = ExtractCookie(loginResponse, CookieName)!;
+
+        using var refreshRequest = new HttpRequestMessage(HttpMethod.Post, "/api/authentication/refresh");
+        refreshRequest.Headers.Add("Cookie", $"{CookieName}={refreshCookie}");
+        var refreshResponse = await client.SendAsync(refreshRequest);
+
+        var setCookieHeader = GetSetCookieHeader(refreshResponse);
+        Assert.That(setCookieHeader, Is.Not.Null);
+        Assert.That(setCookieHeader, Does.Contain("expires=").IgnoreCase,
+            "rotating a 'remember me' token must keep issuing a persistent cookie, not fall back to a session one");
+    }
+
     // ── Refresh-token reuse detection ───────────────────────────────
     [Test]
     public async Task Refresh_ReplayingRotatedOutCookie_RevokesWholeFamily()
@@ -242,5 +293,12 @@ public class LoginFlowTests
         var afterName = line[(cookieName.Length + 1)..];
         var separatorIndex = afterName.IndexOf(';');
         return separatorIndex >= 0 ? afterName[..separatorIndex] : afterName;
+    }
+
+    private static string? GetSetCookieHeader(HttpResponseMessage response)
+    {
+        return response.Headers.TryGetValues("Set-Cookie", out var values)
+            ? values.FirstOrDefault(v => v.StartsWith($"{CookieName}=", StringComparison.OrdinalIgnoreCase))
+            : null;
     }
 }

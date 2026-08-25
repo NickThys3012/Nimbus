@@ -66,9 +66,9 @@ public class AuthenticationController : ControllerBase
 
         var roles = await _users.GetRolesAsync(user);
         var (accessToken, expiry) = _tokens.GenerateAccessToken(user, roles);
-        var (rawRefresh, _) = await _tokens.GenerateRefreshTokenAsync(user.Id);
+        var (rawRefresh, refreshEntity) = await _tokens.GenerateRefreshTokenAsync(user.Id, request.RememberMe);
 
-        SetRefreshCookie(rawRefresh);
+        SetRefreshCookie(rawRefresh, request.RememberMe ? refreshEntity.ExpiresAt : null);
 
         return Ok(new LoginResponseDto(accessToken, expiry, user.Email!, roles.FirstOrDefault() ?? nameof(UserRole.Pilot)));
     }
@@ -130,11 +130,13 @@ public class AuthenticationController : ControllerBase
 
         var roles = await _users.GetRolesAsync(user);
         var (newAccess, expiry) = _tokens.GenerateAccessToken(user, roles);
-        var (newRaw, _) = await _tokens.GenerateRefreshTokenAsync(user.Id);
+        // Carry the "remember me" choice forward across rotation — it was fixed at login time
+        // and shouldn't silently flip just because the token got rotated on this refresh.
+        var (newRaw, newEntity) = await _tokens.GenerateRefreshTokenAsync(user.Id, existing.RememberMe);
 
         await _tokens.RevokeTokenAsync(existing, TokenService.HashToken(newRaw));
 
-        SetRefreshCookie(newRaw);
+        SetRefreshCookie(newRaw, existing.RememberMe ? newEntity.ExpiresAt : null);
 
         return Ok(new LoginResponseDto(newAccess, expiry, user.Email!, roles.FirstOrDefault() ?? nameof(UserRole.Pilot)));
     }
@@ -186,7 +188,11 @@ public class AuthenticationController : ControllerBase
 
 
     // ── Cookie helper ───────────────────────────────────────────────
-    private void SetRefreshCookie(string raw)
+    // `expires`: null means "session cookie" — the browser drops it when it closes, which is
+    // the behaviour we want when the user did NOT check "remember me". A value means
+    // persistent, surviving browser restarts (and matching the underlying refresh token's own
+    // expiry exactly, so the cookie and the DB record it authenticates always agree).
+    private void SetRefreshCookie(string raw, DateTimeOffset? expires)
     {
         // Secure=true requires the cookie to actually travel over HTTPS. In every real
         // deployment that's true (Caddy/VPS terminate TLS), but a plain `dotnet run`/
@@ -202,7 +208,7 @@ public class AuthenticationController : ControllerBase
             HttpOnly = true,
             Secure = !_environment.IsDevelopment(),
             SameSite = SameSiteMode.Strict,
-            Expires = DateTimeOffset.UtcNow.AddDays(7)
+            Expires = expires
         });
     }
 }
