@@ -52,7 +52,7 @@ export class Login {
         rememberMe: rememberMe ?? false,
       })
       .subscribe({
-        next: () => this.router.navigate(['/home'], { queryParams: { email: email } }),
+        next: () => this.router.navigate(['/home']),
       });
   }
 }
