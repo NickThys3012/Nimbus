@@ -68,7 +68,7 @@ public class AuthenticationController : ControllerBase
         var (accessToken, expiry) = _tokens.GenerateAccessToken(user, roles);
         var (rawRefresh, refreshEntity) = await _tokens.GenerateRefreshTokenAsync(user.Id, request.RememberMe);
 
-        SetRefreshCookie(rawRefresh, request.RememberMe ? refreshEntity.ExpiresAt : null);
+        SetRefreshCookie(rawRefresh, request.RememberMe ? new DateTimeOffset(refreshEntity.ExpiresAt) : null);
 
         return Ok(new LoginResponseDto(accessToken, expiry, user.Email!, roles.FirstOrDefault() ?? nameof(UserRole.Pilot)));
     }
