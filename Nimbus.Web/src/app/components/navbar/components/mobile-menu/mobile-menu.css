@@ -1,0 +1,150 @@
+/* ===== mobile / compact ===== */
+.sheet {
+    position: fixed;
+    inset: 0;
+    z-index: 55;
+    background: var(--bg);
+    display: flex;
+    flex-direction: column;
+    padding: 13px 20px 26px;
+    animation: drop .18s ease;
+}
+
+@keyframes drop {
+    from {
+        opacity: 0;
+        transform: translateY(-8px);
+    }
+    to {
+        opacity: 1;
+        transform: none;
+    }
+}
+
+.sheet[hidden] {
+    display: none;
+}
+
+.sheet-top {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 22px;
+}
+
+.sheet-links {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.sheet-links a {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    text-decoration: none;
+    color: var(--tx);
+    font-size: 16px;
+    padding: 13px 10px;
+    border-radius: 10px;
+}
+
+.sheet-links a:hover {
+    background: var(--chip);
+}
+
+.sheet-links a i {
+    font-size: 19px;
+    color: var(--dim);
+    width: 19px;
+}
+
+.sheet-links a[aria-current="page"] {
+    color: var(--ac);
+}
+
+.sheet-links a[aria-current="page"] i {
+    color: var(--ac);
+}
+
+.sheet-cta {
+    margin-top: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 9px;
+    padding-top: 26px;
+}
+
+.sheet-cta .btn {
+    width: 100%;
+    justify-content: center;
+    padding: 12px;
+    font-size: 14px;
+}
+
+.sheet-note {
+    display: flex;
+    gap: 9px;
+    align-items: flex-start;
+    margin-top: 14px;
+    font-size: 12px;
+    color: var(--a);
+    background: var(--ab);
+    border-radius: 9px;
+    padding: 11px 12px;
+    line-height: 1.5;
+}
+
+.sheet-note i {
+    font-size: 15px;
+    margin-top: 1px;
+    flex: 0 0 auto;
+}
+
+.mark {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    text-decoration: none;
+    color: var(--tx);
+    flex: 0 0 auto;
+}
+
+.mark .tile {
+    width: 28px;
+    height: 28px;
+    border-radius: 7px;
+    background: var(--ac);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.mark .tile svg {
+    width: 22px;
+    height: 22px;
+}
+
+.mark .wm {
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: -.01em;
+}
+
+
+.mark .tag {
+    font-size: 10px;
+    font-family: var(--mono);
+    color: var(--fnt);
+    border: 1px solid var(--ln2);
+    border-radius: 6px;
+    padding: 2px 6px;
+    margin-left: 2px;
+    text-transform: uppercase;
+    letter-spacing: .05em;
+}
+
+
+.spacer {
+    flex: 1;
+}

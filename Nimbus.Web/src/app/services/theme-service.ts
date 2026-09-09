@@ -25,4 +25,12 @@ export class ThemeService {
   toggle() {
     this.isDarkMode.update((val) => !val);
   }
+
+  SetDarkMode() {
+    this.isDarkMode.set(true);
+  }
+
+  SetLightMode() {
+    this.isDarkMode.set(false);
+  }
 }

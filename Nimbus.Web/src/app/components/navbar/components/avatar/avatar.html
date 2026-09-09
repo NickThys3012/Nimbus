@@ -1,0 +1,36 @@
+<div class="avatar-wrap">
+  <button
+    (click)="toggleMenu()"
+    [attr.aria-expanded]="isMenuOpen"
+    aria-controls="av-menu"
+    aria-haspopup="menu"
+    class="avatar"
+    id="av-btn"
+  >
+    {{ authStore?.initials() }}
+  </button>
+  <div [hidden]="!isMenuOpen" aria-label="User menu" class="menu" id="av-menu" role="menu">
+    <div class="menu-id">
+      <span class="av">{{ authStore?.initials() }}</span>
+      <div>
+        <div class="nm">{{ authStore?.abbreviatedName() }}</div>
+        <div class="em">{{ authStore?.email() }}</div>
+      </div>
+    </div>
+    <div class="menu-sep"></div>
+    <a class="menu-item" role="menuitem" routerLink="/profile"><i aria-hidden="true" class="ti ti-id-badge-2"></i>Profile</a>
+    <a class="menu-item" role="menuitem" routerLink="/settings"><i aria-hidden="true" class="ti ti-settings"></i>Settings</a>
+    @if (authStore.roles().includes('admin')) {
+      <a class="menu-item" role="menuitem" routerLink="/admin"><i aria-hidden="true" class="ti ti-shield-check"></i>Admin<span class="menu-role">admin</span></a>
+    }
+    <div class="menu-sep"></div>
+    <div aria-label="Thema" class="seg" role="group">
+      <button (click)="themeService.SetLightMode()" [class.on]="!themeService.isDarkMode()" data-theme="light">Light</button>
+      <button (click)="themeService.SetDarkMode()" [class.on]="themeService.isDarkMode()" data-theme="dark">Dark</button>
+    </div>
+    <div class="menu-sep"></div>
+    <!-- TODO : add release notes page in later issue-->
+    <!--<a class="menu-item" href="nimbus-release-notes.html" role="menuitem"><i aria-hidden="true" class="ti ti-notes"></i>Whats new<span class="menu-role" style="color:var(--ac); background:var(--acbg);">v1.2</span></a>-->
+    <button (click)="authStore.logout()" class="menu-item danger" data-goto="s-loggedout" role="menuitem"><i aria-hidden="true" class="ti ti-logout"></i>Sign out</button>
+  </div>
+</div>

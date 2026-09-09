@@ -28,6 +28,30 @@ export class AuthStore {
    *  signal-native replacement for manual Observable subscriptions on GETs).
    */
   readonly lookupEmail = signal<string | null>(null);
+  // Mutations (login/logout/refresh) are one-off actions, not reactive
+  readonly roles = computed(() => this.currentUser.value()?.roles ?? []);
+  readonly isApproved = computed(() => this.currentUser.value()?.isApproved ?? false);
+  readonly firstName = computed(() => this.currentUser.value()?.firstName ?? null);
+  readonly name = computed(() => this.currentUser.value()?.name ?? null);
+  /** e.g. "N. Thys" */
+  readonly abbreviatedName = computed(() => {
+    const first = this.firstName();
+    const last = this.name();
+    if (!first && !last) return null;
+    if (!first) return last;
+    if (!last) return first;
+    return `${first[0].toUpperCase()}. ${last}`;
+  });
+  /** e.g. "NT" */
+  readonly initials = computed(() => {
+    const first = this.firstName();
+    const last = this.name();
+    const f = first?.[0]?.toUpperCase() ?? '';
+    const l = last?.[0]?.toUpperCase() ?? '';
+    return f + l || null;
+  });
+
+
   private readonly authApi = inject(AuthenticationService);
   readonly userLookup = rxResource({
     params: () => this.lookupEmail(),
@@ -48,9 +72,6 @@ export class AuthStore {
     params: () => this._accessToken() ?? undefined,
     stream: () => this.authApi.getApiAuthenticationMe(),
   });
-  // Mutations (login/logout/refresh) are one-off actions, not reactive
-  readonly roles = computed(() => this.currentUser.value()?.roles ?? []);
-  readonly isApproved = computed(() => this.currentUser.value()?.isApproved ?? false);
   private readonly _email = signal<string | null>(null);
   readonly email = this._email.asReadonly();
   private readonly _role = signal<string | null>(null);

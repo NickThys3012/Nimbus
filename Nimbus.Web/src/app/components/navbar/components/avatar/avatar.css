@@ -1,0 +1,155 @@
+.avatar-wrap {
+    position: relative;
+    margin-left: 8px;
+}
+
+.avatar {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: var(--acbg);
+    color: var(--ac);
+    font-size: 11px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
+    border: none;
+    cursor: pointer;
+    font-family: var(--sans);
+    padding: 0;
+}
+
+.avatar[aria-expanded="true"] {
+    box-shadow: 0 0 0 2px var(--ac);
+}
+
+.menu {
+    position: absolute;
+    right: 0;
+    top: 36px;
+    width: 236px;
+    z-index: 30;
+    background: var(--pan);
+    border: 1px solid var(--ln2);
+    border-radius: 11px;
+    padding: 6px;
+    box-shadow: 0 10px 28px rgba(0, 0, 0, .32);
+}
+
+html.lt .menu {
+    box-shadow: 0 10px 28px rgba(0, 0, 0, .10);
+}
+
+.menu[hidden] {
+    display: none;
+}
+
+.menu-id {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    padding: 8px 8px 10px;
+}
+
+.menu-id .av {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: var(--acbg);
+    color: var(--ac);
+    font-size: 12px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
+}
+
+.menu-id .nm {
+    font-size: 13px;
+}
+
+.menu-id .em {
+    font-size: 11px;
+    color: var(--fnt);
+    font-family: var(--mono);
+    margin-top: 1px;
+}
+
+.menu-sep {
+    height: 1px;
+    background: var(--ln);
+    margin: 5px 2px;
+}
+
+.menu-item {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    width: 100%;
+    text-align: left;
+    background: none;
+    border: none;
+    color: var(--tx);
+    font-family: var(--sans);
+    font-size: 13px;
+    padding: 8px;
+    border-radius: 7px;
+    cursor: pointer;
+    text-decoration: none;
+}
+
+.menu-item:hover {
+    background: var(--chip);
+}
+
+.menu-item i {
+    font-size: 16px;
+    color: var(--dim);
+}
+
+.menu-item.danger, .menu-item.danger i {
+    color: var(--r);
+}
+
+.menu-item.danger:hover {
+    background: var(--rb);
+}
+
+.menu-role {
+    margin-left: auto;
+    font-size: 10px;
+    font-family: var(--mono);
+    color: var(--a);
+    background: var(--ab);
+    padding: 2px 7px;
+    border-radius: 7px;
+}
+
+.seg {
+    display: flex;
+    background: var(--chip);
+    border-radius: 8px;
+    padding: 3px;
+    margin: 4px 8px 6px;
+}
+
+.seg button {
+    flex: 1;
+    border: none;
+    background: none;
+    color: var(--fnt);
+    font-size: 12px;
+    font-family: var(--sans);
+    padding: 5px 0;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.seg button.on {
+    background: var(--pan);
+    color: var(--tx);
+    font-weight: 600;
+}

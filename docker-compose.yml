@@ -108,8 +108,8 @@ services:
     # installed SQL Server (or another project's compose stack) already binds
     # it. Uncomment only if you need to connect a host tool (SSMS/Azure Data
     # Studio) directly at localhost:1433 and nothing else is using that port.
-    # ports:
-    #   - "1433:1433"
+    ports:
+      - "1434:1433"
     # sa is only ever used for this in-container liveness probe and by
     # sqlserver-init's one-time login bootstrap — never by the API/migrator.
     healthcheck:
