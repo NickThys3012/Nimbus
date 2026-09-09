@@ -20,8 +20,8 @@
     <div class="menu-sep"></div>
     <a class="menu-item" role="menuitem" routerLink="/profile"><i aria-hidden="true" class="ti ti-id-badge-2"></i>Profile</a>
     <a class="menu-item" role="menuitem" routerLink="/settings"><i aria-hidden="true" class="ti ti-settings"></i>Settings</a>
-    @if (authStore.roles().includes('admin')) {
-      <a class="menu-item" role="menuitem" routerLink="/admin"><i aria-hidden="true" class="ti ti-shield-check"></i>Admin<span class="menu-role">admin</span></a>
+    @if (authStore.roles().includes('Admin')) {
+      <a class="menu-item" role="menuitem" routerLink="/admin"><i aria-hidden="true" class="ti ti-shield-check"></i>Admin<span class="menu-role">Admin</span></a>
     }
     <div class="menu-sep"></div>
     <div aria-label="Thema" class="seg" role="group">
