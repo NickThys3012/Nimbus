@@ -24,9 +24,9 @@
       <a class="menu-item" role="menuitem" routerLink="/admin"><i aria-hidden="true" class="ti ti-shield-check"></i>Admin<span class="menu-role">Admin</span></a>
     }
     <div class="menu-sep"></div>
-    <div aria-label="Thema" class="seg" role="group">
-      <button (click)="themeService.SetLightMode()" [class.on]="!themeService.isDarkMode()" data-theme="light">Light</button>
-      <button (click)="themeService.SetDarkMode()" [class.on]="themeService.isDarkMode()" data-theme="dark">Dark</button>
+    <div aria-label="Theme" class="seg" role="group">
+      <button (click)="themeService.setLightMode()" [class.on]="!themeService.isDarkMode()" data-theme="light">Light</button>
+      <button (click)="themeService.setDarkMode()" [class.on]="themeService.isDarkMode()" data-theme="dark">Dark</button>
     </div>
     <div class="menu-sep"></div>
     <!-- TODO : add release notes page in later issue-->

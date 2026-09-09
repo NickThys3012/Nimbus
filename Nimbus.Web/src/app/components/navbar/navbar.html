@@ -21,7 +21,7 @@
     } @else {
       <div class="cta">
         <Nimbus-button (click)="router.navigate(['/login'])" [fullWidth]="false" id="btn-sign-in" type="button" variant="ghost">Sign in</Nimbus-button>
-        <Nimbus-button (click)="router.navigate(['/login/register'])" [fullWidth]="false" id="btn-request-account" type="button" variant="primary">Sign up</Nimbus-button>
+        <Nimbus-button (click)="router.navigate(['/login', 'register'])" [fullWidth]="false" id="btn-request-account" type="button" variant="primary">Sign up</Nimbus-button>
       </div>
       <Nimbus-icon-button
         (pressed)="menuOpen.set(true)"

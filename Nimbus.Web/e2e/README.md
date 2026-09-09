@@ -45,8 +45,7 @@ docker compose -f ../docker-compose.yml -f docker-compose.e2e.yml --profile dev 
 - A full page reload followed by navigating to a guarded route (`/settings`)
   — this only works if `authGuard`'s silent `restoreSession()` (a real
   `POST /api/authentication/refresh` using the httpOnly cookie) succeeds.
-- "Logout": there's currently no logout button in the UI (see the TODO in
-  `navbar.html`), so this calls `POST /api/authentication/logout` directly
-  via `page.request` (shares the browser context's cookie jar) and then
-  confirms the guarded route no longer works afterwards.
+- "Logout": this currently calls `POST /api/authentication/logout` directly via `page.request`
+  (shares the browser context's cookie jar) and then confirms the guarded route no longer works
+  afterwards. Consider switching this to a UI click if/when the logout button is stable in the shell.
 - Wrong-password handling and the 5-attempt account lockout.

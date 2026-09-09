@@ -26,11 +26,20 @@ export class ThemeService {
     this.isDarkMode.update((val) => !val);
   }
 
-  SetDarkMode() {
+  setDarkMode(): void {
     this.isDarkMode.set(true);
   }
 
-  SetLightMode() {
+  setLightMode(): void {
     this.isDarkMode.set(false);
+  }
+
+  // Backwards-compat for existing templates; remove once call sites are updated.
+  SetDarkMode(): void {
+    this.setDarkMode();
+  }
+
+  SetLightMode(): void {
+    this.setLightMode();
   }
 }
