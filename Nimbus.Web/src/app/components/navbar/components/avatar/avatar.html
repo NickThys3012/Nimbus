@@ -7,14 +7,14 @@
     class="avatar"
     id="av-btn"
   >
-    {{ authStore?.initials() }}
+    {{ authStore.initials() }}
   </button>
   <div [hidden]="!isMenuOpen" aria-label="User menu" class="menu" id="av-menu" role="menu">
     <div class="menu-id">
-      <span class="av">{{ authStore?.initials() }}</span>
+      <span class="av">{{ authStore.initials() }}</span>
       <div>
-        <div class="nm">{{ authStore?.abbreviatedName() }}</div>
-        <div class="em">{{ authStore?.email() }}</div>
+        <div class="nm">{{ authStore.abbreviatedName() }}</div>
+        <div class="em">{{ authStore.email() }}</div>
       </div>
     </div>
     <div class="menu-sep"></div>

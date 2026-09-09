@@ -1,5 +1,13 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
+import { AuthStore } from '../../../../core/auth/auth.store';
+import { LOCAL_STORAGE } from '../../../../services/theme-service';
 import { Avatar } from './avatar';
+
+const mockStorage = {
+  getItem: () => null,
+  setItem: () => undefined,
+} as unknown as Storage;
 
 describe('Avatar', () => {
   let component: Avatar;
@@ -8,6 +16,20 @@ describe('Avatar', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [Avatar],
+      providers: [
+        provideRouter([]),
+        { provide: LOCAL_STORAGE, useValue: mockStorage },
+        {
+          provide: AuthStore,
+          useValue: {
+            initials: () => 'NT',
+            abbreviatedName: () => 'N. Thys',
+            email: () => 'nick@example.com',
+            roles: () => [],
+            logout: () => undefined,
+          },
+        },
+      ],
     }).compileComponents();
 
     fixture = TestBed.createComponent(Avatar);

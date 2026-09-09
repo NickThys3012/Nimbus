@@ -2,6 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { Nimbus } from './Nimbus';
 import { LOCAL_STORAGE } from './services/theme-service';
+import { AuthStore } from './core/auth/auth.store';
 
 const store: Record<string, string> = {};
 const mockStorage = {
@@ -23,7 +24,17 @@ describe('App', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [Nimbus],
-      providers: [provideRouter([]), { provide: LOCAL_STORAGE, useValue: mockStorage }],
+      providers: [
+        provideRouter([]),
+        { provide: LOCAL_STORAGE, useValue: mockStorage },
+        {
+          provide: AuthStore,
+          useValue: {
+            isAuthenticated: () => false,
+            role: () => null,
+          },
+        },
+      ],
     }).compileComponents();
   });
 
