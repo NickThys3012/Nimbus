@@ -32,6 +32,7 @@ describe('App', () => {
           useValue: {
             isAuthenticated: () => false,
             role: () => null,
+            roles: () => [],
           },
         },
       ],

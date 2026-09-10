@@ -19,6 +19,7 @@ describe('Navbar', () => {
           useValue: {
             isAuthenticated: () => false,
             role: () => null,
+            roles: () => [],
           },
         },
       ],
