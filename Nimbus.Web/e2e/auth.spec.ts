@@ -53,7 +53,7 @@ async function login(page: Page, email: string) {
   await page.goto('/login');
   await page.getByRole('textbox', { name: 'EMAIL ADDRESS' }).fill(email);
   await page.locator('input#pw-reg').fill(password);
-  await page.getByRole('button', { name: 'Sign in' }).click();
+  await page.locator('#p-login').getByRole('button', { name: 'Sign in' }).click();
   await expect(page).toHaveURL(/\/home/);
 }
 
@@ -122,7 +122,7 @@ test.describe('Login / register / refresh / logout', () => {
     await page.goto('/login');
     await page.getByRole('textbox', { name: 'EMAIL ADDRESS' }).fill(email);
     await page.locator('input#pw-reg').fill(wrongPassword);
-    await page.getByRole('button', { name: 'Sign in' }).click();
+    await page.locator('#p-login').getByRole('button', { name: 'Sign in' }).click();
 
     await expect(page.locator('nimbus-banner#login-error')).toBeVisible();
     await expect(page).toHaveURL(/\/login/);
@@ -136,7 +136,7 @@ test.describe('Login / register / refresh / logout', () => {
     for (let attempt = 0; attempt < 5; attempt++) {
       await page.getByRole('textbox', { name: 'EMAIL ADDRESS' }).fill(email);
       await page.locator('input#pw-reg').fill(wrongPassword);
-      await page.getByRole('button', { name: 'Sign in' }).click();
+      await page.locator('#p-login').getByRole('button', { name: 'Sign in' }).click();
       await expect(page.locator('nimbus-banner#login-error')).toBeVisible();
     }
 
@@ -144,7 +144,7 @@ test.describe('Login / register / refresh / logout', () => {
     // rejected — the account is locked out regardless of credentials now.
     await page.getByRole('textbox', { name: 'EMAIL ADDRESS' }).fill(email);
     await page.locator('input#pw-reg').fill(password);
-    await page.getByRole('button', { name: 'Sign in' }).click();
+    await page.locator('#p-login').getByRole('button', { name: 'Sign in' }).click();
 
     await expect(page.locator('nimbus-banner#login-error')).toBeVisible();
     await expect(page).toHaveURL(/\/login/);
