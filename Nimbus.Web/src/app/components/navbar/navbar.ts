@@ -33,7 +33,7 @@ export class Navbar {
 
   readonly visibleNavItems = computed(() => {
     const isLoggedIn = this.authStore.isAuthenticated();
-    const role = this.authStore.role();
+    const roles = this.authStore.roles();
 
     return this.navItems.filter((item) => {
       // Show only public items while logged out.
@@ -46,7 +46,7 @@ export class Navbar {
         return false;
       }
 
-      return !item.requiresRole || item.requiresRole === role;
+      return !item.requiresRole || roles.includes(item.requiresRole);
     });
   });
 }
