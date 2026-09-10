@@ -4,6 +4,7 @@
 /* eslint-disable */
 import { Injectable } from '@angular/core';
 import type { Observable } from 'rxjs';
+import type { CurrentUserDto } from '../models/CurrentUserDto';
 import type { LoginRequestDto } from '../models/LoginRequestDto';
 import type { LoginResponseDto } from '../models/LoginResponseDto';
 import type { RegisterRequestDto } from '../models/RegisterRequestDto';
@@ -118,6 +119,16 @@ export class AuthenticationService {
             query: {
                 'email': email,
             },
+        });
+    }
+    /**
+     * @returns CurrentUserDto OK
+     * @throws ApiError
+     */
+    public getApiAuthenticationMe(): Observable<CurrentUserDto> {
+        return this.httpRequest.request({
+            method: 'GET',
+            url: '/api/Authentication/me',
         });
     }
 }

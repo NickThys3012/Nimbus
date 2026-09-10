@@ -1,0 +1,13 @@
+<button
+  (click)="onPressed()"
+  [attr.aria-controls]="ariaControls() || null"
+  [attr.aria-expanded]="ariaExpanded()"
+  [attr.aria-label]="ariaLabel()"
+  [disabled]="disabled()"
+  [id]="id()"
+  class="icon-btn"
+  type="button"
+>
+  <i [class]="'ti ' + icon()" aria-hidden="true"></i>
+</button>
+

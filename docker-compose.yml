@@ -108,8 +108,8 @@ services:
     # installed SQL Server (or another project's compose stack) already binds
     # it. Uncomment only if you need to connect a host tool (SSMS/Azure Data
     # Studio) directly at localhost:1433 and nothing else is using that port.
-    # ports:
-    #   - "1433:1433"
+    ports:
+      - "1434:1433"
     # sa is only ever used for this in-container liveness probe and by
     # sqlserver-init's one-time login bootstrap — never by the API/migrator.
     healthcheck:
@@ -204,6 +204,13 @@ services:
       MP_MAX_MESSAGES: 500
       MP_SMTP_AUTH_ACCEPT_ANY: 1
       MP_SMTP_AUTH_ALLOW_INSECURE: 1
+    # Without this, mailpit only joins Compose's implicit default network
+    # (every other service here opts out of that by declaring nimbus-dev
+    # explicitly) — the api container then can't resolve the `mailpit`
+    # hostname at all ("Name or service not known"), so it must be listed
+    # here too even though nothing currently sets Email:SmtpHost=mailpit by
+    # default (see Nimbus.Web/e2e/docker-compose.e2e.yml, which does).
+    networks: [nimbus-dev]
 
 networks:
   nimbus-dev:

@@ -1,0 +1,31 @@
+
+<div [hidden]="!menuOpen()" class="sheet" id="sheet">
+  <div class="sheet-top">
+    <a aria-label="Nimbus" class="mark" href="#">
+      <span class="tile"><svg aria-hidden="true" viewBox="0 0 48 48"><path d="M9 22 C17 14 31 14 39 8 M9 30 C17 22 31 22 39 16 M9 38 C17 30 31 30 39 24" fill="none" stroke="var(--bg)" stroke-linecap="round" stroke-width="4.5"></path></svg></span>
+      <span class="wm">Nimbus</span>
+    </a>
+    <div class="spacer"></div>
+    <Nimbus-icon-button
+      (pressed)="menuOpen.set(false)"
+      [ariaExpanded]="menuOpen()"
+      ariaControls="sheet"
+      ariaLabel="Close menu"
+      icon="ti-x"
+      id="sheet-close"
+    ></Nimbus-icon-button>
+  </div>
+
+  <nav aria-label="nav bar" class="sheet-links">
+    @for (item of navItems(); track item.label) {
+      <a (click)="closeMenu()" [routerLinkActiveOptions]="{ exact: true }" [routerLink]="item.route" routerLinkActive="on">
+        <i [class]="'ti ' + item.icon" aria-hidden="true"></i>{{ item.label }}
+      </a>
+    }
+  </nav>
+
+  <div class="sheet-cta">
+    <Nimbus-button (click)="navigateTo(['/login'])" id="btn-sign-in" type="button" variant="ghost">Sign in</Nimbus-button>
+    <Nimbus-button (click)="navigateTo(['/login', 'register'])" id="btn-request-account" type="button" variant="primary">Request account</Nimbus-button>
+  </div>
+</div>

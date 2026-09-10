@@ -49,15 +49,21 @@ public class TokenService
 
     // ── Refresh token ────────────────────────────────────────────────
     public async Task<(string raw, RefreshToken entity)>
-        GenerateRefreshTokenAsync(string userId)
+        GenerateRefreshTokenAsync(string userId, bool rememberMe = false)
     {
         var raw = Convert.ToBase64String(RandomNumberGenerator.GetBytes(64));
         var hash = HashToken(raw);
-        var days = _config.GetValue("Jwt:RefreshTokenDays", 7);
+
+        // "Remember me": a long-lived token when checked (matches the persistent cookie),
+        // a short-lived one otherwise so an unattended shared machine isn't left with a
+        // week-long valid session cookie after the browser is closed and reopened.
+        var expiresAt = rememberMe
+            ? DateTime.UtcNow.AddDays(_config.GetValue("Jwt:RefreshTokenDays", 7))
+            : DateTime.UtcNow.AddHours(_config.GetValue("Jwt:RefreshTokenSessionHours", 12));
 
         var entity = new RefreshToken
         {
-            UserId = userId, TokenHash = hash, CreatedAt = DateTime.UtcNow, ExpiresAt = DateTime.UtcNow.AddDays(days)
+            UserId = userId, TokenHash = hash, CreatedAt = DateTime.UtcNow, ExpiresAt = expiresAt, RememberMe = rememberMe
         };
 
         _db.RefreshTokens.Add(entity);

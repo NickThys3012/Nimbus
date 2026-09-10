@@ -188,6 +188,7 @@ finally { Log.CloseAndFlush(); }
 
 return 0;
 
+
 // Renders a small bitmap with a text label — text rendering is what actually
 // exercises fontconfig, which is the dependency a slim runtime image is missing
 // when everything else "looks" fine. Returns non-zero so a Dockerfile RUN step
@@ -221,3 +222,8 @@ int RunRenderSmokeTest()
         return 1;
     }
 }
+
+// Exposes the top-level-statements entry point as a type WebApplicationFactory<Program> can
+// reference from Nimbus.Api.Tests — required for in-process integration tests, otherwise
+// unused by the app itself.
+public partial class Program;

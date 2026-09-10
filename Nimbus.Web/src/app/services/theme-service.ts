@@ -25,4 +25,21 @@ export class ThemeService {
   toggle() {
     this.isDarkMode.update((val) => !val);
   }
+
+  setDarkMode(): void {
+    this.isDarkMode.set(true);
+  }
+
+  setLightMode(): void {
+    this.isDarkMode.set(false);
+  }
+
+  // Backwards-compat for existing templates; remove once call sites are updated.
+  SetDarkMode(): void {
+    this.setDarkMode();
+  }
+
+  SetLightMode(): void {
+    this.setLightMode();
+  }
 }

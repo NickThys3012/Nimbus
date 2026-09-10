@@ -46,6 +46,10 @@ export const routes: Routes = [
     loadComponent: () => import('./pages/auth/login-register/login-register'),
   },
   {
+    path: 'login/:tab',
+    loadComponent: () => import('./pages/auth/login-register/login-register'),
+  },
+  {
     path: 'email-verification',
     loadComponent: () => import('./pages/auth/email-verification/email-verification'),
   },

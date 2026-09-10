@@ -1,0 +1,20 @@
+<div id="p-login">
+  <form (ngSubmit)="onSubmit()" [formGroup]="loginForm">
+  <Nimbus-input-field [control]="loginForm.controls.email" label="EMAIL ADDRESS" placeholder="name@example.com" type="email"></Nimbus-input-field>
+  <Nimbus-password-field [control]="loginForm.controls.password" placeholder="••••••••"></Nimbus-password-field>
+
+  <div class="row-between">
+    <label class="check-inline" for="remember-me"><input class="check-box" [formControl]="loginForm.controls.rememberMe" id="remember-me" type="checkbox" />Remember me</label>
+    <a href="#">Forgot password?</a>
+  </div>
+
+  <Nimbus-button [disabled]="!loginForm.valid" icon="ti-login-2" id="login-btn" type="submit">
+    Sign in
+  </Nimbus-button>
+  </form>
+  @if (hasError()) {
+    <Nimbus-banner icon="ti-alert-triangle" id="login-error" type="warning">
+      Email address or password is incorrect.
+    </Nimbus-banner>
+  }
+</div>

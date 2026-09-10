@@ -1,3 +1,3 @@
 namespace Nimbus.Contracts.DTOs.Features.Auth;
 
-public record LoginRequestDto(string Email, string Password);
+public record LoginRequestDto(string Email, string Password, bool RememberMe = false);

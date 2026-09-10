@@ -296,6 +296,9 @@ namespace Nimbus.Infrastructure.Persistence.EntityFramework.Migrations
                     b.Property<bool>("IsRevoked")
                         .HasColumnType("bit");
 
+                    b.Property<bool>("RememberMe")
+                        .HasColumnType("bit");
+
                     b.Property<string>("ReplacedByTokenHash")
                         .HasColumnType("nvarchar(max)");
 
