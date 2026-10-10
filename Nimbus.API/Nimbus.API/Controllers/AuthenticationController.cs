@@ -137,32 +137,20 @@ public class AuthenticationController : ControllerBase
             return Unauthorized();
         }
 
-        var existing = await _tokens.ValidateRefreshTokenAsync(raw);
-        if (existing is null)
+        // Rotation is atomic with respect to admin block/delete/role changes (see TokenService).
+        var rotation = await _tokens.RotateRefreshTokenAsync(raw);
+        if (rotation is null)
         {
             _logger.LogInformation(
-                "Refresh rejected: refreshToken cookie did not match a valid, non-expired token (unknown, expired, or reuse of an already-rotated/revoked token).");
+                "Refresh rejected: unknown, expired or reused refresh token, or the account is locked out, rejected or deleted.");
             return Unauthorized();
         }
 
-        var user = await _users.FindByIdAsync(existing.UserId);
-        if (user is null)
-        {
-            _logger.LogInformation("Refresh rejected: token was valid but its UserId {UserId} no longer exists.", existing.UserId);
-            return Unauthorized();
-        }
+        var user = rotation.User;
+        // Carry the "remember me" choice forward across rotation — it was fixed at login time.
+        SetRefreshCookie(rotation.RawRefresh, rotation.RememberMe ? rotation.RefreshEntity.ExpiresAt : null);
 
-        var roles = await _users.GetRolesAsync(user);
-        var (newAccess, expiry) = _tokens.GenerateAccessToken(user, roles);
-        // Carry the "remember me" choice forward across rotation — it was fixed at login time
-        // and shouldn't silently flip just because the token got rotated on this refresh.
-        var (newRaw, newEntity) = await _tokens.GenerateRefreshTokenAsync(user.Id, existing.RememberMe);
-
-        await _tokens.RevokeTokenAsync(existing, TokenService.HashToken(newRaw));
-
-        SetRefreshCookie(newRaw, existing.RememberMe ? newEntity.ExpiresAt : null);
-
-        return Ok(new LoginResponseDto(newAccess, expiry, user.Email!, roles.FirstOrDefault() ?? nameof(UserRole.Pilot), user.IsApproved, user.IsRejected, user.RequestedAt));
+        return Ok(new LoginResponseDto(rotation.AccessToken, rotation.AccessExpiry, user.Email!, rotation.Roles.FirstOrDefault() ?? nameof(UserRole.Pilot), user.IsApproved, user.IsRejected, user.RequestedAt));
     }
 
     // ── POST /api/auth/logout ───────────────────────────────────────

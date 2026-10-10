@@ -4,7 +4,8 @@ namespace Nimbus.API;
 /// <summary>
 ///     Fails fast at startup when the JWT signing key is missing or weak, so the API can never run
 ///     on a committed, default or guessable key. The real value is supplied per environment
-///     (<c>Jwt__Secret</c>); Development has its own dev-only key in appsettings.Development.json.
+///     (<c>Jwt__Secret</c> / <c>JWT_SECRET</c> in the compose <c>.env</c>); local development uses a committed dev-only key from the root
+///     <c>.env.example</c> (compose) and <c>launchSettings.json</c> (<c>dotnet run</c>).
 /// </summary>
 public static class JwtSecretValidator
 {
@@ -18,7 +19,7 @@ public static class JwtSecretValidator
         if (string.IsNullOrWhiteSpace(secret))
         {
             throw new InvalidOperationException(
-                "Jwt:Secret is not configured. Set the Jwt__Secret environment variable (e.g. generate one with `openssl rand -base64 48`).");
+                "Jwt:Secret is not configured. Set the Jwt__Secret environment variable (JWT_SECRET in the compose .env); generate one with `openssl rand -base64 48`.");
         }
 
         if (PlaceholderMarkers.Any(m => secret.Contains(m, StringComparison.OrdinalIgnoreCase)))

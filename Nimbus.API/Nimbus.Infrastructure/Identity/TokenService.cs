@@ -2,6 +2,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
@@ -13,10 +14,52 @@ public class TokenService
     private readonly IConfiguration _config;
     private readonly AppDbContext _db;
 
-    public TokenService(IConfiguration config, AppDbContext db)
+    private readonly UserManager<ApplicationUser> _userManager;
+
+    public TokenService(IConfiguration config, AppDbContext db, UserManager<ApplicationUser> userManager)
     {
         _config = config;
         _db = db;
+        _userManager = userManager;
+    }
+
+    public sealed record RotationResult(
+        ApplicationUser User, IList<string> Roles, string AccessToken, DateTime AccessExpiry,
+        string RawRefresh, RefreshToken RefreshEntity, bool RememberMe);
+
+    /// <summary>
+    ///     Rotates a refresh token atomically: under a Shared application lock (an admin block/delete/role
+    ///     change holds it Exclusive while it revokes sessions) it re-reads the account, refuses locked-out,
+    ///     rejected or deleted accounts, and only then mints the replacement and revokes the old token. No
+    ///     token can therefore be minted after a block's revoke point. Returns null when the refresh must
+    ///     be rejected (unknown/expired/revoked token or an account that may no longer refresh).
+    /// </summary>
+    public async Task<RotationResult?> RotateRefreshTokenAsync(string raw, CancellationToken ct = default)
+    {
+        var strategy = _db.Database.CreateExecutionStrategy();
+        return await strategy.ExecuteAsync(async () =>
+        {
+            _db.ChangeTracker.Clear();
+            await using var tx = await _db.Database.BeginTransactionAsync(ct);
+            await AppLocks.AcquireAsync(_db, AppLocks.AdminSet, false, ct);
+
+            // Includes reuse detection (revokes the family); committed even when we return null.
+            var existing = await ValidateRefreshTokenAsync(raw);
+            var user = existing is null ? null : await _userManager.FindByIdAsync(existing.UserId);
+            if (existing is null || user is null || user.IsRejected
+                || (user.LockoutEnd is not null && user.LockoutEnd > DateTimeOffset.UtcNow))
+            {
+                await tx.CommitAsync(ct);
+                return null;
+            }
+
+            var roles = await _userManager.GetRolesAsync(user);
+            var (access, expiry) = GenerateAccessToken(user, roles);
+            var (newRaw, newEntity) = await GenerateRefreshTokenAsync(user.Id, existing.RememberMe);
+            await RevokeTokenAsync(existing, HashToken(newRaw));
+            await tx.CommitAsync(ct);
+            return new RotationResult(user, roles, access, expiry, newRaw, newEntity, existing.RememberMe);
+        });
     }
 
     // ── Access token ────────────────────────────────────────────────

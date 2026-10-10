@@ -340,6 +340,76 @@ public class AdminUsersTests
         Assert.DoesNotThrowAsync(async () => await db.SaveChangesAsync(), "a later save must not retry the failed row");
     }
 
+    // ── refresh vs block ──
+    private static async Task<string> LoginForRefreshCookieAsync(HttpClient client, TestUser user)
+    {
+        var res = await client.PostAsJsonAsync("/api/authentication/login", new LoginRequestDto(user.Email, user.Password));
+        res.EnsureSuccessStatusCode();
+        var line = res.Headers.GetValues("Set-Cookie").First(v => v.StartsWith("refreshToken=", StringComparison.OrdinalIgnoreCase));
+        return line.Split(';')[0].Substring("refreshToken=".Length);
+    }
+
+    private static Task<HttpResponseMessage> RefreshAsync(HttpClient client, string cookie)
+    {
+        var req = new HttpRequestMessage(HttpMethod.Post, "/api/authentication/refresh");
+        req.Headers.Add("Cookie", $"refreshToken={cookie}");
+        return client.SendAsync(req);
+    }
+
+    [Test]
+    public async Task Refresh_AfterBlock_IsRejected_AndNothingSurvivesUnblock()
+    {
+        using var client = _factory.CreateClient();
+        var user = await _factory.CreateUserAsync();
+        var cookie = await LoginForRefreshCookieAsync(client, user);
+        var adminToken = await LoginAdminAsync(client);
+
+        await Send(client, HttpMethod.Post, $"/api/admin/users/{user.Id}/block", adminToken);
+        Assert.That((await RefreshAsync(client, cookie)).StatusCode, Is.EqualTo(HttpStatusCode.Unauthorized));
+
+        await Send(client, HttpMethod.Post, $"/api/admin/users/{user.Id}/unblock", adminToken);
+        Assert.That((await RefreshAsync(client, cookie)).StatusCode, Is.EqualTo(HttpStatusCode.Unauthorized), "token revoked by the block must not revive on unblock");
+    }
+
+    [Test]
+    public async Task Refresh_ForRejectedAccount_IsRejected()
+    {
+        using var client = _factory.CreateClient();
+        var user = await _factory.CreateUserAsync(approved: false, rejected: true);
+        var cookie = await LoginForRefreshCookieAsync(client, user);
+        Assert.That((await RefreshAsync(client, cookie)).StatusCode, Is.EqualTo(HttpStatusCode.Unauthorized));
+    }
+
+    [Test]
+    public async Task ConcurrentRefreshAndBlock_NeverLeavesAUsableRefreshToken()
+    {
+        using var client = _factory.CreateClient();
+        var adminToken = await LoginAdminAsync(client);
+        for (var i = 0; i < 8; i++)
+        {
+            var user = await _factory.CreateUserAsync();
+            var cookie = await LoginForRefreshCookieAsync(client, user);
+
+            var refresh = RefreshAsync(client, cookie);
+            var block = Send(client, HttpMethod.Post, $"/api/admin/users/{user.Id}/block", adminToken);
+            await Task.WhenAll(refresh, block);
+            Assert.That(block.Result.StatusCode, Is.EqualTo(HttpStatusCode.NoContent));
+
+            using var scope = _factory.Services.CreateScope();
+            var db = scope.ServiceProvider.GetRequiredService<Nimbus.Infrastructure.Persistence.AppDbContext>();
+            var live = db.RefreshTokens.Count(t => t.UserId == user.Id.ToString() && !t.IsRevoked);
+            Assert.That(live, Is.Zero, $"iteration {i}: a refresh token survived the block");
+
+            await Send(client, HttpMethod.Post, $"/api/admin/users/{user.Id}/unblock", adminToken);
+            if (refresh.Result.IsSuccessStatusCode)
+            {
+                // The rotated cookie (if any) was minted before the block and must be dead now.
+                var rotated = refresh.Result.Headers.GetValues("Set-Cookie").First(v => v.StartsWith("refreshToken=", StringComparison.OrdinalIgnoreCase)).Split(';')[0].Substring("refreshToken=".Length);
+                Assert.That((await RefreshAsync(client, rotated)).StatusCode, Is.EqualTo(HttpStatusCode.Unauthorized));
+            }
+        }
+    }
+
     // ── retention ──
     [Test]
     public async Task LoginEventRetention_PurgesOnlyEventsOlderThanTheWindow()

@@ -25,4 +25,10 @@ describe('Register', () => {
   it('should create', () => {
     expect(component).toBeTruthy();
   });
+
+  it('explains that approval is required, without promising an approval email', () => {
+    const note = (fixture.nativeElement as HTMLElement).querySelector('#pending-note')?.textContent ?? '';
+    expect(note).toContain('approved by an administrator');
+    expect(note).not.toMatch(/receive an email/i);
+  });
 });

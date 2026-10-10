@@ -16,8 +16,6 @@ namespace Nimbus.Infrastructure.Services;
 /// </summary>
 public class UserAdministrationService : IUserAdministrationService
 {
-    private const string AdminSetLock = "nimbus-admin-set";
-
     private readonly AppDbContext _db;
     private readonly UserManager<ApplicationUser> _userManager;
 
@@ -123,10 +121,9 @@ public class UserAdministrationService : IUserAdministrationService
         {
             _db.ChangeTracker.Clear();
             await using var tx = await _db.Database.BeginTransactionAsync(ct);
-            // Serialises every mutation that may reduce the set of active Admins.
-            await _db.Database.ExecuteSqlRawAsync(
-                "DECLARE @r int; EXEC @r = sp_getapplock @Resource = {0}, @LockMode = 'Exclusive', @LockOwner = 'Transaction', @LockTimeout = 10000; IF @r < 0 THROW 50001, 'Could not acquire the admin lock.', 1;",
-                [AdminSetLock], ct);
+            // Serialises every mutation that may reduce the set of active Admins or revoke sessions;
+            // refresh-token rotation takes the same lock Shared (see AppLocks).
+            await AppLocks.AcquireAsync(_db, AppLocks.AdminSet, true, ct);
             await work();
             await tx.CommitAsync(ct);
         });
