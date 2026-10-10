@@ -1,6 +1,7 @@
 using System.Linq.Expressions;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Nimbus.Domain.Entities;
 using Nimbus.Domain.Entities.Base;
 using Nimbus.Infrastructure.Identity;
@@ -44,11 +45,13 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
         // Existing rows get the migration time as their request date; new rows set it explicitly.
         builder.Entity<ApplicationUser>()
             .Property(u => u.RequestedAt)
-            .HasDefaultValueSql("SYSUTCDATETIME()");
+            .HasDefaultValueSql("SYSUTCDATETIME()")
+            .HasConversion(AsUtc);
 
         builder.Entity<LoginEvent>(e =>
         {
             e.HasKey(l => l.Id);
+            e.Property(l => l.OccurredAt).HasConversion(AsUtc);
             e.Property(l => l.Email).HasMaxLength(320);
             e.Property(l => l.MaskedIp).HasMaxLength(64);
             // The admin list is always "newest N".
@@ -58,6 +61,11 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
         builder.ApplyConfigurationsFromAssembly(typeof(AppDbContext).Assembly);
         ApplySoftDeleteConvention(builder);
     }
+
+    // datetime2 comes back as DateTimeKind.Unspecified; mark it UTC so JSON serialises with a "Z"
+    // and clients do not read the UTC clock value as local time.
+    private static readonly ValueConverter<DateTime, DateTime> AsUtc =
+        new(v => v, v => DateTime.SpecifyKind(v, DateTimeKind.Utc));
 
     private static void ApplySoftDeleteConvention(ModelBuilder builder)
     {

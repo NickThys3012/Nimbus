@@ -50,6 +50,10 @@ services:
       # "" in appsettings.json) and no logs ever reach Loki — the Grafana log-based dashboards
       # (e.g. nimbus-mail-overview) then always show no data, not just for recent events.
       Loki__Url: http://loki:3100
+      # Initial admin created by IdentitySeed (no credential lives in source). Without both,
+      # no admin is seeded outside Development.
+      Seed__AdminEmail: ${SEED_ADMIN_EMAIL:-}
+      Seed__AdminPassword: ${SEED_ADMIN_PASSWORD:-}
     # /health/live performs no dependency checks (issue #97) — this only confirms the process
     # itself is up and answering, which is exactly what a container orchestrator should use to
     # decide whether to keep routing traffic here. Deploy-gating on SQL Server/MinIO reachability

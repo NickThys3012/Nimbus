@@ -3,6 +3,7 @@ using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Nimbus.Application.Features.Admin.Commands.RecordLoginAttempt;
 using Nimbus.Application.Features.Auth.Command.CreateUser;
 using Nimbus.Application.Features.Auth.Command.ResendVerificationEmail;
@@ -40,6 +41,7 @@ public class AuthenticationController : ControllerBase
         _environment = environment;
     }
 
+    [EnableRateLimiting(AuthorizationPolicies.LoginRateLimit)]
     [HttpPost("login")]
     public async Task<ActionResult<LoginResponseDto>> Login(LoginRequestDto request)
     {
@@ -192,7 +194,7 @@ public class AuthenticationController : ControllerBase
     // can decide what to render (issue #15) — separate from login/refresh so the app can
     // re-check approval state at any point during an active session, not only right after
     // authenticating.
-    [Authorize]
+    [Authorize(Policy = AuthorizationPolicies.Authenticated)]
     [HttpGet("me")]
     public async Task<ActionResult<CurrentUserDto>> Me()
     {

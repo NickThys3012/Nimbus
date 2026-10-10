@@ -87,3 +87,10 @@
     opacity: .5;
     cursor: not-allowed;
 }
+
+.btn-disabled,
+.btn[aria-disabled='true'] {
+    opacity: .4;
+    cursor: not-allowed;
+    pointer-events: none;
+}

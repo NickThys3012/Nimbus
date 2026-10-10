@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
 using Nimbus.Infrastructure.Persistence;
@@ -22,7 +23,13 @@ public sealed class NimbusApiFactory : WebApplicationFactory<Program>
     ///     migrations. Must be awaited (e.g. from <c>OneTimeSetUp</c>) before any test issues
     ///     HTTP requests against this factory.
     /// </summary>
-    public async Task InitializeAsync()
+    /// <summary>Credential of the admin created by the startup seed — generated per factory, never hard-coded.</summary>
+    public string AdminEmail { get; } = $"admin-{Guid.NewGuid():N}@example.test";
+
+    public string AdminPassword { get; } = $"Aa1!{Guid.NewGuid():N}";
+
+    /// <param name="loginPermitLimit">Per-IP login limit per window. Relaxed by default because every test client shares one (unknown) IP.</param>
+    public async Task InitializeAsync(int loginPermitLimit = 100_000)
     {
         await _sqlServer.StartAsync();
 
@@ -48,6 +55,11 @@ public sealed class NimbusApiFactory : WebApplicationFactory<Program>
         // register() never touches a real SMTP server here; kept explicit for clarity.
         Environment.SetEnvironmentVariable("Email__Enabled", "false");
 
+        // The runtime seed reads its admin from configuration; the tests give it a generated one.
+        Environment.SetEnvironmentVariable("Seed__AdminEmail", AdminEmail);
+        Environment.SetEnvironmentVariable("Seed__AdminPassword", AdminPassword);
+        Environment.SetEnvironmentVariable("RateLimiting__Login__PermitLimit", loginPermitLimit.ToString());
+
         // Migrate with a standalone DbContext BEFORE ever touching `Server`/`Services` below.
         // Program.cs calls `await app.Services.SeedUsers()` as an integral part of its own
         // startup (before `app.Run()`), and that startup runs synchronously the moment `Server`
@@ -71,11 +83,45 @@ public sealed class NimbusApiFactory : WebApplicationFactory<Program>
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.UseEnvironment("Testing");
+        // Test-only controller that sits behind the default [Authorize] policy.
+        builder.ConfigureServices(services =>
+            services.AddControllers().AddApplicationPart(typeof(NimbusApiFactory).Assembly));
+    }
+
+    /// <summary>Creates a confirmed user directly through Identity (bypassing e-mail) with a generated password.</summary>
+    public async Task<TestUser> CreateUserAsync(string role = "Pilot", bool approved = true, bool rejected = false)
+    {
+        using var scope = Services.CreateScope();
+        var users = scope.ServiceProvider.GetRequiredService<Microsoft.AspNetCore.Identity.UserManager<Nimbus.Infrastructure.Identity.ApplicationUser>>();
+        var email = $"user-{Guid.NewGuid():N}@example.test";
+        var password = $"Aa1!{Guid.NewGuid():N}";
+        var user = new Nimbus.Infrastructure.Identity.ApplicationUser
+        {
+            UserName = email, Email = email, FirstName = "Test", Name = "User", EmailConfirmed = true,
+            IsApproved = approved, IsRejected = rejected,
+            Role = Enum.Parse<Nimbus.Domain.Enums.UserRole>(role)
+        };
+        (await users.CreateAsync(user, password)).Succeeded.ThrowIfFalse();
+        (await users.AddToRoleAsync(user, role)).Succeeded.ThrowIfFalse();
+        return new TestUser(Guid.Parse(user.Id), email, password);
     }
 
     public override async ValueTask DisposeAsync()
     {
         await base.DisposeAsync();
         await _sqlServer.DisposeAsync();
+    }
+}
+
+public sealed record TestUser(Guid Id, string Email, string Password);
+
+internal static class BoolExtensions
+{
+    public static void ThrowIfFalse(this bool value)
+    {
+        if (!value)
+        {
+            throw new InvalidOperationException("Test user setup failed.");
+        }
     }
 }

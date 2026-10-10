@@ -39,6 +39,7 @@ public sealed class RejectUserCommandHandler : IRequestHandler<RejectUserCommand
         user.Reject(); // throws DomainException (HTTP 400) for an already approved user
         await _userRepository.UpdateAsync(user);
         await _administration.RevokeSessionsAsync(user.Id, ct);
+        await _administration.InvalidateAccessTokensAsync(user.Id, ct);
 
         _logger.LogInformation("Admin {AdminUserId} rejected user {TargetUserId}", adminId, user.Id);
     }

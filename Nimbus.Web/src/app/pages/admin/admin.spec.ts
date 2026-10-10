@@ -58,16 +58,30 @@ describe('Admin', () => {
 
   it('shows the three tabs with badges', async () => {
     const { el } = await setup();
-    expect(el.querySelector('#tab-pending')?.textContent).toContain('In afwachting');
+    expect(el.querySelector('#tab-pending')?.textContent).toContain('Pending');
     expect(el.querySelector('#tab-pending Nimbus-count-badge')?.textContent?.trim()).toBe('1');
     expect(el.querySelector('#tab-users Nimbus-count-badge')?.textContent?.trim()).toBe('5');
-    expect(el.querySelector('#tab-history')?.textContent).toContain('Aanmeldgeschiedenis');
+    expect(el.querySelector('#tab-history')?.textContent).toContain('Sign-in history');
+  });
+
+  it('links each tab to its tabpanel (aria-controls / aria-labelledby) and shows only the active one', async () => {
+    const { el, open } = await setup();
+    for (const id of ['pending', 'users', 'history']) {
+      expect(el.querySelector(`#tab-${id}`)?.getAttribute('aria-controls')).toBe(`panel-${id}`);
+      expect(el.querySelector(`#panel-${id}`)?.getAttribute('aria-labelledby')).toBe(`tab-${id}`);
+      expect(el.querySelector(`#panel-${id}`)?.getAttribute('role')).toBe('tabpanel');
+    }
+    expect((el.querySelector('#panel-pending') as HTMLElement).hidden).toBe(false);
+    expect((el.querySelector('#panel-users') as HTMLElement).hidden).toBe(true);
+    await open('users');
+    expect((el.querySelector('#panel-users') as HTMLElement).hidden).toBe(false);
+    expect((el.querySelector('#panel-pending') as HTMLElement).hidden).toBe(true);
   });
 
   it('lists only pending users (with request date) on the first tab', async () => {
     const { el } = await setup();
     expect(el.textContent).toContain('pending@example.com');
-    expect(el.textContent).toContain('aangevraagd 26 jul');
+    expect(el.textContent).toContain('requested 26 Jul');
     expect(el.textContent).not.toContain('rejected@example.com');
     expect(el.querySelector('[data-testid="approve-me"]')).toBeNull();
   });
@@ -88,14 +102,14 @@ describe('Admin', () => {
 
   it('shows the empty state when nobody is pending', async () => {
     const { el } = await setup([users[1]]);
-    expect(el.textContent).toContain('Geen aanvragen in afwachting.');
+    expect(el.textContent).toContain('No requests pending.');
   });
 
   it('shows an error when an action fails', async () => {
     const { el, click } = await setup();
     api['postApiAdminUsersApprove'].mockReturnValue(throwError(() => new Error('boom')));
     await click('approve-p1');
-    expect(el.querySelector('[role="alert"]')?.textContent).toContain('Actie mislukt');
+    expect(el.querySelector('[role="alert"]')?.textContent).toContain('Action failed');
   });
 
   it('users tab: role select for others, chip for self, status pills', async () => {
@@ -104,10 +118,10 @@ describe('Admin', () => {
     expect(el.querySelector('[data-testid="role-u1"]')).toBeTruthy();
     expect(el.querySelector('[data-testid="role-me"]')).toBeNull();
     expect(el.querySelector('[data-testid="user-me"] Nimbus-role-chip')?.textContent).toContain('admin');
-    expect(el.querySelector('[data-testid="user-p1"]')?.textContent).toContain('in afwachting');
-    expect(el.querySelector('[data-testid="user-u1"]')?.textContent).toContain('goedgekeurd');
-    expect(el.querySelector('[data-testid="user-b1"]')?.textContent).toContain('geblokkeerd');
-    expect(el.querySelector('[data-testid="user-r1"]')?.textContent).toContain('geweigerd');
+    expect(el.querySelector('[data-testid="user-p1"]')?.textContent).toContain('pending');
+    expect(el.querySelector('[data-testid="user-u1"]')?.textContent).toContain('approved');
+    expect(el.querySelector('[data-testid="user-b1"]')?.textContent).toContain('blocked');
+    expect(el.querySelector('[data-testid="user-r1"]')?.textContent).toContain('rejected');
   });
 
   it('users tab: no block/delete for yourself; delete only for rejected', async () => {
@@ -157,9 +171,9 @@ describe('Admin', () => {
     expect(api['getApiAdminLoginEvents']).not.toHaveBeenCalled();
     await open('history');
     expect(api['getApiAdminLoginEvents']).toHaveBeenCalledWith({ limit: 100 });
-    expect(el.textContent).toContain('aangemeld');
-    expect(el.textContent).toContain('mislukte poging');
-    expect(el.textContent).toContain('onbekend');
+    expect(el.textContent).toContain('signed in');
+    expect(el.textContent).toContain('failed attempt');
+    expect(el.textContent).toContain('unknown');
     expect(el.textContent).toContain('84.198.x.x');
   });
 });

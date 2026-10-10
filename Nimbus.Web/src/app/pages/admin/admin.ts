@@ -14,7 +14,7 @@ import { formatDayMonth, formatDayMonthTime } from '../../core/format/dates';
 
 type AdminTab = 'pending' | 'users' | 'history';
 
-const ROLE_LABELS: Record<string, string> = { Admin: 'admin', Pilot: 'piloot' };
+const ROLE_LABELS: Record<string, string> = { Admin: 'admin', Pilot: 'pilot' };
 /** The roles that exist in the API (seeded from the UserRole enum). */
 const ASSIGNABLE_ROLES = ['Admin', 'Pilot'];
 
@@ -50,9 +50,9 @@ export default class Admin {
   protected readonly myId = computed(() => this.authStore.currentUser.value()?.id ?? null);
 
   protected readonly tabs = computed<TabItem[]>(() => [
-    { id: 'pending', label: 'In afwachting', count: this.pendingUsers().length, countTone: 'warn' },
-    { id: 'users', label: 'Gebruikers', count: this.allUsers().length },
-    { id: 'history', label: 'Aanmeldgeschiedenis' },
+    { id: 'pending', label: 'Pending', count: this.pendingUsers().length, countTone: 'warn' },
+    { id: 'users', label: 'Users', count: this.allUsers().length },
+    { id: 'history', label: 'Sign-in history' },
   ]);
 
   protected setTab(id: string): void {
@@ -110,13 +110,13 @@ export default class Admin {
   protected toggleBlock(user: AdminUserDto): void {
     if (user.isBlocked) {
       this.run(user.id, this.adminApi.postApiAdminUsersUnblock({ id: user.id }));
-    } else if (confirm(`${user.email} blokkeren? De gebruiker wordt afgemeld.`)) {
+    } else if (confirm(`Block ${user.email}? They will be signed out.`)) {
       this.run(user.id, this.adminApi.postApiAdminUsersBlock({ id: user.id }));
     }
   }
 
   protected remove(user: AdminUserDto): void {
-    if (confirm(`${user.email} definitief verwijderen?`)) {
+    if (confirm(`Permanently delete ${user.email}?`)) {
       this.run(user.id, this.adminApi.deleteApiAdminUsers({ id: user.id }));
     }
   }
@@ -132,7 +132,7 @@ export default class Admin {
       error: (err: unknown) => {
         this.busyId.set(null);
         const title = err instanceof ApiError && typeof err.body?.title === 'string' ? err.body.title : null;
-        this.actionError.set(title ?? 'Actie mislukt. Probeer het opnieuw.');
+        this.actionError.set(title ?? 'Action failed. Please try again.');
         // Re-sync the list so e.g. a rejected role select snaps back.
         this.users.reload();
       },

@@ -4,7 +4,7 @@ import { StatusPill } from './status-pill';
 
 @Component({
   imports: [StatusPill],
-  template: `<Nimbus-status-pill tone="warn">in afwachting</Nimbus-status-pill>`,
+  template: `<Nimbus-status-pill tone="warn">pending</Nimbus-status-pill>`,
 })
 class Host {}
 
@@ -14,7 +14,7 @@ describe('StatusPill', () => {
     const fixture = TestBed.createComponent(Host);
     await fixture.whenStable();
     const pill = (fixture.nativeElement as HTMLElement).querySelector('.pill');
-    expect(pill?.textContent).toContain('in afwachting');
+    expect(pill?.textContent).toContain('pending');
     expect(pill?.classList).toContain('warn');
   });
 });

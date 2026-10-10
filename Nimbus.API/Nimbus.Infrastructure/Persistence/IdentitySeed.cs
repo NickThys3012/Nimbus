@@ -1,5 +1,8 @@
 using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using Nimbus.Domain.Enums;
 using Nimbus.Infrastructure.Identity;
 namespace Nimbus.Infrastructure.Persistence;
@@ -23,8 +26,26 @@ public static class IdentitySeed
             }
         }
 
-        // Create admin user
-        var adminEmail = "nick.thijs@hotmail.com";
+        // The initial admin comes from configuration (Seed:AdminEmail / Seed:AdminPassword, i.e. the
+        // Seed__AdminEmail / Seed__AdminPassword environment variables) so no credential lives in
+        // source. Only Development falls back to a well-known local-dev account; elsewhere, without
+        // configuration, no admin is created (an existing one is left as it is).
+        var config = scope.ServiceProvider.GetRequiredService<IConfiguration>();
+        var env = scope.ServiceProvider.GetRequiredService<IHostEnvironment>();
+        var adminEmail = config["Seed:AdminEmail"];
+        var adminPassword = config["Seed:AdminPassword"];
+        if (env.IsDevelopment())
+        {
+            adminEmail ??= "admin@nimbus.local";
+            adminPassword ??= "Admin1234!";
+        }
+        if (string.IsNullOrWhiteSpace(adminEmail) || string.IsNullOrWhiteSpace(adminPassword))
+        {
+            scope.ServiceProvider.GetRequiredService<ILoggerFactory>().CreateLogger("IdentitySeed")
+                .LogWarning("Seed:AdminEmail / Seed:AdminPassword are not configured; no admin user was seeded.");
+            return;
+        }
+
         var admin = await users.FindByEmailAsync(adminEmail);
 
         if (admin is null)
@@ -45,7 +66,7 @@ public static class IdentitySeed
                 VerificationEmailLocked = false
             };
 
-            var createResult = await users.CreateAsync(admin, "Admin1234!");
+            var createResult = await users.CreateAsync(admin, adminPassword);
             if (!createResult.Succeeded)
             {
                 throw new InvalidOperationException(

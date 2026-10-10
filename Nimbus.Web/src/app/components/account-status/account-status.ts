@@ -8,7 +8,7 @@ import { Glyph } from '../glyph/glyph';
 
 export type AccountStatusKind = 'pending' | 'rejected';
 
-const ROLE_LABELS: Record<string, string> = { Admin: 'admin', Pilot: 'piloot' };
+const ROLE_LABELS: Record<string, string> = { Admin: 'admin', Pilot: 'pilot' };
 
 /**
  * Full-page card shown instead of the app to a signed-in user an admin has not approved yet

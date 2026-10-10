@@ -18,6 +18,14 @@ export class Button {
   /** When set, renders an anchor (e.g. `mailto:`) with the same look instead of a button. */
   href = input<string>();
   size = input<ButtonSize>('md');
+
+  protected onLinkClick(event: Event): void {
+    // A disabled link has no href, but still must not activate or bubble to a host (click) handler.
+    if (this.disabled()) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
+  }
   /** Accessible name for icon-only buttons. */
   ariaLabel = input<string>();
   variant = input<ButtonVariant>('primary');

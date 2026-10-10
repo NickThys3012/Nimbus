@@ -74,7 +74,7 @@ describe('App', () => {
     pending.set(true);
     await fixture.whenStable();
     expect(el.querySelector('#pending-approval-notice')).toBeTruthy();
-    expect(el.textContent).toContain('Je account wacht op goedkeuring');
+    expect(el.textContent).toContain('Your account is awaiting approval');
     expect(el.querySelector('router-outlet')).toBeNull();
 
     pending.set(false);
@@ -82,7 +82,7 @@ describe('App', () => {
     await fixture.whenStable();
     expect(el.querySelector('#pending-approval-notice')).toBeNull();
     expect(el.querySelector('#rejected-notice')).toBeTruthy();
-    expect(el.textContent).toContain('Geen toegang tot Nimbus');
+    expect(el.textContent).toContain('No access to Nimbus');
     expect(el.querySelector('router-outlet')).toBeNull();
   });
 

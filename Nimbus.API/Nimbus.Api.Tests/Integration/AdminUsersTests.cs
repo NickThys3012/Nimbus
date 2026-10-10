@@ -103,10 +103,12 @@ public class AdminUsersTests
     public async Task Admin_CanReject_RejectedCannotBeApproved_AndSpaSeesFlag()
     {
         using var client = _factory.CreateClient();
-        var (pilotToken, pilotId) = await RegisterAndLoginAsync(client, approved: false);
+        var (oldToken, pilotId) = await RegisterAndLoginAsync(client, approved: false, out var pilotEmail);
         var adminToken = await LoginAdminAsync(client);
 
         Assert.That((await Send(client, HttpMethod.Post, $"/api/admin/users/{pilotId}/reject", adminToken)).StatusCode, Is.EqualTo(HttpStatusCode.NoContent));
+        Assert.That((await Send(client, HttpMethod.Get, "/api/authentication/me", oldToken)).StatusCode, Is.EqualTo(HttpStatusCode.Unauthorized), "reject invalidates outstanding tokens");
+        var pilotToken = await LoginAsync(client, pilotEmail, Password);
 
         var listed = (await ListUsersAsync(client, adminToken)).Single(u => u.Id == pilotId);
         Assert.That(listed.IsRejected, Is.True);
@@ -225,6 +227,126 @@ public class AdminUsersTests
         Assert.That((await Send(client, HttpMethod.Get, "/api/admin/login-events?limit=201", adminToken)).StatusCode, Is.EqualTo(HttpStatusCode.UnprocessableEntity));
     }
 
+    // ── access tokens follow the account's CURRENT state ──
+    [Test]
+    public async Task BlockedAdmin_TokenIsRejected_SoSelfUnblockFails()
+    {
+        using var client = _factory.CreateClient();
+        var victim = await _factory.CreateUserAsync("Admin");
+        var victimToken = await LoginAsAsync(client, victim);
+        var adminToken = await LoginAdminAsync(client);
+
+        Assert.That((await Send(client, HttpMethod.Get, "/api/admin/users", victimToken)).StatusCode, Is.EqualTo(HttpStatusCode.OK));
+        Assert.That((await Send(client, HttpMethod.Post, $"/api/admin/users/{victim.Id}/block", adminToken)).StatusCode, Is.EqualTo(HttpStatusCode.NoContent));
+
+        Assert.That((await Send(client, HttpMethod.Get, "/api/admin/users", victimToken)).StatusCode, Is.EqualTo(HttpStatusCode.Unauthorized));
+        Assert.That((await Send(client, HttpMethod.Post, $"/api/admin/users/{victim.Id}/unblock", victimToken)).StatusCode, Is.EqualTo(HttpStatusCode.Unauthorized));
+        Assert.That((await ListUsersAsync(client, adminToken)).Single(u => u.Id == victim.Id).IsBlocked, Is.True);
+    }
+
+    [Test]
+    public async Task DemotedAdmin_CannotReusePreviousTokenToActOrRePromote()
+    {
+        using var client = _factory.CreateClient();
+        var demoted = await _factory.CreateUserAsync("Admin");
+        var demotedToken = await LoginAsAsync(client, demoted);
+        var adminToken = await LoginAdminAsync(client);
+
+        Assert.That((await Send(client, HttpMethod.Put, $"/api/admin/users/{demoted.Id}/role", adminToken, new SetUserRoleRequestDto("Pilot"))).StatusCode, Is.EqualTo(HttpStatusCode.NoContent));
+
+        Assert.That((await Send(client, HttpMethod.Put, $"/api/admin/users/{demoted.Id}/role", demotedToken, new SetUserRoleRequestDto("Admin"))).StatusCode, Is.EqualTo(HttpStatusCode.Unauthorized));
+        // A fresh login carries the Pilot role and is forbidden from the admin area.
+        var fresh = await LoginAsAsync(client, demoted);
+        Assert.That((await Send(client, HttpMethod.Get, "/api/admin/users", fresh)).StatusCode, Is.EqualTo(HttpStatusCode.Forbidden));
+    }
+
+    [Test]
+    public async Task DeletedAdmin_TokenIsRejected()
+    {
+        using var client = _factory.CreateClient();
+        var doomed = await _factory.CreateUserAsync("Admin");
+        var doomedToken = await LoginAsAsync(client, doomed);
+        var adminToken = await LoginAdminAsync(client);
+
+        Assert.That((await Send(client, HttpMethod.Delete, $"/api/admin/users/{doomed.Id}", adminToken)).StatusCode, Is.EqualTo(HttpStatusCode.NoContent));
+        Assert.That((await Send(client, HttpMethod.Get, "/api/admin/users", doomedToken)).StatusCode, Is.EqualTo(HttpStatusCode.Unauthorized));
+    }
+
+    // ── pending / rejected users are gated server-side ──
+    [Test]
+    public async Task PendingAndRejectedUsers_Get403_OnProtectedEndpoints_But_CanReadMe()
+    {
+        using var client = _factory.CreateClient();
+        var pending = await _factory.CreateUserAsync(approved: false);
+        var rejected = await _factory.CreateUserAsync(approved: false, rejected: true);
+        var approved = await _factory.CreateUserAsync();
+        var pendingAdmin = await _factory.CreateUserAsync("Admin", approved: false);
+
+        foreach (var (user, expected) in new[]
+                 {
+                     (pending, HttpStatusCode.Forbidden), (rejected, HttpStatusCode.Forbidden),
+                     (approved, HttpStatusCode.OK), (pendingAdmin, HttpStatusCode.Forbidden)
+                 })
+        {
+            var token = await LoginAsAsync(client, user);
+            Assert.That((await Send(client, HttpMethod.Get, "/api/test/protected", token)).StatusCode, Is.EqualTo(expected), user.Email);
+            Assert.That((await Send(client, HttpMethod.Get, "/api/authentication/me", token)).StatusCode, Is.EqualTo(HttpStatusCode.OK), user.Email);
+        }
+
+        var pendingAdminToken = await LoginAsAsync(client, pendingAdmin);
+        Assert.That((await Send(client, HttpMethod.Get, "/api/admin/users", pendingAdminToken)).StatusCode, Is.EqualTo(HttpStatusCode.Forbidden));
+    }
+
+    [Test]
+    public async Task Approval_TakesEffectImmediately_ForAnExistingToken()
+    {
+        using var client = _factory.CreateClient();
+        var pending = await _factory.CreateUserAsync(approved: false);
+        var token = await LoginAsAsync(client, pending);
+        var adminToken = await LoginAdminAsync(client);
+        Assert.That((await Send(client, HttpMethod.Get, "/api/test/protected", token)).StatusCode, Is.EqualTo(HttpStatusCode.Forbidden));
+
+        await Send(client, HttpMethod.Post, $"/api/admin/users/{pending.Id}/approve", adminToken);
+        Assert.That((await Send(client, HttpMethod.Get, "/api/test/protected", token)).StatusCode, Is.EqualTo(HttpStatusCode.OK));
+    }
+
+    // ── timestamps serialise as UTC ──
+    [Test]
+    public async Task Timestamps_AreSerialisedWithUtcDesignator()
+    {
+        using var client = _factory.CreateClient();
+        await RegisterAndLoginAsync(client, approved: true);
+        var adminToken = await LoginAdminAsync(client);
+
+        var usersJson = await (await Send(client, HttpMethod.Get, "/api/admin/users", adminToken)).Content.ReadAsStringAsync();
+        var eventsJson = await (await Send(client, HttpMethod.Get, "/api/admin/login-events?limit=5", adminToken)).Content.ReadAsStringAsync();
+        Assert.That(usersJson, Does.Match("\"requestedAt\":\"[^\"]+Z\""));
+        Assert.That(eventsJson, Does.Match("\"occurredAt\":\"[^\"]+Z\""));
+    }
+
+    // ── retention ──
+    [Test]
+    public async Task LoginEventRetention_PurgesOnlyEventsOlderThanTheWindow()
+    {
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<Nimbus.Infrastructure.Persistence.AppDbContext>();
+            db.LoginEvents.Add(new Nimbus.Domain.Entities.LoginEvent(DateTime.UtcNow.AddDays(-400), null, null, false, "9.9.x.x"));
+            db.LoginEvents.Add(new Nimbus.Domain.Entities.LoginEvent(DateTime.UtcNow.AddDays(-1), null, null, false, "8.8.x.x"));
+            await db.SaveChangesAsync();
+        }
+
+        var purger = _factory.Services.GetServices<Microsoft.Extensions.Hosting.IHostedService>()
+            .OfType<Nimbus.Infrastructure.Persistence.LoginEventRetentionService>().Single();
+        var deleted = await purger.PurgeAsync(CancellationToken.None);
+
+        using var check = _factory.Services.CreateScope();
+        var ips = check.ServiceProvider.GetRequiredService<Nimbus.Infrastructure.Persistence.AppDbContext>().LoginEvents.Select(e => e.MaskedIp).ToList();
+        Assert.That(deleted, Is.GreaterThanOrEqualTo(1));
+        Assert.That(ips, Does.Not.Contain("9.9.x.x"));
+        Assert.That(ips, Does.Contain("8.8.x.x"));
+    }
+
     private static async Task<HttpResponseMessage> Send(HttpClient client, HttpMethod method, string url, string token, object? body = null)
     {
         using var req = Authed(method, url, token);
@@ -267,12 +389,15 @@ public class AdminUsersTests
         return req;
     }
 
-    private static async Task<string> LoginAdminAsync(HttpClient client)
+    // The seeded admin's credential is generated per factory (see NimbusApiFactory).
+    private Task<string> LoginAdminAsync(HttpClient client)
     {
-        var res = await client.PostAsJsonAsync("/api/authentication/login",
-            new LoginRequestDto("nick.thijs@hotmail.com", "Admin1234!"));
-        res.EnsureSuccessStatusCode();
-        return (await res.Content.ReadFromJsonAsync<LoginResponseDto>())!.AccessToken;
+        return LoginAsync(client, _factory.AdminEmail, _factory.AdminPassword);
+    }
+
+    private async Task<string> LoginAsAsync(HttpClient client, TestUser user)
+    {
+        return await LoginAsync(client, user.Email, user.Password);
     }
 
     private Task<(string Token, Guid Id)> RegisterAndLoginAsync(HttpClient client, bool approved)

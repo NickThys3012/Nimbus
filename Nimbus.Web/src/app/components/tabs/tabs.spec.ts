@@ -28,4 +28,35 @@ describe('Tabs', () => {
     await fixture.whenStable();
     expect(fixture.componentInstance.active()).toBe('b');
   });
+
+  it('wires aria-controls and a roving tabindex', async () => {
+    const el = (await setup()).nativeElement as HTMLElement;
+    expect(el.querySelector('#tab-a')?.getAttribute('aria-controls')).toBe('panel-a');
+    expect(el.querySelector('#tab-b')?.getAttribute('aria-controls')).toBe('panel-b');
+    expect(el.querySelector('#tab-a')?.getAttribute('tabindex')).toBe('0');
+    expect(el.querySelector('#tab-b')?.getAttribute('tabindex')).toBe('-1');
+    expect(el.querySelector('[role="tablist"]')?.getAttribute('aria-label')).toBe('Sections');
+  });
+
+  it('supports Arrow keys (with wrap), Home and End', async () => {
+    const fixture = await setup();
+    const el = fixture.nativeElement as HTMLElement;
+    const press = async (key: string) => {
+      el.querySelector('[role="tablist"]')?.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true }));
+      await fixture.whenStable();
+    };
+    await press('ArrowRight');
+    expect(fixture.componentInstance.active()).toBe('b');
+    expect(document.activeElement).toBe(el.querySelector('#tab-b') ?? null);
+    await press('ArrowRight');
+    expect(fixture.componentInstance.active()).toBe('a');
+    await press('ArrowLeft');
+    expect(fixture.componentInstance.active()).toBe('b');
+    await press('Home');
+    expect(fixture.componentInstance.active()).toBe('a');
+    await press('End');
+    expect(fixture.componentInstance.active()).toBe('b');
+    await press('x');
+    expect(fixture.componentInstance.active()).toBe('b');
+  });
 });

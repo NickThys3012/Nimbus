@@ -33,18 +33,12 @@ public sealed class SetUserRoleCommandHandler : IRequestHandler<SetUserRoleComma
                    ?? throw new NotFoundException(nameof(User), request.UserId);
 
         var adminRole = nameof(UserRole.Admin);
-        var demotesAdmin = user.Roles.Contains(adminRole) && request.Role != adminRole;
-        if (demotesAdmin)
+        if (adminId == user.Id && user.Roles.Contains(adminRole) && request.Role != adminRole)
         {
-            if (adminId == user.Id)
-            {
-                throw new ProcessingException("You cannot remove your own Admin role.");
-            }
-            if (await _administration.CountUsersInRoleAsync(adminRole, ct) <= 1)
-            {
-                throw new ProcessingException("The last Admin cannot be demoted.");
-            }
+            throw new ProcessingException("You cannot remove your own Admin role.");
         }
+        // The "last active Admin" rule is enforced atomically inside IUserAdministrationService.
+
 
         await _administration.SetRoleAsync(user.Id, request.Role, ct);
         _logger.LogInformation("Admin {AdminUserId} set role of user {TargetUserId} to {Role}", adminId, user.Id, request.Role);

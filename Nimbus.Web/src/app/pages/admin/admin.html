@@ -1,24 +1,24 @@
 <div class="wrap">
   <div class="head">
-    <Nimbus-status-pill tone="warn"><i class="ti ti-shield-check" aria-hidden="true"></i> admin-toegang</Nimbus-status-pill>
+    <Nimbus-status-pill tone="warn"><i class="ti ti-shield-check" aria-hidden="true"></i> admin access</Nimbus-status-pill>
   </div>
 
-  <Nimbus-tabs [tabs]="tabs()" [active]="tab()" (activeChange)="setTab($event)"></Nimbus-tabs>
+  <Nimbus-tabs [tabs]="tabs()" [active]="tab()" (activeChange)="setTab($event)" label="Admin sections"></Nimbus-tabs>
 
   @if (users.isLoading()) {
-    <p class="note">Laden…</p>
+    <p class="note">Loading…</p>
   }
 
   @if (users.error()) {
-    <p class="note error" role="alert">Gebruikers konden niet geladen worden.</p>
+    <p class="note error" role="alert">Users could not be loaded.</p>
   }
 
   @if (actionError(); as msg) {
     <p class="note error" role="alert">{{ msg }}</p>
   }
 
-  @if (tab() === 'pending' && users.hasValue()) {
-    <div role="tabpanel" aria-labelledby="tab-pending">
+  <div id="panel-pending" role="tabpanel" aria-labelledby="tab-pending" [hidden]="tab() !== 'pending'">
+    @if (tab() === 'pending' && users.hasValue()) {
       @for (user of pendingUsers(); track user.id) {
         <div class="row">
           <Nimbus-initials-avatar [initials]="initials(user)"></Nimbus-initials-avatar>
@@ -27,7 +27,7 @@
             <div class="em">{{ user.email }}</div>
           </div>
           @if (requestedOn(user); as date) {
-            <span class="meta">aangevraagd {{ date }}</span>
+            <span class="meta">requested {{ date }}</span>
           }
           <Nimbus-button
             [attr.data-testid]="'reject-' + user.id"
@@ -38,7 +38,7 @@
             icon="ti-x"
             size="sm"
             variant="danger"
-          >Weiger</Nimbus-button>
+          >Reject</Nimbus-button>
           <Nimbus-button
             [attr.data-testid]="'approve-' + user.id"
             [disabled]="busyId() === user.id"
@@ -48,16 +48,16 @@
             icon="ti-check"
             size="sm"
             variant="approve"
-          >Goedkeuren</Nimbus-button>
+          >Approve</Nimbus-button>
         </div>
       } @empty {
-        <Nimbus-empty-state data-testid="pending-empty" icon="ti-clipboard-check">Geen aanvragen in afwachting.</Nimbus-empty-state>
+        <Nimbus-empty-state data-testid="pending-empty" icon="ti-clipboard-check">No requests pending.</Nimbus-empty-state>
       }
-    </div>
-  }
+    }
+  </div>
 
-  @if (tab() === 'users' && users.hasValue()) {
-    <div role="tabpanel" aria-labelledby="tab-users">
+  <div id="panel-users" role="tabpanel" aria-labelledby="tab-users" [hidden]="tab() !== 'users'">
+    @if (tab() === 'users' && users.hasValue()) {
       @for (user of allUsers(); track user.id) {
         <div class="row" [attr.data-testid]="'user-' + user.id">
           <Nimbus-initials-avatar
@@ -70,12 +70,12 @@
           </div>
 
           @if (user.isRejected) {
-            <Nimbus-status-pill tone="danger">geweigerd</Nimbus-status-pill>
+            <Nimbus-status-pill tone="danger">rejected</Nimbus-status-pill>
           } @else {
             @if (user.isApproved && !isSelf(user)) {
               <select
                 class="role-select"
-                [attr.aria-label]="'Rol van ' + user.email"
+                [attr.aria-label]="'Role of ' + user.email"
                 [attr.data-testid]="'role-' + user.id"
                 [disabled]="busyId() === user.id"
                 (change)="changeRole(user, $event)"
@@ -90,11 +90,11 @@
               }
             }
             @if (user.isBlocked) {
-              <Nimbus-status-pill tone="danger">geblokkeerd</Nimbus-status-pill>
+              <Nimbus-status-pill tone="danger">blocked</Nimbus-status-pill>
             } @else if (user.isApproved) {
-              <Nimbus-status-pill tone="ok">goedgekeurd</Nimbus-status-pill>
+              <Nimbus-status-pill tone="ok">approved</Nimbus-status-pill>
             } @else {
-              <Nimbus-status-pill tone="warn">in afwachting</Nimbus-status-pill>
+              <Nimbus-status-pill tone="warn">pending</Nimbus-status-pill>
             }
           }
 
@@ -108,7 +108,7 @@
                 [fullWidth]="false"
                 [id]="'delete-btn-' + user.id"
                 (click)="remove(user)"
-                ariaLabel="Verwijder gebruiker"
+                ariaLabel="Delete user"
                 icon="ti-trash"
                 size="sm"
                 variant="ghost"
@@ -116,7 +116,7 @@
             } @else if (user.isApproved) {
               <Nimbus-button
                 [attr.data-testid]="'block-' + user.id"
-                [ariaLabel]="user.isBlocked ? 'Deblokkeer gebruiker' : 'Blokkeer gebruiker'"
+                [ariaLabel]="user.isBlocked ? 'Unblock user' : 'Block user'"
                 [disabled]="busyId() === user.id"
                 [fullWidth]="false"
                 [icon]="user.isBlocked ? 'ti-lock-open' : 'ti-ban'"
@@ -129,33 +129,33 @@
           }
         </div>
       } @empty {
-        <Nimbus-empty-state icon="ti-users">Geen gebruikers.</Nimbus-empty-state>
+        <Nimbus-empty-state icon="ti-users">No users.</Nimbus-empty-state>
       }
-    </div>
-  }
+    }
+  </div>
 
-  @if (tab() === 'history') {
-    <div role="tabpanel" aria-labelledby="tab-history">
+  <div id="panel-history" role="tabpanel" aria-labelledby="tab-history" [hidden]="tab() !== 'history'">
+    @if (tab() === 'history') {
       @if (events.isLoading()) {
-        <p class="note">Laden…</p>
+        <p class="note">Loading…</p>
       }
       @if (events.error()) {
-        <p class="note error" role="alert">Aanmeldgeschiedenis kon niet geladen worden.</p>
+        <p class="note error" role="alert">Sign-in history could not be loaded.</p>
       }
       @if (events.hasValue()) {
         @if (events.value().length > 0) {
           <div class="table-scroll">
             <table class="audit">
               <thead>
-                <tr><th>TIJDSTIP</th><th>GEBRUIKER</th><th>GEBEURTENIS</th><th>IP</th></tr>
+                <tr><th>TIME</th><th>USER</th><th>EVENT</th><th>IP</th></tr>
               </thead>
               <tbody>
                 @for (event of events.value(); track $index) {
                   <tr>
                     <td>{{ eventTime(event.occurredAt) }}</td>
-                    <td>{{ event.userEmail ?? 'onbekend' }}</td>
+                    <td>{{ event.userEmail ?? 'unknown' }}</td>
                     <td>
-                      <Nimbus-status-pill [tone]="event.succeeded ? 'ok' : 'danger'">{{ event.succeeded ? 'aangemeld' : 'mislukte poging' }}</Nimbus-status-pill>
+                      <Nimbus-status-pill [tone]="event.succeeded ? 'ok' : 'danger'">{{ event.succeeded ? 'signed in' : 'failed attempt' }}</Nimbus-status-pill>
                     </td>
                     <td>{{ event.maskedIp ?? '-' }}</td>
                   </tr>
@@ -164,9 +164,9 @@
             </table>
           </div>
         } @else {
-          <Nimbus-empty-state icon="ti-history">Nog geen aanmeldingen.</Nimbus-empty-state>
+          <Nimbus-empty-state icon="ti-history">No sign-ins yet.</Nimbus-empty-state>
         }
       }
-    </div>
-  }
+    }
+  </div>
 </div>

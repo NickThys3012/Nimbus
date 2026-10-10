@@ -28,9 +28,9 @@ describe('AccountStatus', () => {
   it('pending: shows the card, request date, role and a mailto button', async () => {
     const el = (await setup('pending')).nativeElement as HTMLElement;
     expect(el.querySelector('#pending-approval-notice')).toBeTruthy();
-    expect(el.textContent).toContain('Je account wacht op goedkeuring');
-    expect(el.querySelector('#meta-requested')?.textContent).toContain('26 jul 2026');
-    expect(el.querySelector('#meta-role')?.textContent).toContain('piloot');
+    expect(el.textContent).toContain('Your account is awaiting approval');
+    expect(el.querySelector('#meta-requested')?.textContent).toContain('26 Jul 2026');
+    expect(el.querySelector('#meta-role')?.textContent).toContain('pilot');
     expect(el.querySelector('#contact-admin')?.getAttribute('href')).toMatch(/^mailto:/);
   });
 
@@ -44,7 +44,7 @@ describe('AccountStatus', () => {
   it('rejected: shows the no-access card without meta lines', async () => {
     const el = (await setup('rejected')).nativeElement as HTMLElement;
     expect(el.querySelector('#rejected-notice')).toBeTruthy();
-    expect(el.textContent).toContain('Geen toegang tot Nimbus');
+    expect(el.textContent).toContain('No access to Nimbus');
     expect(el.querySelector('#meta-requested')).toBeNull();
     expect(el.querySelector('#contact-admin')).toBeTruthy();
   });

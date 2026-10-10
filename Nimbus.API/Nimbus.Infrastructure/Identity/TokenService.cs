@@ -29,7 +29,10 @@ public class TokenService
 
         var claims = new List<Claim>
         {
-            new(ClaimTypes.NameIdentifier, user.Id), new(ClaimTypes.Name, user.Name), new(ClaimTypes.Email, user.Email!), new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
+            new(ClaimTypes.NameIdentifier, user.Id), new(ClaimTypes.Name, user.Name), new(ClaimTypes.Email, user.Email!), new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+            // Checked on every request (AccessTokenValidator): a role change, block, reject or
+            // delete rotates the stamp, which invalidates every token issued before it.
+            new(AccessTokenValidator.SecurityStampClaim, user.SecurityStamp ?? string.Empty)
         };
         claims.AddRange(roles.Select(r => new Claim(ClaimTypes.Role, r)));
 

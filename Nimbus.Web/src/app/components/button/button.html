@@ -7,14 +7,18 @@
 
 @if (href(); as link) {
   <a
+    (click)="onLinkClick($event)"
+    [attr.aria-disabled]="disabled() ? 'true' : null"
     [attr.aria-label]="ariaLabel() ?? null"
+    [attr.href]="disabled() ? null : link"
+    [attr.tabindex]="disabled() ? -1 : null"
+    [class.btn-disabled]="disabled()"
     [class.btn-approve]="variant() === 'approve'"
     [class.btn-auto]="!fullWidth()"
     [class.btn-danger]="variant() === 'danger'"
     [class.btn-ghost]="variant() === 'ghost'"
     [class.btn-primary]="variant() === 'primary'"
     [class.btn-sm]="size() === 'sm'"
-    [href]="link"
     [id]="id()"
     class="btn"
   >

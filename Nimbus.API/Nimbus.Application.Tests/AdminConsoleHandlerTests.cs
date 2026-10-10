@@ -9,6 +9,7 @@ using Nimbus.Application.Features.Admin.Commands.RejectUser;
 using Nimbus.Application.Features.Admin.Commands.SetUserBlocked;
 using Nimbus.Application.Features.Admin.Commands.SetUserRole;
 using Nimbus.Application.Features.Admin.Queries.ListLoginEvents;
+using Nimbus.Application.Features.Admin.Queries.ListUsers;
 using Nimbus.Application.Helpers;
 using Nimbus.Domain.Entities;
 using Nimbus.Domain.Enums;
@@ -46,6 +47,7 @@ public class AdminConsoleHandlerTests
         {
             Assert.That(target.IsRejected, Is.True);
             Assert.That(svc.Revoked, Does.Contain(target.Id));
+            Assert.That(svc.Invalidated, Does.Contain(target.Id));
         });
     }
 
@@ -88,25 +90,16 @@ public class AdminConsoleHandlerTests
     public void SetRole_SelfDemotion_IsRefused()
     {
         var me = Admin(AdminId);
-        var handler = new SetUserRoleCommandHandler(new Repo(me), new Administration { AdminCount = 2 }, new Me(AdminId), NullLogger<SetUserRoleCommandHandler>.Instance);
+        var handler = new SetUserRoleCommandHandler(new Repo(me), new Administration(), new Me(AdminId), NullLogger<SetUserRoleCommandHandler>.Instance);
 
         Assert.ThrowsAsync<ProcessingException>(() => handler.Handle(new SetUserRoleCommand(me.Id, "Pilot"), CancellationToken.None));
-    }
-
-    [Test]
-    public void SetRole_LastAdmin_IsRefused()
-    {
-        var other = Admin();
-        var handler = new SetUserRoleCommandHandler(new Repo(other), new Administration { AdminCount = 1 }, new Me(AdminId), NullLogger<SetUserRoleCommandHandler>.Instance);
-
-        Assert.ThrowsAsync<ProcessingException>(() => handler.Handle(new SetUserRoleCommand(other.Id, "Pilot"), CancellationToken.None));
     }
 
     [Test]
     public void SetRole_DemotingAnotherAdmin_WhenSeveralExist_Succeeds_AndUnknownIs404()
     {
         var other = Admin();
-        var handler = new SetUserRoleCommandHandler(new Repo(other), new Administration { AdminCount = 2 }, new Me(AdminId), NullLogger<SetUserRoleCommandHandler>.Instance);
+        var handler = new SetUserRoleCommandHandler(new Repo(other), new Administration(), new Me(AdminId), NullLogger<SetUserRoleCommandHandler>.Instance);
 
         Assert.DoesNotThrowAsync(() => handler.Handle(new SetUserRoleCommand(other.Id, "Pilot"), CancellationToken.None));
         Assert.ThrowsAsync<NotFoundException>(() => handler.Handle(new SetUserRoleCommand(Guid.NewGuid(), "Pilot"), CancellationToken.None));
@@ -145,7 +138,7 @@ public class AdminConsoleHandlerTests
 
     // ── delete ──
     [Test]
-    public async Task Delete_RemovesTarget_ButNotSelfOrLastAdmin()
+    public async Task Delete_RemovesTarget_ButNotSelf()
     {
         var target = Pilot(rejected: true);
         var svc = new Administration();
@@ -156,10 +149,28 @@ public class AdminConsoleHandlerTests
 
         Assert.ThrowsAsync<ProcessingException>(() => handler.Handle(new DeleteUserCommand(AdminId), CancellationToken.None));
         Assert.ThrowsAsync<NotFoundException>(() => handler.Handle(new DeleteUserCommand(Guid.NewGuid()), CancellationToken.None));
+    }
 
-        var lastAdmin = Admin();
-        var lastHandler = new DeleteUserCommandHandler(new Repo(lastAdmin), new Administration { AdminCount = 1 }, new Me(AdminId), NullLogger<DeleteUserCommandHandler>.Instance);
-        Assert.ThrowsAsync<ProcessingException>(() => lastHandler.Handle(new DeleteUserCommand(lastAdmin.Id), CancellationToken.None));
+    // ── validators ──
+    [Test]
+    public void RecordLoginAttemptValidator_RequiresMatchedUserForSuccess()
+    {
+        var validator = new RecordLoginAttemptCommandValidator();
+        Assert.Multiple(() =>
+        {
+            Assert.That(validator.Validate(new RecordLoginAttemptCommand(null, null, true, "1.2.3.4")).IsValid, Is.False);
+            Assert.That(validator.Validate(new RecordLoginAttemptCommand(Guid.NewGuid(), "a@example.com", true, "1.2.3.4")).IsValid, Is.True);
+            Assert.That(validator.Validate(new RecordLoginAttemptCommand(null, null, false, null)).IsValid, Is.True);
+            Assert.That(validator.Validate(new RecordLoginAttemptCommand(Guid.NewGuid(), "", false, null)).IsValid, Is.False);
+            Assert.That(validator.Validate(new RecordLoginAttemptCommand(Guid.Empty, "a@example.com", false, null)).IsValid, Is.False);
+            Assert.That(validator.Validate(new RecordLoginAttemptCommand(null, null, false, new string('1', 65))).IsValid, Is.False);
+        });
+    }
+
+    [Test]
+    public void ListUsersValidator_AcceptsTheParameterlessQuery()
+    {
+        Assert.That(new ListUsersQueryValidator().Validate(new ListUsersQuery()).IsValid, Is.True);
     }
 
     // ── login events ──
@@ -226,16 +237,16 @@ public class AdminConsoleHandlerTests
 
     private sealed class Administration : IUserAdministrationService
     {
-        public int AdminCount { get; init; } = 2;
         public List<Guid> Revoked { get; } = [];
         public List<Guid> Deleted { get; } = [];
+        public List<Guid> Invalidated { get; } = [];
         public Dictionary<Guid, string> Roles { get; } = new();
         public Dictionary<Guid, bool> Blocked { get; } = new();
 
-        public Task<int> CountUsersInRoleAsync(string role, CancellationToken ct = default) => Task.FromResult(AdminCount);
         public Task SetRoleAsync(Guid userId, string role, CancellationToken ct = default) { Roles[userId] = role; return Task.CompletedTask; }
         public Task SetBlockedAsync(Guid userId, bool blocked, CancellationToken ct = default) { Blocked[userId] = blocked; return Task.CompletedTask; }
         public Task RevokeSessionsAsync(Guid userId, CancellationToken ct = default) { Revoked.Add(userId); return Task.CompletedTask; }
+        public Task InvalidateAccessTokensAsync(Guid userId, CancellationToken ct = default) { Invalidated.Add(userId); return Task.CompletedTask; }
         public Task DeleteAsync(Guid userId, CancellationToken ct = default) { Deleted.Add(userId); return Task.CompletedTask; }
     }
 

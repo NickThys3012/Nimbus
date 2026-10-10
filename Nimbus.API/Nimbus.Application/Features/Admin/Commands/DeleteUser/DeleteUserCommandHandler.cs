@@ -37,12 +37,7 @@ public sealed class DeleteUserCommandHandler : IRequestHandler<DeleteUserCommand
         var user = await _userRepository.GetByIdAsync(request.UserId)
                    ?? throw new NotFoundException(nameof(User), request.UserId);
 
-        var adminRole = nameof(UserRole.Admin);
-        if (user.Roles.Contains(adminRole) && await _administration.CountUsersInRoleAsync(adminRole, ct) <= 1)
-        {
-            throw new ProcessingException("The last Admin cannot be deleted.");
-        }
-
+        // The "last active Admin" rule is enforced atomically inside IUserAdministrationService.
         await _administration.DeleteAsync(user.Id, ct);
         _logger.LogInformation("Admin {AdminUserId} deleted user {TargetUserId}", adminId, user.Id);
     }
