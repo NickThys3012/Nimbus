@@ -22,7 +22,7 @@ public class JwtSecretValidatorTests
     [Test]
     public void Short_Secret_Fails_AndTheMessageDoesNotLeakIt()
     {
-        var secret = "short-0123456789";
+        var secret = Guid.NewGuid().ToString("N")[..12];
         var ex = Assert.Throws<InvalidOperationException>(() => JwtSecretValidator.Require(secret));
         Assert.That(ex!.Message, Does.Not.Contain(secret));
     }
