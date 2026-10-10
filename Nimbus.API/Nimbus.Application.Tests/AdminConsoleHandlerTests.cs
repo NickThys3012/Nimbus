@@ -182,6 +182,12 @@ public class AdminConsoleHandlerTests
             Assert.That(IpMasker.Mask("84.198.12.9"), Is.EqualTo("84.198.x.x"));
             Assert.That(IpMasker.Mask("::ffff:84.198.12.9"), Is.EqualTo("84.198.x.x"));
             Assert.That(IpMasker.Mask("2001:db8:abcd::1"), Is.EqualTo("2001:db8:x:x"));
+            Assert.That(IpMasker.Mask("2001::dead:beef"), Is.EqualTo("2001:0:x:x"));
+            Assert.That(IpMasker.Mask("::1"), Is.EqualTo("0:0:x:x"));
+            Assert.That(IpMasker.Mask("::"), Is.EqualTo("0:0:x:x"));
+            Assert.That(IpMasker.Mask("fe80::1%eth0"), Is.EqualTo("fe80:0:x:x"));
+            Assert.That(IpMasker.Mask("2001:0DB8:0000:0000:0000:0000:0000:0001"), Is.EqualTo("2001:db8:x:x"));
+            Assert.That(IpMasker.Mask("::ffff:1.2.3.4"), Is.EqualTo("1.2.x.x"));
             Assert.That(IpMasker.Mask("nope"), Is.Null);
             Assert.That(IpMasker.Mask(null), Is.Null);
         });

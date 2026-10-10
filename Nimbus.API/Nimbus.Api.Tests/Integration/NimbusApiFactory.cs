@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -29,7 +30,8 @@ public sealed class NimbusApiFactory : WebApplicationFactory<Program>
     public string AdminPassword { get; } = $"Aa1!{Guid.NewGuid():N}";
 
     /// <param name="loginPermitLimit">Per-IP login limit per window. Relaxed by default because every test client shares one (unknown) IP.</param>
-    public async Task InitializeAsync(int loginPermitLimit = 100_000)
+    /// <param name="trustedProxyNetwork">CIDR trusted to send X-Forwarded-For; null keeps the production default (loopback + private ranges).</param>
+    public async Task InitializeAsync(int loginPermitLimit = 100_000, string? trustedProxyNetwork = null)
     {
         await _sqlServer.StartAsync();
 
@@ -59,6 +61,7 @@ public sealed class NimbusApiFactory : WebApplicationFactory<Program>
         Environment.SetEnvironmentVariable("Seed__AdminEmail", AdminEmail);
         Environment.SetEnvironmentVariable("Seed__AdminPassword", AdminPassword);
         Environment.SetEnvironmentVariable("RateLimiting__Login__PermitLimit", loginPermitLimit.ToString());
+        Environment.SetEnvironmentVariable("ForwardedHeaders__KnownNetworks__0", trustedProxyNetwork);
 
         // Migrate with a standalone DbContext BEFORE ever touching `Server`/`Services` below.
         // Program.cs calls `await app.Services.SeedUsers()` as an integral part of its own
@@ -85,7 +88,12 @@ public sealed class NimbusApiFactory : WebApplicationFactory<Program>
         builder.UseEnvironment("Testing");
         // Test-only controller that sits behind the default [Authorize] policy.
         builder.ConfigureServices(services =>
-            services.AddControllers().AddApplicationPart(typeof(NimbusApiFactory).Assembly));
+        {
+            services.AddControllers().AddApplicationPart(typeof(NimbusApiFactory).Assembly);
+            // TestServer has no socket peer: pretend every request comes from a loopback proxy,
+            // as it does behind Caddy, so ForwardedHeaders can be exercised.
+            services.AddTransient<IStartupFilter, LoopbackPeerStartupFilter>();
+        });
     }
 
     /// <summary>Creates a confirmed user directly through Identity (bypassing e-mail) with a generated password.</summary>
@@ -123,5 +131,21 @@ internal static class BoolExtensions
         {
             throw new InvalidOperationException("Test user setup failed.");
         }
+    }
+}
+
+internal sealed class LoopbackPeerStartupFilter : IStartupFilter
+{
+    public Action<Microsoft.AspNetCore.Builder.IApplicationBuilder> Configure(Action<Microsoft.AspNetCore.Builder.IApplicationBuilder> next)
+    {
+        return app =>
+        {
+            app.Use((context, nxt) =>
+            {
+                context.Connection.RemoteIpAddress ??= System.Net.IPAddress.Loopback;
+                return nxt(context);
+            });
+            next(app);
+        };
     }
 }

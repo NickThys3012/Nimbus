@@ -1,5 +1,7 @@
 using System.Security.Claims;
+using System.Net;
 using System.Text;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
@@ -124,6 +126,28 @@ try
     });
     builder.Services.AddSingleton<IAuthorizationHandler, ActiveAccountHandler>();
 
+    // Behind Caddy every request arrives from the proxy, so the real client IP must come from
+    // X-Forwarded-For — but only when the immediate peer is a trusted proxy. Trust is limited to
+    // loopback and the private ranges Docker bridge networks use, and is configurable
+    // (ForwardedHeaders:KnownNetworks / KnownProxies); never "trust everyone".
+    builder.Services.Configure<ForwardedHeadersOptions>(opts =>
+    {
+        opts.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+        opts.ForwardLimit = 1; // Caddy appends exactly one hop
+        opts.KnownIPNetworks.Clear();
+        opts.KnownProxies.Clear();
+        var networks = builder.Configuration.GetSection("ForwardedHeaders:KnownNetworks").Get<string[]>()
+                       ?? ["127.0.0.0/8", "::1/128", "10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16"];
+        foreach (var cidr in networks)
+        {
+            opts.KnownIPNetworks.Add(System.Net.IPNetwork.Parse(cidr));
+        }
+        foreach (var proxy in builder.Configuration.GetSection("ForwardedHeaders:KnownProxies").Get<string[]>() ?? [])
+        {
+            opts.KnownProxies.Add(IPAddress.Parse(proxy));
+        }
+    });
+
     // Per-IP limit on the login endpoint: bounds password guessing and the growth of the login
     // audit table (rejected requests never reach the action, so they are not recorded).
     var loginPermits = builder.Configuration.GetValue("RateLimiting:Login:PermitLimit", 10);
@@ -171,6 +195,7 @@ try
     await app.Services.SeedUsers();
 
     // ── Middleware pipeline ───────────────────────────────────────────
+    app.UseForwardedHeaders();                        // real client IP first: limiter, audit and logs all use it
     app.UseSerilogRequestLogging();                   // HTTP request logging (#48)
     app.UseMiddleware<ExceptionHandlingMiddleware>(); // maps known exceptions to API responses
     app.UseHttpsRedirection();

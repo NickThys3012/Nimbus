@@ -30,7 +30,8 @@ export default class Admin {
   private readonly authStore = inject(AuthStore);
 
   protected readonly tab = signal<AdminTab>('pending');
-  protected readonly busyId = signal<string | null>(null);
+  /** Ids of the users with an action in flight; each user is tracked independently. */
+  protected readonly busyIds = signal<ReadonlySet<string>>(new Set());
   protected readonly actionError = signal<string | null>(null);
   protected readonly roles = ASSIGNABLE_ROLES;
 
@@ -54,6 +55,19 @@ export default class Admin {
     { id: 'users', label: 'Users', count: this.allUsers().length },
     { id: 'history', label: 'Sign-in history' },
   ]);
+
+  protected isBusy(id: string): boolean {
+    return this.busyIds().has(id);
+  }
+
+  private setBusy(id: string, busy: boolean): void {
+    this.busyIds.update((ids) => {
+      const next = new Set(ids);
+      if (busy) next.add(id);
+      else next.delete(id);
+      return next;
+    });
+  }
 
   protected setTab(id: string): void {
     this.tab.set(id as AdminTab);
@@ -122,15 +136,16 @@ export default class Admin {
   }
 
   private run(id: string, call: Observable<unknown>): void {
-    this.busyId.set(id);
+    if (this.isBusy(id)) return;
+    this.setBusy(id, true);
     this.actionError.set(null);
     call.subscribe({
       next: () => {
-        this.busyId.set(null);
+        this.setBusy(id, false);
         this.users.reload();
       },
       error: (err: unknown) => {
-        this.busyId.set(null);
+        this.setBusy(id, false);
         const title = err instanceof ApiError && typeof err.body?.title === 'string' ? err.body.title : null;
         this.actionError.set(title ?? 'Action failed. Please try again.');
         // Re-sync the list so e.g. a rejected role select snaps back.

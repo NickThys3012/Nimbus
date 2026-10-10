@@ -31,7 +31,7 @@
           }
           <Nimbus-button
             [attr.data-testid]="'reject-' + user.id"
-            [disabled]="busyId() === user.id"
+            [disabled]="isBusy(user.id)"
             [fullWidth]="false"
             [id]="'reject-btn-' + user.id"
             (click)="reject(user.id)"
@@ -41,7 +41,7 @@
           >Reject</Nimbus-button>
           <Nimbus-button
             [attr.data-testid]="'approve-' + user.id"
-            [disabled]="busyId() === user.id"
+            [disabled]="isBusy(user.id)"
             [fullWidth]="false"
             [id]="'approve-btn-' + user.id"
             (click)="approve(user.id)"
@@ -77,7 +77,7 @@
                 class="role-select"
                 [attr.aria-label]="'Role of ' + user.email"
                 [attr.data-testid]="'role-' + user.id"
-                [disabled]="busyId() === user.id"
+                [disabled]="isBusy(user.id)"
                 (change)="changeRole(user, $event)"
               >
                 @for (role of roles; track role) {
@@ -104,7 +104,7 @@
             @if (user.isRejected) {
               <Nimbus-button
                 [attr.data-testid]="'delete-' + user.id"
-                [disabled]="busyId() === user.id"
+                [disabled]="isBusy(user.id)"
                 [fullWidth]="false"
                 [id]="'delete-btn-' + user.id"
                 (click)="remove(user)"
@@ -117,7 +117,7 @@
               <Nimbus-button
                 [attr.data-testid]="'block-' + user.id"
                 [ariaLabel]="user.isBlocked ? 'Unblock user' : 'Block user'"
-                [disabled]="busyId() === user.id"
+                [disabled]="isBusy(user.id)"
                 [fullWidth]="false"
                 [icon]="user.isBlocked ? 'ti-lock-open' : 'ti-ban'"
                 [id]="'block-btn-' + user.id"

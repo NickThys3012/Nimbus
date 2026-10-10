@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { of, throwError } from 'rxjs';
+import { of, Subject, throwError } from 'rxjs';
 import { type Mock, vi } from 'vitest';
 
 import Admin from './admin';
@@ -91,6 +91,33 @@ describe('Admin', () => {
     await click('approve-p1');
     expect(api['postApiAdminUsersApprove']).toHaveBeenCalledWith({ id: 'p1' });
     expect(api['getApiAdminUsers']).toHaveBeenCalledTimes(2);
+  });
+
+  it('tracks busy state per user: overlapping actions do not clear each other', async () => {
+    const first = new Subject<void>();
+    const second = new Subject<void>();
+    const { el, fixture } = await setup([
+      users[0],
+      { ...users[0], id: 'p2', email: 'second@example.com' },
+    ]);
+    api['postApiAdminUsersApprove'].mockImplementation(({ id }: { id: string }) => (id === 'p1' ? first : second));
+    const btn = (id: string) => el.querySelector(`[data-testid="approve-${id}"] button`) as HTMLButtonElement;
+
+    btn('p1').click();
+    btn('p2').click();
+    await fixture.whenStable();
+    expect(btn('p1').disabled).toBe(true);
+    expect(btn('p2').disabled).toBe(true);
+
+    first.next();
+    first.complete();
+    await fixture.whenStable();
+    // p2 is still in flight even though p1 finished.
+    expect(btn('p2').disabled).toBe(true);
+    second.next();
+    second.complete();
+    await fixture.whenStable();
+    expect(el.querySelector('[data-testid="approve-p2"] button')?.hasAttribute('disabled')).toBe(false);
   });
 
   it('rejects and reloads', async () => {

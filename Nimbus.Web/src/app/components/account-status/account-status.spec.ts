@@ -29,6 +29,7 @@ describe('AccountStatus', () => {
     const el = (await setup('pending')).nativeElement as HTMLElement;
     expect(el.querySelector('#pending-approval-notice')).toBeTruthy();
     expect(el.textContent).toContain('Your account is awaiting approval');
+    expect(el.textContent).not.toMatch(/receive an email/i); // no approval email is sent
     expect(el.querySelector('#meta-requested')?.textContent).toContain('26 Jul 2026');
     expect(el.querySelector('#meta-role')?.textContent).toContain('pilot');
     expect(el.querySelector('#contact-admin')?.getAttribute('href')).toMatch(/^mailto:/);

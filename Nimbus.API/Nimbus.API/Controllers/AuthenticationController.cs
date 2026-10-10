@@ -71,18 +71,19 @@ public class AuthenticationController : ControllerBase
             return Unauthorized("Invalid credentials");
         }
 
-        await RecordLoginAttemptAsync(user, user.Email, true);
-
         var roles = await _users.GetRolesAsync(user);
         var (accessToken, expiry) = _tokens.GenerateAccessToken(user, roles);
         var (rawRefresh, refreshEntity) = await _tokens.GenerateRefreshTokenAsync(user.Id, request.RememberMe);
 
         SetRefreshCookie(rawRefresh, request.RememberMe ? new DateTimeOffset(refreshEntity.ExpiresAt) : null);
 
+        // Only now — access and refresh tokens issued and saved — is the sign-in a success.
+        await RecordLoginAttemptAsync(user, user.Email, true);
+
         return Ok(new LoginResponseDto(accessToken, expiry, user.Email!, roles.FirstOrDefault() ?? nameof(UserRole.Pilot), user.IsApproved, user.IsRejected, user.RequestedAt));
     }
 
-    // Audit trail for the admin "Aanmeldgeschiedenis" tab. Must never break the login itself.
+    // Audit trail for the admin "Sign-in history" tab. Failure-isolated: the repository detaches a failed row so it can never break or be re-saved by the login.
     private async Task RecordLoginAttemptAsync(ApplicationUser? user, string? email, bool succeeded)
     {
         try

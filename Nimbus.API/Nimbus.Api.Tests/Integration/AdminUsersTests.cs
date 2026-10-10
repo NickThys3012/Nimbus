@@ -324,6 +324,22 @@ public class AdminUsersTests
         Assert.That(eventsJson, Does.Match("\"occurredAt\":\"[^\"]+Z\""));
     }
 
+    // ── audit recording is failure-isolated ──
+    [Test]
+    public async Task FailedAuditInsert_IsDetached_AndNeverBreaksALaterSave()
+    {
+        using var scope = _factory.Services.CreateScope();
+        var repo = scope.ServiceProvider.GetRequiredService<Nimbus.Domain.Interfaces.ILoginEventRepository>();
+        var db = scope.ServiceProvider.GetRequiredService<Nimbus.Infrastructure.Persistence.AppDbContext>();
+
+        // MaskedIp is limited to 64 characters, so SaveChanges fails.
+        var bad = new Nimbus.Domain.Entities.LoginEvent(DateTime.UtcNow, null, null, false, new string('x', 200));
+        Assert.CatchAsync(async () => await repo.AddAsync(bad));
+
+        Assert.That(db.ChangeTracker.Entries<Nimbus.Domain.Entities.LoginEvent>(), Is.Empty, "failed row must not stay tracked");
+        Assert.DoesNotThrowAsync(async () => await db.SaveChangesAsync(), "a later save must not retry the failed row");
+    }
+
     // ── retention ──
     [Test]
     public async Task LoginEventRetention_PurgesOnlyEventsOlderThanTheWindow()
