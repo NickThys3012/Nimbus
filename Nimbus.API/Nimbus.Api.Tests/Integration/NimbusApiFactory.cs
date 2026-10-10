@@ -47,7 +47,7 @@ public sealed class NimbusApiFactory : WebApplicationFactory<Program>
         // Fixed (not the "REPLACE-ME" placeholder) so tokens minted during a run validate
         // within that same run; irrelevant across runs since each run gets a fresh
         // container/database.
-        Environment.SetEnvironmentVariable("Jwt__Secret", "integration-test-signing-key-at-least-32-chars-long");
+        Environment.SetEnvironmentVariable("Jwt__Secret", Convert.ToBase64String(System.Security.Cryptography.RandomNumberGenerator.GetBytes(48)));
         Environment.SetEnvironmentVariable("Jwt__Issuer", "Nimbus.Server.Tests");
         Environment.SetEnvironmentVariable("Jwt__Audience", "Nimbus.Client.Tests");
         Environment.SetEnvironmentVariable("Jwt__AccessTokenMinutes", "15");
