@@ -153,7 +153,7 @@ services:
     networks: [nimbus]
 
   minio:
-    image: minio/minio:latest
+    image: cgr.dev/chainguard/minio:latest
     restart: unless-stopped
     user: "1000:1000"
     # No ports: published — reachable only on the internal `nimbus` network.
@@ -181,7 +181,7 @@ services:
   # One-shot, idempotent bucket/policy/app-user bootstrap (issue #95). Safe to
   # re-run on every `docker compose up` — see infra/minio/minio-init.sh.
   minio-init:
-    image: minio/mc:latest
+    image: cgr.dev/chainguard/minio:latest
     restart: "no"
     entrypoint: ["/bin/sh", "/init/minio-init.sh"]
     environment:

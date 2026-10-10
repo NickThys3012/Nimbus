@@ -17,7 +17,7 @@ public class MinioHealthCheckTests
     [SetUp]
     public async Task SetUpAsync()
     {
-        _minio = new MinioBuilder("minio/minio:latest").Build();
+        _minio = new MinioBuilder("cgr.dev/chainguard/minio:latest").Build();
         await _minio.StartAsync();
     }
 
