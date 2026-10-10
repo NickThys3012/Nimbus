@@ -12,6 +12,7 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) {}
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
     public DbSet<SentEmail> SentEmails => Set<SentEmail>();
+    public DbSet<LoginEvent> LoginEvents => Set<LoginEvent>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -39,6 +40,20 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
             });
         });
 
+
+        // Existing rows get the migration time as their request date; new rows set it explicitly.
+        builder.Entity<ApplicationUser>()
+            .Property(u => u.RequestedAt)
+            .HasDefaultValueSql("SYSUTCDATETIME()");
+
+        builder.Entity<LoginEvent>(e =>
+        {
+            e.HasKey(l => l.Id);
+            e.Property(l => l.Email).HasMaxLength(320);
+            e.Property(l => l.MaskedIp).HasMaxLength(64);
+            // The admin list is always "newest N".
+            e.HasIndex(l => l.OccurredAt);
+        });
 
         builder.ApplyConfigurationsFromAssembly(typeof(AppDbContext).Assembly);
         ApplySoftDeleteConvention(builder);

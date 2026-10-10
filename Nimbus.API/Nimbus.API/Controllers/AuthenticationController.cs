@@ -3,6 +3,7 @@ using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Nimbus.Application.Features.Admin.Commands.RecordLoginAttempt;
 using Nimbus.Application.Features.Auth.Command.CreateUser;
 using Nimbus.Application.Features.Auth.Command.ResendVerificationEmail;
 using Nimbus.Application.Features.Auth.Queries.GetUserByEmail;
@@ -45,24 +46,30 @@ public class AuthenticationController : ControllerBase
         var user = await _users.FindByEmailAsync(request.Email);
         if (user is null)
         {
+            await RecordLoginAttemptAsync(null, null, false);
             return Unauthorized("Invalid credentials");
         }
 
         var signInResult = await _signInManager.CheckPasswordSignInAsync(user, request.Password, true);
         if (signInResult.IsNotAllowed)
         {
+            await RecordLoginAttemptAsync(user, user.Email, false);
             return Unauthorized("Please verify your email before logging in.");
         }
 
         if (signInResult.IsLockedOut)
         {
+            await RecordLoginAttemptAsync(user, user.Email, false);
             return Unauthorized("Account temporarily locked. Try again later.");
         }
 
         if (!signInResult.Succeeded)
         {
+            await RecordLoginAttemptAsync(user, user.Email, false);
             return Unauthorized("Invalid credentials");
         }
+
+        await RecordLoginAttemptAsync(user, user.Email, true);
 
         var roles = await _users.GetRolesAsync(user);
         var (accessToken, expiry) = _tokens.GenerateAccessToken(user, roles);
@@ -70,7 +77,21 @@ public class AuthenticationController : ControllerBase
 
         SetRefreshCookie(rawRefresh, request.RememberMe ? new DateTimeOffset(refreshEntity.ExpiresAt) : null);
 
-        return Ok(new LoginResponseDto(accessToken, expiry, user.Email!, roles.FirstOrDefault() ?? nameof(UserRole.Pilot)));
+        return Ok(new LoginResponseDto(accessToken, expiry, user.Email!, roles.FirstOrDefault() ?? nameof(UserRole.Pilot), user.IsApproved, user.IsRejected, user.RequestedAt));
+    }
+
+    // Audit trail for the admin "Aanmeldgeschiedenis" tab. Must never break the login itself.
+    private async Task RecordLoginAttemptAsync(ApplicationUser? user, string? email, bool succeeded)
+    {
+        try
+        {
+            await _mediator.Send(new RecordLoginAttemptCommand(
+                user is null ? null : Guid.Parse(user.Id), email, succeeded, HttpContext.Connection.RemoteIpAddress?.ToString()));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Could not record login attempt for the audit list.");
+        }
     }
 
     [HttpPost("register")]
@@ -138,7 +159,7 @@ public class AuthenticationController : ControllerBase
 
         SetRefreshCookie(newRaw, existing.RememberMe ? newEntity.ExpiresAt : null);
 
-        return Ok(new LoginResponseDto(newAccess, expiry, user.Email!, roles.FirstOrDefault() ?? nameof(UserRole.Pilot)));
+        return Ok(new LoginResponseDto(newAccess, expiry, user.Email!, roles.FirstOrDefault() ?? nameof(UserRole.Pilot), user.IsApproved, user.IsRejected, user.RequestedAt));
     }
 
     // ── POST /api/auth/logout ───────────────────────────────────────
@@ -183,7 +204,7 @@ public class AuthenticationController : ControllerBase
         }
 
         var roles = await _users.GetRolesAsync(user);
-        return Ok(new CurrentUserDto(user.Id, user.Email!, user.FirstName, user.Name, roles.ToList(), user.IsApproved));
+        return Ok(new CurrentUserDto(user.Id, user.Email!, user.FirstName, user.Name, roles.ToList(), user.IsApproved, user.IsRejected, user.RequestedAt));
     }
 
 

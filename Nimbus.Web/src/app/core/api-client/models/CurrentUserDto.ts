@@ -9,5 +9,7 @@ export type CurrentUserDto = {
     name: string;
     roles: Array<string>;
     isApproved: boolean;
+    isRejected: boolean;
+    requestedAt: string | null;
 };
 

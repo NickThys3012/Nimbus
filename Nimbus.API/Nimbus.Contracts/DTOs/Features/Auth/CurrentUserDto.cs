@@ -11,4 +11,6 @@ public record CurrentUserDto(
     string FirstName,
     string Name,
     IReadOnlyList<string> Roles,
-    bool IsApproved);
+    bool IsApproved,
+    bool IsRejected,
+    DateTime? RequestedAt);

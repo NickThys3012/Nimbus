@@ -67,6 +67,8 @@ public static class DependencyInjection
         services.AddScoped<ICurrentUserService, CurrentUserService>();
         services.AddScoped<IEmailAuditLogger, EmailAuditLogger>();
         services.AddScoped<IIdentityService, IdentityService>();
+        services.AddScoped<IUserAdministrationService, UserAdministrationService>();
+        services.AddScoped<ILoginEventRepository, LoginEventRepository>();
 
         AddObjectStorage(services, config);
 

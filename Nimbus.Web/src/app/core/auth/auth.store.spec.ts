@@ -1,0 +1,57 @@
+import { TestBed } from '@angular/core/testing';
+import { of } from 'rxjs';
+
+import { AuthStore } from './auth.store';
+import { AuthenticationService, type LoginResponseDto } from '../api-client';
+
+describe('AuthStore approval state', () => {
+  const login = (isApproved: boolean, isRejected = false): LoginResponseDto => ({
+    accessToken: 't',
+    expiration: '2099-01-01T00:00:00Z',
+    email: 'pilot@example.com',
+    role: 'Pilot',
+    isApproved,
+    isRejected,
+    requestedAt: '2026-07-26T10:00:00Z',
+  });
+
+  function setup(response: LoginResponseDto) {
+    TestBed.configureTestingModule({
+      providers: [
+        {
+          provide: AuthenticationService,
+          useValue: {
+            postApiAuthenticationLogin: () => of(response),
+            getApiAuthenticationMe: () => new Promise(() => undefined) as never,
+            getApiAuthentication: () => of(undefined),
+          },
+        },
+      ],
+    });
+    return TestBed.inject(AuthStore);
+  }
+
+  it('flags a pending user after login without blocking the login', () => {
+    const store = setup(login(false));
+    expect(store.isPendingApproval()).toBe(false);
+    store.login({ email: 'pilot@example.com', password: 'x', rememberMe: false }).subscribe();
+    expect(store.isAuthenticated()).toBe(true);
+    expect(store.isApproved()).toBe(false);
+    expect(store.isPendingApproval()).toBe(true);
+  });
+
+  it('does not flag an approved user', () => {
+    const store = setup(login(true));
+    store.login({ email: 'pilot@example.com', password: 'x', rememberMe: false }).subscribe();
+    expect(store.isApproved()).toBe(true);
+    expect(store.isPendingApproval()).toBe(false);
+  });
+
+  it('flags a rejected user separately from pending and exposes the request date', () => {
+    const store = setup(login(false, true));
+    store.login({ email: 'pilot@example.com', password: 'x', rememberMe: false }).subscribe();
+    expect(store.isAccessRejected()).toBe(true);
+    expect(store.isPendingApproval()).toBe(false);
+    expect(store.requestedAt()).toBe('2026-07-26T10:00:00Z');
+  });
+});

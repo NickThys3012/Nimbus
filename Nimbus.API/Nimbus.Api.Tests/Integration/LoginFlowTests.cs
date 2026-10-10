@@ -55,6 +55,7 @@ public class LoginFlowTests
         Assert.That(login, Is.Not.Null);
         Assert.That(login!.AccessToken, Is.Not.Empty);
         Assert.That(login.Email, Is.EqualTo(email));
+        Assert.That(login.IsApproved, Is.True);
 
         var refreshCookie = ExtractCookie(loginResponse, CookieName);
         Assert.That(refreshCookie, Is.Not.Null, "login must set a refreshToken cookie");

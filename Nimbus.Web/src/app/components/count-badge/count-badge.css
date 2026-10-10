@@ -1,0 +1,13 @@
+.badge {
+    background: var(--chip);
+    color: var(--fnt);
+    font-size: 10.5px;
+    font-family: var(--mono);
+    padding: 1px 6px;
+    border-radius: 10px;
+}
+
+.badge.warn {
+    background: var(--ab);
+    color: var(--a);
+}

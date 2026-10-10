@@ -1,0 +1,18 @@
+<div class="tabs" role="tablist">
+  @for (tab of tabs(); track tab.id) {
+    <button
+      (click)="active.set(tab.id)"
+      [attr.aria-selected]="active() === tab.id"
+      [class.on]="active() === tab.id"
+      [id]="'tab-' + tab.id"
+      class="tab"
+      role="tab"
+      type="button"
+    >
+      {{ tab.label }}
+      @if (tab.count !== undefined) {
+        <Nimbus-count-badge [count]="tab.count" [tone]="tab.countTone ?? 'neutral'"></Nimbus-count-badge>
+      }
+    </button>
+  }
+</div>

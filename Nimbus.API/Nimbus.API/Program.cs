@@ -5,8 +5,10 @@ using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.IdentityModel.Tokens;
+using Nimbus.API;
 using Nimbus.API.Middleware;
 using Nimbus.Application;
+using Nimbus.Domain.Enums;
 using Nimbus.Infrastructure;
 using Nimbus.Infrastructure.Identity;
 using Nimbus.Infrastructure.Persistence;
@@ -88,7 +90,8 @@ try
     });
 
     builder.Services.AddNimbusEmail(builder.Configuration);
-    builder.Services.AddAuthorization();
+    builder.Services.AddAuthorization(opts =>
+        opts.AddPolicy(AuthorizationPolicies.AdminOnly, policy => policy.RequireRole(nameof(UserRole.Admin))));
     builder.Services.AddScoped<TokenService>();
     builder.Services.AddSingleton(TimeProvider.System);
 

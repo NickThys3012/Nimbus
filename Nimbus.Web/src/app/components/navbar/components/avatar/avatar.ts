@@ -2,9 +2,10 @@ import { Component, ElementRef, HostListener, inject } from '@angular/core';
 import { ThemeService } from '../../../../services/theme-service';
 import { AuthStore } from '../../../../core/auth/auth.store';
 import { RouterLink } from '@angular/router';
+import { InitialsAvatar } from '../../../initials-avatar/initials-avatar';
 
 @Component({
-  imports: [RouterLink],
+  imports: [RouterLink, InitialsAvatar],
   selector: 'Nimbus-avatar',
   styleUrl: './avatar.css',
   templateUrl: './avatar.html',

@@ -1,14 +1,39 @@
-<button
-  [class.btn-auto]="!fullWidth()"
-  [class.btn-ghost]="variant() === 'ghost'"
-  [class.btn-primary]="variant() === 'primary'"
-  [disabled]="disabled()"
-  [id]="id()"
-  [type]="type()"
-  class="btn"
->
-  @if (icon() !== null) {
+<ng-template #content>
+  @if (icon()) {
     <i aria-hidden="true" class="ti {{icon()}}"></i>
   }
   <ng-content/>
-</button>
+</ng-template>
+
+@if (href(); as link) {
+  <a
+    [attr.aria-label]="ariaLabel() ?? null"
+    [class.btn-approve]="variant() === 'approve'"
+    [class.btn-auto]="!fullWidth()"
+    [class.btn-danger]="variant() === 'danger'"
+    [class.btn-ghost]="variant() === 'ghost'"
+    [class.btn-primary]="variant() === 'primary'"
+    [class.btn-sm]="size() === 'sm'"
+    [href]="link"
+    [id]="id()"
+    class="btn"
+  >
+    <ng-container *ngTemplateOutlet="content"/>
+  </a>
+} @else {
+  <button
+    [attr.aria-label]="ariaLabel() ?? null"
+    [class.btn-approve]="variant() === 'approve'"
+    [class.btn-auto]="!fullWidth()"
+    [class.btn-danger]="variant() === 'danger'"
+    [class.btn-ghost]="variant() === 'ghost'"
+    [class.btn-primary]="variant() === 'primary'"
+    [class.btn-sm]="size() === 'sm'"
+    [disabled]="disabled()"
+    [id]="id()"
+    [type]="type()"
+    class="btn"
+  >
+    <ng-container *ngTemplateOutlet="content"/>
+  </button>
+}

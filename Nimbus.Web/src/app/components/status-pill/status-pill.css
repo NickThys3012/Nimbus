@@ -1,0 +1,22 @@
+.pill {
+    font-size: 10.5px;
+    padding: 3px 9px;
+    border-radius: 8px;
+    font-family: var(--mono);
+    white-space: nowrap;
+}
+
+.pill.ok {
+    color: var(--g);
+    background: var(--gb);
+}
+
+.pill.warn {
+    color: var(--a);
+    background: var(--ab);
+}
+
+.pill.danger {
+    color: var(--r);
+    background: var(--rb);
+}

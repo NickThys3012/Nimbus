@@ -30,7 +30,26 @@ export class AuthStore {
   readonly lookupEmail = signal<string | null>(null);
   // Mutations (login/logout/refresh) are one-off actions, not reactive
   readonly roles = computed(() => this.currentUser.value()?.roles ?? []);
-  readonly isApproved = computed(() => this.currentUser.value()?.isApproved ?? false);
+  /** Approval state from the login/refresh response; used until `/me` has loaded. */
+  private readonly _loginIsApproved = signal(false);
+  readonly isApproved = computed(
+    () => this.currentUser.value()?.isApproved ?? this._loginIsApproved(),
+  );
+  private readonly _loginIsRejected = signal(false);
+  private readonly _loginRequestedAt = signal<string | null>(null);
+  readonly isRejected = computed(
+    () => this.currentUser.value()?.isRejected ?? this._loginIsRejected(),
+  );
+  /** ISO timestamp of when the account was requested. */
+  readonly requestedAt = computed(
+    () => this.currentUser.value()?.requestedAt ?? this._loginRequestedAt(),
+  );
+  /** True for a signed-in user still awaiting admin approval (drives the "pending" notice). */
+  readonly isPendingApproval = computed(
+    () => this.isAuthenticated() && !this.isApproved() && !this.isRejected(),
+  );
+  /** True for a signed-in user an admin has rejected (drives the "no access" card). */
+  readonly isAccessRejected = computed(() => this.isAuthenticated() && this.isRejected());
   readonly firstName = computed(() => this.currentUser.value()?.firstName ?? null);
   readonly name = computed(() => this.currentUser.value()?.name ?? null);
   /** e.g. "N. Thys" */
@@ -218,11 +237,17 @@ export class AuthStore {
     this._accessToken.set(response.accessToken);
     this._email.set(response.email);
     this._role.set(response.role);
+    this._loginIsApproved.set(response.isApproved);
+    this._loginIsRejected.set(response.isRejected);
+    this._loginRequestedAt.set(response.requestedAt);
   }
 
   private clearSession(): void {
     this._accessToken.set(null);
     this._email.set(null);
     this._role.set(null);
+    this._loginIsApproved.set(false);
+    this._loginIsRejected.set(false);
+    this._loginRequestedAt.set(null);
   }
 }

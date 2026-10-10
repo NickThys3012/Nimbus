@@ -152,6 +152,11 @@ public class VerificationEmailHandlerTests
             return Task.FromResult(_emails.TryGetValue(email, out var id) && _users.TryGetValue(id, out var user) ? user : null);
         }
 
+        public Task<IReadOnlyList<User>> ListAllAsync(CancellationToken ct = default)
+        {
+            return Task.FromResult<IReadOnlyList<User>>(_users.Values.ToList());
+        }
+
         public Task UpdateAsync(User user)
         {
             _users[user.Id] = user;

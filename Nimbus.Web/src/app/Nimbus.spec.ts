@@ -1,3 +1,4 @@
+import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { Nimbus } from './Nimbus';
@@ -33,6 +34,8 @@ describe('App', () => {
             isAuthenticated: () => false,
             role: () => null,
             roles: () => [],
+            isPendingApproval: () => false,
+            isAccessRejected: () => false,
           },
         },
       ],
@@ -43,6 +46,44 @@ describe('App', () => {
     const fixture = TestBed.createComponent(Nimbus);
     const app = fixture.componentInstance;
     expect(app).toBeTruthy();
+  });
+
+  it('shows the pending approval notice only when the store reports it', async () => {
+    const pending = signal(false);
+    const rejected = signal(false);
+    TestBed.overrideProvider(AuthStore, {
+      useValue: {
+        isAuthenticated: () => true,
+        role: () => 'Pilot',
+        roles: () => ['Pilot'],
+        isPendingApproval: pending,
+        isAccessRejected: rejected,
+        requestedAt: () => '2026-07-26T10:00:00Z',
+        initials: () => 'PP',
+        abbreviatedName: () => 'P. Pilot',
+        email: () => 'pilot@example.com',
+        logout: () => undefined,
+      },
+    });
+    const fixture = TestBed.createComponent(Nimbus);
+    await fixture.whenStable();
+    const el = fixture.nativeElement as HTMLElement;
+    expect(el.querySelector('#pending-approval-notice')).toBeNull();
+    expect(el.querySelector('router-outlet')).toBeTruthy();
+
+    pending.set(true);
+    await fixture.whenStable();
+    expect(el.querySelector('#pending-approval-notice')).toBeTruthy();
+    expect(el.textContent).toContain('Je account wacht op goedkeuring');
+    expect(el.querySelector('router-outlet')).toBeNull();
+
+    pending.set(false);
+    rejected.set(true);
+    await fixture.whenStable();
+    expect(el.querySelector('#pending-approval-notice')).toBeNull();
+    expect(el.querySelector('#rejected-notice')).toBeTruthy();
+    expect(el.textContent).toContain('Geen toegang tot Nimbus');
+    expect(el.querySelector('router-outlet')).toBeNull();
   });
 
   it('should render the router outlet', async () => {

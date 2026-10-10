@@ -53,20 +53,6 @@ html.lt .menu {
     padding: 8px 8px 10px;
 }
 
-.menu-id .av {
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    background: var(--acbg);
-    color: var(--ac);
-    font-size: 12px;
-    font-weight: 600;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex: 0 0 auto;
-}
-
 .menu-id .nm {
     font-size: 13px;
 }
