@@ -101,6 +101,14 @@ table.audit td {
   white-space: nowrap;
 }
 
+table.audit tr.failed td {
+  background: color-mix(in srgb, var(--r) 8%, transparent);
+}
+
+table.audit tr.failed td:first-child {
+  box-shadow: inset 3px 0 0 var(--r);
+}
+
 table.audit tr:last-child td {
   border-bottom: none;
 }

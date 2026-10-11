@@ -16,7 +16,7 @@ const users: AdminUserDto[] = [
 ];
 const events: LoginEventDto[] = [
   { occurredAt: '2026-07-28T09:14:00', userEmail: 'admin@example.com', succeeded: true, maskedIp: '84.198.x.x' },
-  { occurredAt: '2026-07-27T22:41:00', userEmail: null, succeeded: false, maskedIp: '45.227.x.x' },
+  { occurredAt: '2026-07-27T22:41:00', userEmail: null, succeeded: false, maskedIp: '45.227.x.x', failureReason: 'InvalidPassword' },
 ];
 
 describe('Admin', () => {
@@ -207,10 +207,14 @@ describe('Admin', () => {
     const { el, open } = await setup();
     expect(api['getApiAdminLoginEvents']).not.toHaveBeenCalled();
     await open('history');
-    expect(api['getApiAdminLoginEvents']).toHaveBeenCalledWith({ limit: 100 });
+    expect(api['getApiAdminLoginEvents']).toHaveBeenCalledWith({ limit: 50 });
     expect(el.textContent).toContain('signed in');
     expect(el.textContent).toContain('failed attempt');
     expect(el.textContent).toContain('unknown');
     expect(el.textContent).toContain('84.198.x.x');
+    expect(el.textContent).toContain('wrong password');
+    expect(el.querySelectorAll('[data-testid="event-failed"]').length).toBe(1);
+    expect(el.querySelector('[data-testid="event-failed"]')?.classList).toContain('failed');
+    expect(el.querySelector('[data-testid="event-ok"]')?.classList).not.toContain('failed');
   });
 });
