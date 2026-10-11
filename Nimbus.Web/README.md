@@ -118,7 +118,7 @@ overwritten on every `npm run generate:api`).
 See `src/app/core/auth/auth.store.ts` for the pattern, built on
 `AuthenticationService`:
 
-- **Mutations** (login/logout/refresh) are one-off actions: call the
+- **Mutations** (login/logout) are one-off actions: call the
   generated Observable-returning method, `.subscribe()`, and push the result
   into writable signals (`signal()`/`computed()`).
 - **Reactive queries** (e.g. GET-by-email lookups) use `rxResource()` from

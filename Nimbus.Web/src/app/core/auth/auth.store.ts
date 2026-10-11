@@ -1,6 +1,17 @@
 import { computed, inject, Injectable, signal } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
-import { catchError, finalize, map, Observable, of, shareReplay, tap, throwError } from 'rxjs';
+import {
+  catchError,
+  finalize,
+  map,
+  Observable,
+  of,
+  shareReplay,
+  Subject,
+  switchMap,
+  tap,
+  throwError,
+} from 'rxjs';
 
 import {
   ApiError,
@@ -18,6 +29,11 @@ import {
  * Generated services stay Observable-based (that's what
  * openapi-typescript-codegen produces), so this store is the seam where we
  * convert those calls into signals for the rest of the app to consume.
+ *
+ * The session itself is an HttpOnly cookie the browser attaches on its own: no credential
+ * ever reaches this code. "Signed in" therefore means "`/me` answered with a user", and is
+ * re-established after a page reload by `restoreSession()`. The API re-checks the account on
+ * every request, so nothing here is a security decision — it only decides what to render.
  */
 @Injectable({ providedIn: 'root' })
 export class AuthStore {
@@ -28,30 +44,25 @@ export class AuthStore {
    *  signal-native replacement for manual Observable subscriptions on GETs).
    */
   readonly lookupEmail = signal<string | null>(null);
-  // Mutations (login/logout/refresh) are one-off actions, not reactive
-  readonly roles = computed(() => this.currentUser.value()?.roles ?? []);
-  /** Approval state from the login/refresh response; used until `/me` has loaded. */
-  private readonly _loginIsApproved = signal(false);
-  readonly isApproved = computed(
-    () => this.currentUser.value()?.isApproved ?? this._loginIsApproved(),
-  );
-  private readonly _loginIsRejected = signal(false);
-  private readonly _loginRequestedAt = signal<string | null>(null);
-  readonly isRejected = computed(
-    () => this.currentUser.value()?.isRejected ?? this._loginIsRejected(),
-  );
+  /** The signed-in account (identity, roles, approval state), or null while signed out. */
+  private readonly _user = signal<CurrentUserDto | null>(null);
+  readonly user = this._user.asReadonly();
+  readonly isAuthenticated = computed(() => this._user() !== null);
+  readonly roles = computed(() => this._user()?.roles ?? []);
+  readonly role = computed(() => this._user()?.roles[0] ?? null);
+  readonly email = computed(() => this._user()?.email ?? null);
+  readonly isApproved = computed(() => this._user()?.isApproved ?? false);
+  readonly isRejected = computed(() => this._user()?.isRejected ?? false);
   /** ISO timestamp of when the account was requested. */
-  readonly requestedAt = computed(
-    () => this.currentUser.value()?.requestedAt ?? this._loginRequestedAt(),
-  );
+  readonly requestedAt = computed(() => this._user()?.requestedAt ?? null);
   /** True for a signed-in user still awaiting admin approval (drives the "pending" notice). */
   readonly isPendingApproval = computed(
     () => this.isAuthenticated() && !this.isApproved() && !this.isRejected(),
   );
   /** True for a signed-in user an admin has rejected (drives the "no access" card). */
   readonly isAccessRejected = computed(() => this.isAuthenticated() && this.isRejected());
-  readonly firstName = computed(() => this.currentUser.value()?.firstName ?? null);
-  readonly name = computed(() => this.currentUser.value()?.name ?? null);
+  readonly firstName = computed(() => this._user()?.firstName ?? null);
+  readonly name = computed(() => this._user()?.name ?? null);
   /** e.g. "N. Thys" */
   readonly abbreviatedName = computed(() => {
     const first = this.firstName();
@@ -70,49 +81,34 @@ export class AuthStore {
     return f + l || null;
   });
 
+  /**
+   * Emits (with the URL being left) just before the app sends the user to login because the session
+   * ended. Forms subscribe to stash unsaved work (see `DraftService`) while they still exist.
+   */
+  readonly sessionExpiring = new Subject<string>();
 
   private readonly authApi = inject(AuthenticationService);
   readonly userLookup = rxResource({
     params: () => this.lookupEmail(),
     stream: ({ params: email }) => this.authApi.getApiAuthentication({ email: email ?? undefined }),
   });
-  // queries, so we drive their state with plain writable signals.
-  private readonly _accessToken = signal<string | null>(null);
-  readonly accessToken = this._accessToken.asReadonly();
-  readonly isAuthenticated = computed(() => this._accessToken() !== null);
-  /**
-   * Identity, roles and approval state for the signed-in user (issue #15) — refetches
-   * automatically whenever `_accessToken` changes (login/refresh/restoreSession), and is
-   * skipped entirely while signed out since `params` resolves to `undefined` then. This is
-   * what lets guards/the shell tell an approved pilot apart from one still pending admin
-   * approval, without that state ever being trusted from the client-only route guard.
-   */
-  readonly currentUser = rxResource<CurrentUserDto, string | undefined>({
-    params: () => this._accessToken() ?? undefined,
-    stream: () => this.authApi.getApiAuthenticationMe(),
-  });
-  private readonly _email = signal<string | null>(null);
-  readonly email = this._email.asReadonly();
-  private readonly _role = signal<string | null>(null);
-  readonly role = this._role.asReadonly();
   private readonly _isLoading = signal(false);
   readonly isLoading = this._isLoading.asReadonly();
   private readonly _error = signal<string | null>(null);
   readonly error = this._error.asReadonly();
-  /** Set once a restore/refresh attempt has resolved, so guards know
-   *  whether `isAuthenticated` reflects a real answer yet (relevant right
-   *  after a full page reload, before the access token in memory has been
-   *  re-hydrated from the httpOnly refresh cookie). */
-  private readonly _isRestored = signal(false);
-  readonly isRestored = this._isRestored.asReadonly();
-
   login(request: LoginRequestDto): Observable<LoginResponseDto> {
     this._isLoading.set(true);
     this._error.set(null);
 
     return this.authApi.postApiAuthenticationLogin({ requestBody: request }).pipe(
+      // The login response sets the session cookie; `/me` then supplies the full profile (name, roles).
+      switchMap((response) =>
+        this.authApi.getApiAuthenticationMe().pipe(
+          tap((user) => this._user.set(user)),
+          map(() => response),
+        ),
+      ),
       finalize(() => this._isLoading.set(false)),
-      tap((response) => this.applyLoginResponse(response)),
       tap(() => this._error.set(null)),
       catchError((err) => {
         this._error.set(err?.message ?? 'Login failed');
@@ -163,40 +159,34 @@ export class AuthStore {
 
   private restoreInFlight: Observable<boolean> | null = null;
 
-  refresh(): void {
-    this.restoreSession().subscribe();
-  }
-
   /**
-   * Silently attempts to obtain a new access token from the httpOnly
-   * refresh-token cookie. Used on app start (to restore a session after a
-   * page reload, since the access token itself only ever lives in memory)
-   * and by `authGuard`/the auth interceptor before giving up on a route or
-   * request. Never throws — resolves to `false` on any failure.
+   * Asks the API who the session cookie belongs to. Used on app start (to restore a session after a
+   * page reload) and by `authGuard` before giving up on a route. Never throws — resolves to `false`
+   * (and clears local state) when there is no valid session. Concurrent callers share one request.
    */
   restoreSession(): Observable<boolean> {
-    // Refresh tokens are single-use: the API treats a second use of the same cookie as a replay
-    // and revokes the whole family. Concurrent callers (several 401s at once, or the route guard
-    // plus the interceptor) therefore share one in-flight request instead of each firing their own.
     if (this.restoreInFlight) {
       return this.restoreInFlight;
     }
 
-    const request = this.authApi.postApiAuthenticationRefresh().pipe(
-      tap((response) => this.applyLoginResponse(response)),
+    const request = this.authApi.getApiAuthenticationMe().pipe(
+      tap((user) => this._user.set(user)),
       map(() => true),
       catchError(() => {
         this.clearSession();
         return of(false);
       }),
-      finalize(() => {
-        this._isRestored.set(true);
-        this.restoreInFlight = null;
-      }),
+      finalize(() => (this.restoreInFlight = null)),
       shareReplay({ bufferSize: 1, refCount: false }),
     );
     this.restoreInFlight = request;
     return request;
+  }
+
+  /** The API said 401 mid-session: forget the user locally and tell forms to stash unsaved work. */
+  expireSession(returnUrl: string): void {
+    this.sessionExpiring.next(returnUrl);
+    this.clearSession();
   }
 
   logout(): void {
@@ -248,21 +238,7 @@ export class AuthStore {
     );
   }
 
-  private applyLoginResponse(response: LoginResponseDto): void {
-    this._accessToken.set(response.accessToken);
-    this._email.set(response.email);
-    this._role.set(response.role);
-    this._loginIsApproved.set(response.isApproved);
-    this._loginIsRejected.set(response.isRejected);
-    this._loginRequestedAt.set(response.requestedAt);
-  }
-
   private clearSession(): void {
-    this._accessToken.set(null);
-    this._email.set(null);
-    this._role.set(null);
-    this._loginIsApproved.set(false);
-    this._loginIsRejected.set(false);
-    this._loginRequestedAt.set(null);
+    this._user.set(null);
   }
 }

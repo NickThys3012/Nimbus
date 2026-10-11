@@ -2,7 +2,6 @@ import { TestBed } from '@angular/core/testing';
 import { HttpClient, provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { Router } from '@angular/router';
-import { of } from 'rxjs';
 import { vi } from 'vitest';
 
 import { authInterceptor } from './auth.interceptor';
@@ -12,15 +11,16 @@ describe('authInterceptor', () => {
   let http: HttpClient;
   let httpMock: HttpTestingController;
   let navigate: ReturnType<typeof vi.fn>;
-  let restoreSession: ReturnType<typeof vi.fn>;
+  let expireSession: ReturnType<typeof vi.fn>;
   let store: Record<string, unknown>;
+  let url: string;
 
   beforeEach(() => {
+    url = '/flights?x=1';
     navigate = vi.fn().mockResolvedValue(true);
-    restoreSession = vi.fn();
+    expireSession = vi.fn();
     store = {
-      accessToken: () => 'old-token',
-      restoreSession,
+      expireSession,
       isPendingApproval: () => false,
       isAccessRejected: () => false,
     };
@@ -30,7 +30,15 @@ describe('authInterceptor', () => {
         provideHttpClient(withInterceptors([authInterceptor])),
         provideHttpClientTesting(),
         { provide: AuthStore, useValue: store },
-        { provide: Router, useValue: { navigate, url: '/flights?x=1' } },
+        {
+          provide: Router,
+          useValue: {
+            navigate,
+            get url() {
+              return url;
+            },
+          },
+        },
       ],
     });
     http = TestBed.inject(HttpClient);
@@ -39,52 +47,47 @@ describe('authInterceptor', () => {
 
   afterEach(() => httpMock.verify());
 
-  it('attaches the bearer token', () => {
+  it('never adds a credential to requests (the session is an HttpOnly cookie)', () => {
     http.get('/api/flights').subscribe();
     const req = httpMock.expectOne('/api/flights');
-    expect(req.request.headers.get('Authorization')).toBe('Bearer old-token');
+    expect(req.request.headers.has('Authorization')).toBe(false);
     req.flush({});
   });
 
-  it('expired session: routes to login with the current URL when refresh fails', () => {
-    restoreSession.mockReturnValue(of(false));
+  it('expired session: forgets the user and routes to login with the current URL', () => {
     const errors: unknown[] = [];
     http.get('/api/flights').subscribe({ error: (e) => errors.push(e) });
 
     httpMock.expectOne('/api/flights').flush(null, { status: 401, statusText: 'Unauthorized' });
 
+    expect(expireSession).toHaveBeenCalledWith('/flights?x=1');
     expect(navigate).toHaveBeenCalledWith(['/login'], { queryParams: { returnUrl: '/flights?x=1' } });
     expect(errors).toHaveLength(1);
   });
 
-  it('expired session: retries once with the fresh token when refresh succeeds', () => {
-    restoreSession.mockReturnValue(of(true));
-    store['accessToken'] = () => 'new-token';
-    let body: unknown;
-    http.get('/api/flights').subscribe((b) => (body = b));
-
+  it('does not loop when already on the login screen', () => {
+    url = '/login?returnUrl=%2Fflights';
+    http.get('/api/flights').subscribe({ error: () => undefined });
     httpMock.expectOne('/api/flights').flush(null, { status: 401, statusText: 'Unauthorized' });
-    const retry = httpMock.expectOne('/api/flights');
-    expect(retry.request.headers.get('Authorization')).toBe('Bearer new-token');
-    retry.flush({ ok: true });
-
-    expect(body).toEqual({ ok: true });
     expect(navigate).not.toHaveBeenCalled();
+    expect(expireSession).not.toHaveBeenCalled();
   });
 
-  it('does not refresh or redirect for a failed login', () => {
-    http.post('/api/Authentication/login', {}).subscribe({ error: () => undefined });
-    httpMock
-      .expectOne('/api/Authentication/login')
-      .flush(null, { status: 401, statusText: 'Unauthorized' });
-    expect(restoreSession).not.toHaveBeenCalled();
-    expect(navigate).not.toHaveBeenCalled();
-  });
+  it.each(['/api/Authentication/login', '/api/Authentication/me'])(
+    'leaves a 401 from %s alone (wrong password / "is anyone signed in?" probe)',
+    (endpoint) => {
+      http.get(endpoint).subscribe({ error: () => undefined });
+      httpMock.expectOne(endpoint).flush(null, { status: 401, statusText: 'Unauthorized' });
+      expect(navigate).not.toHaveBeenCalled();
+      expect(expireSession).not.toHaveBeenCalled();
+    },
+  );
 
   it('routes to access-denied on 403', () => {
     http.get('/api/admin').subscribe({ error: () => undefined });
     httpMock.expectOne('/api/admin').flush(null, { status: 403, statusText: 'Forbidden' });
     expect(navigate).toHaveBeenCalledWith(['/access-denied']);
+    expect(expireSession).not.toHaveBeenCalled();
   });
 
   it('leaves 403 alone for a pending-approval account', () => {

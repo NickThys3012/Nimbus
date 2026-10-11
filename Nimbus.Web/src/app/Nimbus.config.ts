@@ -14,6 +14,7 @@ import { AngularHttpRequest } from './core/api-client/core/AngularHttpRequest';
 import { BaseHttpRequest } from './core/api-client';
 import { OpenAPI } from './core/api-client';
 import { authInterceptor } from './core/auth/auth.interceptor';
+import { xsrfInterceptor } from './core/auth/xsrf.interceptor';
 import { AuthStore } from './core/auth/auth.store';
 import { TelemetryErrorHandler, TelemetryService } from './core/telemetry/telemetry.service';
 
@@ -23,14 +24,14 @@ import { TelemetryErrorHandler, TelemetryService } from './core/telemetry/teleme
 // should go to the same origin. Only point at the separately-running local
 // dev API server when running under `ng serve`.
 OpenAPI.BASE = isDevMode() ? 'http://localhost:5214' : '';
-// Needed so the browser sends/receives the httpOnly `refreshToken` cookie
-// set by the API on login/refresh (see AuthenticationController).
+// Needed so the browser sends/receives the HttpOnly session cookie set by the
+// API on login (see AuthenticationController) when the API is on another origin.
 OpenAPI.WITH_CREDENTIALS = true;
 
 export const nimbusConfig: ApplicationConfig = {
   providers: [
     provideRouter(routes),
-    provideHttpClient(withXhr(), withInterceptors([authInterceptor])),
+    provideHttpClient(withXhr(), withInterceptors([xsrfInterceptor, authInterceptor])),
     // Generated services (e.g. AuthenticationService) depend on
     // `BaseHttpRequest`, which in turn depends on the `OpenAPI` config
     // object as an injection token. The generated `NimbusApiClient`
@@ -41,9 +42,8 @@ export const nimbusConfig: ApplicationConfig = {
     // Reports every uncaught error to /api/telemetry (issue #12) instead of
     // (only) the browser console, replacing provideBrowserGlobalErrorListeners.
     { provide: ErrorHandler, useClass: TelemetryErrorHandler },
-    // Silently attempt to restore a session from the httpOnly refresh
-    // cookie on app start, since the access token itself only lives in
-    // memory and is lost on every full page reload.
+    // Ask the API who the session cookie belongs to on app start, so a page
+    // reload keeps the user signed in (the SPA itself holds no credential).
     provideAppInitializer(() => firstValueFrom(inject(AuthStore).restoreSession())),
   ],
 };

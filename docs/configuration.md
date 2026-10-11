@@ -31,7 +31,6 @@ Three places hold configuration, and each has exactly one job:
 | `MINIO_CONSOLE_USER` / `MINIO_CONSOLE_PASSWORD_HASH` | Caddy basic-auth in front of the MinIO console route | `.env` | **Yes** (hash) |
 | `GRAFANA_ADMIN_USER` / `GRAFANA_ADMIN_PASSWORD` | Grafana admin login | `.env` | **Yes** |
 | `Loki__Url` | Serilog sink target: the API's own structured logs pushed to Loki (issue #12) | `.env` (committed default `http://loki:3100`, internal-network only, not a secret) | No |
-| `JWT_SECRET` | Signing key for access tokens (mapped to `Jwt__Secret`). **Required**: compose refuses to start without it, and the API refuses to start unless it is at least 32 bytes and not a placeholder. Generate with `openssl rand -base64 48`. It only signs **access tokens** (15 minutes): changing it invalidates every existing access token, but refresh tokens are stored server-side, are not signed with it, and `/refresh` simply mints new access tokens under the new key — see §5 for how to force everyone to sign in again. Local development uses a committed dev-only key from the root `.env.example` (compose) / `launchSettings.json` (`dotnet run`), tests generate one per run | `.env` | **Yes** |
 | `SEED_ADMIN_EMAIL` / `SEED_ADMIN_PASSWORD` | Initial admin created by `IdentitySeed` (mapped to `Seed__AdminEmail`/`Seed__AdminPassword`); an admin is seeded only while **no Admin exists at all** (a changed email on an existing deployment creates or promotes nothing), and nothing is seeded outside Development when unset. Rotate the password after first sign-in | `.env` | **Yes** |
 | `ForwardedHeaders__KnownNetworks__0`, `__1`, ... / `ForwardedHeaders__KnownProxies__0`, ... | Peers allowed to set `X-Forwarded-For`/`X-Forwarded-Proto` (CIDR networks / single IPs). Default when unset: loopback plus the private ranges Docker bridge networks use (`127.0.0.0/8`, `::1/128`, `10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16`). Caddy reaches the API as `api:8080` over the internal `nimbus` bridge network and appends one `X-Forwarded-For` hop; the real client IP then feeds the login rate limiter, the masked IP in the sign-in history and request logs. Set a tighter CIDR if the bridge subnet is pinned; never widen it to the public internet | `.env` / compose `environment` | No |
 | `RateLimiting__Login__PermitLimit` / `RateLimiting__Login__WindowSeconds` | Per-client-IP limit on `POST /api/authentication/login` (default 10 per 60 s; extra requests get 429) | `.env` / compose `environment` | No |
@@ -113,7 +112,6 @@ rotation last happened, only for the *policy*).
 | SQL Server app/migrator logins (`MSSQL_APP_PASSWORD` / `MSSQL_MIGRATOR_PASSWORD`) | Maintainer | 90 days, or on suspected compromise | Generate new passwords, update `.env`, `docker compose --profile app up -d sqlserver-init` (re-applies the `ALTER LOGIN` in `infra/db/sqlserver-init.sql`), then restart `api`/`migrator` to pick up the new connection strings |
 | MinIO root credential | Maintainer | 90 days | Generate new pair, update `.env`, `docker compose up -d minio`, confirm `minio-init` still applies policy on next run |
 | MinIO app access key (`MINIO_APP_ACCESS_KEY`/`MINIO_APP_SECRET_KEY`) | Maintainer | 90 days | Generate new pair, update `.env`, `docker compose up -d minio-init`, confirm the API's object-storage calls still succeed before removing the old key from MinIO |
-| JWT signing key (`JWT_SECRET`) | Maintainer | Yearly, or immediately on suspected compromise | `openssl rand -base64 48`, update `.env`, `docker compose --profile app up -d api`. **Effect: all existing access tokens stop validating (signature) at once, but sessions are not ended**: refresh tokens live in the database and are not signed with this key, so each client's next `/refresh` obtains a new access token under the new key. To really force everyone to sign in again, also run the "force sign-out" procedure below |
 | Grafana admin password | Maintainer | 90 days | Update `.env`, `docker compose up -d grafana`, log in to confirm |
 | Restic repository password (`RESTIC_PASSWORD`) | Maintainer | On suspected compromise only (rotating re-encrypts nothing retroactively — a rotation effectively starts a new repository) | See §6 — never rotate without first confirming the new password is recorded off-server |
 | Email provider API key | Maintainer | Per provider's own guidance, at minimum yearly | Rotate via provider dashboard, update `.env` and the `EMAIL_PROVIDER_API_KEY` GitHub secret together, confirm a test send succeeds |
@@ -122,14 +120,12 @@ rotation last happened, only for the *policy*).
 
 ### Force every user to sign in again
 
-Key rotation alone does not end sessions. To end all sessions (e.g. after a suspected compromise),
-revoke all refresh tokens and rotate every account's security stamp (the API rejects an access
-token whose stamp no longer matches, so this also kills access tokens immediately, not after 15
-minutes). Against the `Nimbus` database (table `RefreshTokens`, column `IsRevoked`; table
+Sessions are encrypted auth cookies (`nimbus.auth`) and every request re-checks the account's
+security stamp, so rotating every stamp ends all sessions at once (the next request of every
+browser gets a 401 and the SPA sends the user to login). Against the `Nimbus` database (table
 `AspNetUsers`, column `SecurityStamp`):
 
 ```sql
-UPDATE RefreshTokens SET IsRevoked = 1 WHERE IsRevoked = 0;
 UPDATE AspNetUsers SET SecurityStamp = CONVERT(nvarchar(36), NEWID());
 ```
 
@@ -174,15 +170,18 @@ follow-up.
 - `infra/compose/.env` is gitignored; `infra/compose/.env.example` is the only committed variant and holds no real
   values.
 
-### The previously committed JWT value is compromised
+### The previously committed JWT value (historical)
 
-Before issue #19's follow-up, `Nimbus.API/appsettings.json` carried a `Jwt:Secret` value in git
-(the well-known placeholder string, since `docker-compose.prod.yml` never set `Jwt__Secret`, so a
-production API started from that image signed tokens with it). That value is in git history
-forever and must be treated as compromised: anyone who has read the repository could forge
-access tokens for it, including an Admin token. **Set a fresh `JWT_SECRET` on the VPS and
-redeploy** (see the rotation row in §5); until then production is exposed. The API now refuses to
-start without a strong secret, so this cannot silently regress.
+Before issue #19's follow-up, `Nimbus.API/appsettings.json` carried a `Jwt:Secret` value in git. The API no longer
+issues or accepts JWTs (issue #17: sessions are HttpOnly cookies), so that value signs nothing and cannot be used
+to forge a login. `JWT_SECRET` may be deleted from the VPS `.env`; it is ignored.
+
+### Auth cookie keys
+
+The auth cookie and the antiforgery tokens are encrypted with ASP.NET Core Data Protection keys, stored in the
+database (table `DataProtectionKeys`) so a restart, a redeploy or a second instance still reads them. Keys
+rotate themselves every 90 days. **Deleting the table's rows signs everyone out** and invalidates every
+antiforgery token (the SPA fetches a fresh one on its next request) — a blunt alternative to the stamp rotation above.
 
 ## 8. Verifying "no default fallback" stays true
 

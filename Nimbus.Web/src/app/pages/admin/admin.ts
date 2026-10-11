@@ -48,7 +48,7 @@ export default class Admin {
   protected readonly pendingUsers = computed(() =>
     this.allUsers().filter((u) => !u.isApproved && !u.isRejected),
   );
-  protected readonly myId = computed(() => this.authStore.currentUser.value()?.id ?? null);
+  protected readonly myId = computed(() => this.authStore.user()?.id ?? null);
 
   protected readonly tabs = computed<TabItem[]>(() => [
     { id: 'pending', label: 'Pending', count: this.pendingUsers().length, countTone: 'warn' },

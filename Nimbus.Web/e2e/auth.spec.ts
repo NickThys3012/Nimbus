@@ -2,7 +2,7 @@ import { test, expect, type Page } from '@playwright/test';
 import { waitForConfirmationLink } from './mailpit';
 
 /**
- * End-to-end coverage for the full login/register/refresh/logout flow
+ * End-to-end coverage for the full login/register/session/logout flow
  * against a real running stack (see playwright.config.ts / global-setup.ts).
  * Mirrors the backend integration suite in
  * Nimbus.API/Nimbus.Api.Tests/Integration/LoginFlowTests.cs, but drives the
@@ -57,7 +57,7 @@ async function login(page: Page, email: string) {
   await expect(page).toHaveURL(/\/home/);
 }
 
-test.describe('Login / register / refresh / logout', () => {
+test.describe('Login / register / session / logout', () => {
   test('register -> confirm email -> login lands on /home', async ({ page }) => {
     const email = uniqueEmail('happy-path');
 
@@ -65,52 +65,77 @@ test.describe('Login / register / refresh / logout', () => {
     await login(page, email);
   });
 
-  test('login sets an httpOnly refresh cookie', async ({ page, context }) => {
+  test('login sets an HttpOnly, Secure-in-production, SameSite=Strict session cookie', async ({
+    page,
+    context,
+  }) => {
     const email = uniqueEmail('cookie-attrs');
     await registerAndConfirm(page, email);
     await login(page, email);
 
     const cookies = await context.cookies();
-    const refreshCookie = cookies.find((c) => c.name === 'refreshToken');
+    const sessionCookie = cookies.find((c) => c.name === 'nimbus.auth');
 
-    expect(refreshCookie).toBeDefined();
-    expect(refreshCookie?.httpOnly).toBe(true);
+    expect(sessionCookie).toBeDefined();
+    expect(sessionCookie?.httpOnly).toBe(true);
+    expect(sessionCookie?.sameSite).toBe('Strict');
+    // Only the antiforgery request token is script-readable; the session never is.
+    expect(await page.evaluate(() => document.cookie)).not.toContain('nimbus.auth');
   });
 
-  test('reloading the page silently restores the session via the refresh cookie', async ({
+  test('reloading the page keeps the user signed in via the session cookie', async ({
     page,
   }) => {
-    const email = uniqueEmail('silent-refresh');
+    const email = uniqueEmail('session-reload');
     await registerAndConfirm(page, email);
     await login(page, email);
 
-    // The access token only ever lives in memory (AuthStore) — reloading
-    // clears it, so landing on a guarded route afterwards only works if
-    // authGuard's restoreSession() (POST /api/authentication/refresh using
-    // the httpOnly cookie) actually succeeds.
+    // AuthStore keeps the signed-in user in memory only — reloading clears it, so landing on a
+    // guarded route afterwards only works if restoreSession() (GET /api/authentication/me with
+    // the HttpOnly session cookie) actually succeeds.
     await page.reload();
     await page.goto('/settings');
 
     await expect(page).toHaveURL(/\/settings/);
   });
 
-  test('logging out revokes the session so a guarded route redirects to /login', async ({
+  test('logging out ends the session so a guarded route redirects to /login', async ({
     page,
+    context,
   }) => {
     const email = uniqueEmail('logout');
     await registerAndConfirm(page, email);
     await login(page, email);
 
-    // No logout button exists in the UI yet — call the real endpoint
-    // directly. page.request shares the browser context's cookie jar, so
-    // this still exercises real server-side cookie/token revocation.
-    const response = await page.request.post('/api/authentication/logout');
+    // No logout button exists in the UI yet — call the real endpoint directly, echoing the
+    // antiforgery token the way the Angular client does. page.request shares the browser
+    // context's cookie jar.
+    const xsrf = (await context.cookies()).find((c) => c.name === 'XSRF-TOKEN')?.value ?? '';
+    const response = await page.request.post('/api/authentication/logout', {
+      headers: { 'X-XSRF-TOKEN': xsrf },
+    });
     expect(response.ok()).toBe(true);
 
     await page.reload();
     await page.goto('/settings');
 
     await expect(page).not.toHaveURL(/\/settings/);
+  });
+
+  test('a guarded route sends a signed-out visitor to login and back after signing in', async ({
+    page,
+  }) => {
+    const email = uniqueEmail('return-url');
+    await registerAndConfirm(page, email);
+
+    await page.goto('/settings');
+    await expect(page).toHaveURL(/\/login\?returnUrl=%2Fsettings/);
+
+    await page.getByRole('textbox', { name: 'EMAIL ADDRESS' }).fill(email);
+    await page.locator('input#pw-reg').fill(password);
+    await page.locator('#p-login').getByRole('button', { name: 'Sign in' }).click();
+
+    await expect(page).toHaveURL(/\/settings/);
   });
 
   test('logging in with the wrong password shows an error and stays on /login', async ({

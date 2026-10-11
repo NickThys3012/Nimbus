@@ -4,7 +4,7 @@ using Nimbus.Infrastructure.Persistence;
 namespace Nimbus.Infrastructure.Identity;
 
 /// <summary>
-///     Per-request check of a validated access token against the CURRENT state of the account
+///     Per-request check of a validated auth-cookie principal against the CURRENT state of the account
 ///     (one indexed lookup of the user plus its role names, a single round trip). A token is
 ///     rejected when the user no longer exists, is locked out/blocked, or its security stamp no
 ///     longer matches (stamp is rotated on role change, block, reject and delete). Roles come from
@@ -13,7 +13,8 @@ namespace Nimbus.Infrastructure.Identity;
 /// </summary>
 public static class AccessTokenValidator
 {
-    public const string SecurityStampClaim = "nimbus:stamp";
+    // Identity's own stamp claim, written into the auth cookie by the SignInManager's claims factory.
+    public const string SecurityStampClaim = "AspNet.Identity.SecurityStamp";
     public const string StatusClaim = "nimbus:status";
     public const string StatusActive = "active";
     public const string StatusPending = "pending";

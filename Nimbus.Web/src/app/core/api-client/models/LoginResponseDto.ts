@@ -3,8 +3,6 @@
 /* tslint:disable */
 /* eslint-disable */
 export type LoginResponseDto = {
-    accessToken: string;
-    expiration: string;
     email: string;
     role: string;
     isApproved: boolean;

@@ -9,6 +9,7 @@ import { BaseHttpRequest } from './core/BaseHttpRequest';
 import type { OpenAPIConfig } from './core/OpenAPI';
 import { OpenAPI } from './core/OpenAPI';
 import { AdminService } from './services/AdminService';
+import { AntiforgeryService } from './services/AntiforgeryService';
 import { AuthenticationService } from './services/AuthenticationService';
 import { TelemetryService } from './services/TelemetryService';
 @NgModule({
@@ -33,6 +34,7 @@ import { TelemetryService } from './services/TelemetryService';
             useClass: AngularHttpRequest,
         },
         AdminService,
+        AntiforgeryService,
         AuthenticationService,
         TelemetryService,
     ]

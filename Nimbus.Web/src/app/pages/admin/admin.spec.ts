@@ -37,7 +37,7 @@ describe('Admin', () => {
       imports: [Admin],
       providers: [
         { provide: AdminService, useValue: api },
-        { provide: AuthStore, useValue: { currentUser: { value: () => ({ id: 'me' }) } } },
+        { provide: AuthStore, useValue: { user: () => ({ id: 'me' }) } },
       ],
     }).compileComponents();
     const fixture = TestBed.createComponent(Admin);

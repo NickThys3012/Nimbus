@@ -95,11 +95,10 @@ concrete technology: EF Core, ASP.NET Core Identity, health checks.
 - `Persistence/Repositories/UserRepository` — `IUserRepository` implementation.
 - `Persistence/DatabaseMigrator` — applies EF Core migrations at startup.
 - `Persistence/IdentitySeed` — seeds initial Identity users/roles.
-- `Identity/ApplicationUser`, `Identity/RefreshToken` — ASP.NET Core Identity
-  user model and refresh-token storage (kept separate from the `Domain.User`
-  entity by design).
-- `Identity/TokenService` — issues/validates JWT access tokens and refresh
-  tokens.
+- `Identity/ApplicationUser` — ASP.NET Core Identity user model (kept separate
+  from the `Domain.User` entity by design).
+- `Identity/AccessTokenValidator` — per-request check of the auth-cookie
+  principal against the account's current state (see **Auth** below).
 - `Services/CurrentUserService` — exposes the current authenticated user to
   the application layer.
 - `DependencyInjection.cs` (`AddInfrastructure`) wires up EF Core, Identity,
@@ -126,8 +125,8 @@ Application-specific metrics for Prometheus.
 ### Nimbus.API (host)
 The ASP.NET Core entry point (`Program.cs`) that composes everything above:
 
-- **Auth**: JWT bearer authentication (`Jwt:*` config), role/claim mapping,
-  `[Authorize]`-ready.
+- **Auth**: cookie authentication and global antiforgery validation (see
+  **Auth** under Cross-cutting concerns), role/claim mapping, `[Authorize]`-ready.
 - **API docs**: `Microsoft.AspNetCore.OpenApi` (`AddOpenApi`/`MapOpenApi`,
   spec served at `/openapi/v1.json`) with **Scalar** as the interactive
   docs UI (`MapScalarApiReference`, served at `/scalar`).
@@ -144,7 +143,7 @@ The ASP.NET Core entry point (`Program.cs`) that composes everything above:
   boot.
 - **Controllers**: thin controllers (`Controllers/AuthenticationController`)
   that delegate to MediatR (`ISender`) for queries/commands, and directly use
-  Identity's `UserManager`/`TokenService` for login/refresh/logout (auth
+  Identity's `UserManager`/`SignInManager` for login/logout (auth
   itself isn't yet routed through the CQRS pipeline).
 
 #### Dev hosting (Angular + API)
@@ -199,10 +198,12 @@ hand-written layer converts them to Angular **signals** for the rest of the
 app to consume, without ever editing generated files:
 
 - `src/app/core/auth/auth.store.ts` (`AuthStore`) — example/current pattern:
-  - **Mutations** (`login`, `logout`, `refresh`) — one-off actions: call the
+  - **Mutations** (`login`, `logout`) — one-off actions: call the
     generated Observable method, `.subscribe()`, push results into writable
-    `signal()`s (`accessToken`, `email`, `role`, `isLoading`, `error`), with
-    `isAuthenticated` as a `computed()`.
+    `signal()`s (`user`, `isLoading`, `error`), with `isAuthenticated`, `roles`
+    etc. as `computed()`s. The store holds no credential: the session is an
+    HttpOnly cookie, and `restoreSession()` (`GET /me`) re-establishes the user
+    after a page reload.
   - **Reactive queries** (`userLookup`) — use `rxResource()` from
     `@angular/core/rxjs-interop`, wrapping the generated
     `getApiAuthentication` call. Driven by a `lookupEmail` signal; exposes
@@ -225,10 +226,39 @@ to be consumed reactively via signals.
   (`Nimbus.Observability`), exposed at `/metrics`.
 - **Health checks**: SQL Server + EF Core `DbContext` checks at `/health`
   and `/health/ready`.
-- **Auth**: JWT bearer tokens (access + refresh), issued/validated by
-  `TokenService`, backed by ASP.NET Core Identity (`ApplicationUser`,
-  roles). Refresh tokens are set as an HTTP-only, secure, `SameSite=Strict`
-  cookie.
+- **Auth** (issue #17): cookie-based, backed by ASP.NET Core Identity
+  (`ApplicationUser`, roles). `POST /api/authentication/login|register|logout`
+  are plain API endpoints — the SPA posts JSON and never renders a server-side
+  form. Login sets Identity's application cookie `nimbus.auth`: encrypted with
+  Data Protection keys persisted in the database, **HttpOnly** (no script can
+  read it), **Secure**, **`SameSite=Strict`**, a session cookie unless "remember
+  me" (then persistent, `Auth:RememberMeDays`); the ticket lifetime is
+  `Auth:SessionHours`. There is no token in any response body.
+  - **Per-request validation**: on every request `AccessTokenValidator`
+    re-reads the account; a deleted/blocked account or a rotated security stamp
+    (block, reject, delete and role change all rotate it) rejects the cookie at
+    once, and roles and approval status always come from the database, never
+    from the cookie. API auth failures are status codes, never redirects:
+    **401** = not signed in / session ended, **403** = signed in but not allowed
+    (including pending/rejected accounts outside `/me`).
+  - **Logout** clears the cookie. A copied cookie stays valid until it expires
+    unless the account's security stamp is rotated (see "Force every user to
+    sign in again" in configuration.md).
+  - **Antiforgery**: cookies are ambient credentials, so every POST/PUT/PATCH/
+    DELETE — anonymous login and register included — must carry a valid
+    antiforgery token (`AntiforgeryValidationFilter`, registered globally, so
+    new controllers are protected by default). `GET /api/antiforgery`, and the
+    login and logout responses, set a script-readable `XSRF-TOKEN` cookie; the
+    SPA's `xsrfInterceptor` echoes it as `X-XSRF-TOKEN` (fetching it first when
+    absent), and the server pairs it with the HttpOnly `nimbus.antiforgery`
+    cookie. Tokens are bound to the identity, hence re-issued on login/logout.
+  - **SPA behaviour**: `authGuard`/`adminGuard` only decide what to render —
+    the API re-enforces every decision. `authGuard` sends a signed-out visitor
+    to `/login?returnUrl=…` (login returns there, in-app paths only);
+    `adminGuard` sends non-admins to `/access-denied`. `authInterceptor` turns a
+    mid-session 401 into the same login redirect (emitting
+    `AuthStore.sessionExpiring` first so forms can stash unsaved work with
+    `DraftService`) and a 403 into the access-denied screen.
 - **Object storage**: `IObjectStorageService` (Domain) /
   `S3ObjectStorageService` (Infrastructure, over `AWSSDK.S3`) abstracts the
   self-hosted MinIO store used for flight images/tracks/exports and map
@@ -240,8 +270,8 @@ to be consumed reactively via signals.
 
 - An admin cannot delete their own account (rejected server-side with 400, and the
   SPA control is disabled), and the last active Admin can never be deleted.
-- **Personal data cascades**: the account, its roles, refresh tokens/sessions and
-  any per-user settings are removed in one transaction. Access tokens stop
+- **Personal data cascades**: the account, its roles and
+  any per-user settings are removed in one transaction. Sessions stop
   validating because the account no longer exists.
 - **Flights and shared data**: all Nimbus data is owned by exactly one user and is
   never visible to other users, so deleting an owner removes only that owner's
@@ -286,7 +316,7 @@ to be consumed reactively via signals.
   the controller rather than going through MediatR commands/queries like
   the rest of the application layer.
 - The Angular app's generated API client and signals wrapper currently only
-  cover the `Authentication` feature (login/refresh/logout/get-by-email);
+  cover the `Authentication` feature (login/logout/get-by-email);
   the pattern will need to be repeated as more API features are added.
 - No automated regeneration of the Angular API client (it's a manual,
   on-demand `npm run generate:api` step) — no build-time or CI enforcement

@@ -61,7 +61,7 @@ Application → Contracts → Domain`. `Domain` has zero dependencies.
   automatically via the `ValidationBehaviour` MediatR pipeline behaviour — don't call them
   manually in handlers.
 - **Nimbus.Infrastructure** — EF Core (`AppDbContext`, SQL Server), ASP.NET Core Identity
-  (`ApplicationUser`/`RefreshToken`, deliberately separate from `Domain.User`), health checks,
+  (`ApplicationUser`, deliberately separate from `Domain.User`), health checks,
   object storage (`S3ObjectStorageService` over MinIO).
 - **Nimbus.API** — thin controllers delegating to MediatR (`ISender`), except auth endpoints
   which call `UserManager`/`TokenService` directly (a known, intentional gap — not yet routed
