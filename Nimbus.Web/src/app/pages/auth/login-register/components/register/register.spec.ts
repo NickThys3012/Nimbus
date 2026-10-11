@@ -30,5 +30,6 @@ describe('Register', () => {
     const note = (fixture.nativeElement as HTMLElement).querySelector('#pending-note')?.textContent ?? '';
     expect(note).toContain('approved by an administrator');
     expect(note).not.toMatch(/receive an email/i);
+    expect(note).not.toMatch(/awaiting approval/i); // unapproved accounts cannot sign in (#16)
   });
 });
