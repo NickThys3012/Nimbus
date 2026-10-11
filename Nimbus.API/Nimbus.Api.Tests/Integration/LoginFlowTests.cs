@@ -251,8 +251,45 @@ public class LoginFlowTests
         Assert.That(loginResponse.StatusCode, Is.EqualTo(HttpStatusCode.Unauthorized));
     }
 
+    // ── Approval gate must not leak which emails are registered (#16) ──
+    [Test]
+    public async Task Login_UnapprovedAccount_WithWrongPassword_IsIndistinguishableFromApprovedWrongPassword()
+    {
+        using var client = _factory.CreateClient();
+        var pending = await RegisterConfirmedUserAsync(client, approve: false);
+        var approved = await RegisterConfirmedUserAsync(client);
+
+        var pendingResponse = await client.PostAsJsonAsync("/api/authentication/login",
+            new LoginRequestDto(pending, "WrongPassword!123"));
+        var approvedResponse = await client.PostAsJsonAsync("/api/authentication/login",
+            new LoginRequestDto(approved, "WrongPassword!123"));
+
+        Assert.That(pendingResponse.StatusCode, Is.EqualTo(HttpStatusCode.Unauthorized));
+        Assert.That(approvedResponse.StatusCode, Is.EqualTo(HttpStatusCode.Unauthorized));
+        Assert.That(await pendingResponse.Content.ReadAsStringAsync(),
+            Is.EqualTo(await approvedResponse.Content.ReadAsStringAsync()));
+        Assert.That(ExtractCookie(pendingResponse, CookieName), Is.Null);
+    }
+
+    [Test]
+    public async Task Login_UnapprovedAccount_WithCorrectPassword_IsRejectedWithoutSession()
+    {
+        using var client = _factory.CreateClient();
+        var pending = await RegisterConfirmedUserAsync(client, approve: false);
+        var unknown = $"nobody-{Guid.NewGuid():N}@example.test";
+
+        var response = await client.PostAsJsonAsync("/api/authentication/login", new LoginRequestDto(pending, Password));
+        var unknownResponse = await client.PostAsJsonAsync("/api/authentication/login", new LoginRequestDto(unknown, Password));
+
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.Unauthorized));
+        Assert.That(await response.Content.ReadAsStringAsync(), Is.EqualTo("Invalid credentials"));
+        Assert.That(await response.Content.ReadAsStringAsync(), Is.EqualTo(await unknownResponse.Content.ReadAsStringAsync()));
+        Assert.That(ExtractCookie(response, CookieName), Is.Null, "no refresh cookie may be issued");
+        Assert.That(response.Headers.Contains("Set-Cookie"), Is.False);
+    }
+
     // ── Helpers ──────────────────────────────────────────────────────
-    private async Task<string> RegisterConfirmedUserAsync(HttpClient client)
+    private async Task<string> RegisterConfirmedUserAsync(HttpClient client, bool approve = true)
     {
         var email = $"user-{Guid.NewGuid():N}@example.test";
 
@@ -272,7 +309,7 @@ public class LoginFlowTests
         var confirmResult = await userManager.ConfirmEmailAsync(user!, confirmToken);
         Assert.That(confirmResult.Succeeded, Is.True);
 
-        user!.IsApproved = true;
+        user!.IsApproved = approve;
         await userManager.UpdateAsync(user);
 
         return email;

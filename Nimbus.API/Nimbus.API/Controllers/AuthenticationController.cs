@@ -71,6 +71,17 @@ public class AuthenticationController : ControllerBase
             return Unauthorized("Invalid credentials");
         }
 
+        // Deliberate ordering (do not "simplify" by moving this above the password check): approval is only
+        // consulted once the password has been verified. Checking it first would answer "unapproved" for a
+        // registered-but-pending address and "invalid credentials" for everything else, letting an attacker
+        // enumerate registered emails without knowing any password. An unapproved account therefore gets the
+        // exact same response and audit reason as a wrong password, and no tokens/cookies are issued for it.
+        if (!user.IsApproved)
+        {
+            await RecordLoginAttemptAsync(user, user.Email, false, LoginFailureReason.NotApproved);
+            return Unauthorized("Invalid credentials");
+        }
+
         // Tokens are minted under the session lock after re-reading the account, so a login racing an
         // admin block/delete cannot end up with a live session (see TokenService).
         var session = await _tokens.IssueSessionAsync(user.Id, user.SecurityStamp, request.RememberMe);
