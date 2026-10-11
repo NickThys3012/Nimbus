@@ -147,16 +147,17 @@
           <div class="table-scroll">
             <table class="audit">
               <thead>
-                <tr><th>TIME</th><th>USER</th><th>EVENT</th><th>IP</th></tr>
+                <tr><th>TIME</th><th>EMAIL</th><th>OUTCOME</th><th>REASON</th><th>IP</th></tr>
               </thead>
               <tbody>
                 @for (event of events.value(); track $index) {
-                  <tr>
+                  <tr [class.failed]="!event.succeeded" [attr.data-testid]="event.succeeded ? 'event-ok' : 'event-failed'">
                     <td>{{ eventTime(event.occurredAt) }}</td>
                     <td>{{ event.userEmail ?? 'unknown' }}</td>
                     <td>
                       <Nimbus-status-pill [tone]="event.succeeded ? 'ok' : 'danger'">{{ event.succeeded ? 'signed in' : 'failed attempt' }}</Nimbus-status-pill>
                     </td>
+                    <td>{{ failureLabel(event.failureReason) }}</td>
                     <td>{{ event.maskedIp ?? '-' }}</td>
                   </tr>
                 }

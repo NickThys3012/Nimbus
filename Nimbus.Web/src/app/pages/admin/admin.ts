@@ -14,6 +14,14 @@ import { formatDayMonth, formatDayMonthTime } from '../../core/format/dates';
 
 type AdminTab = 'pending' | 'users' | 'history';
 
+/** How many recent sign-in events the history tab shows. */
+const HISTORY_LIMIT = 50;
+
+const FAILURE_LABELS: Record<string, string> = {
+  InvalidPassword: 'wrong password',
+  NotApproved: 'not approved',
+  LockedOut: 'locked out',
+};
 const ROLE_LABELS: Record<string, string> = { Admin: 'admin', Pilot: 'pilot' };
 /** The roles that exist in the API (seeded from the UserRole enum). */
 const ASSIGNABLE_ROLES = ['Admin', 'Pilot'];
@@ -41,7 +49,7 @@ export default class Admin {
   /** Only fetched while the history tab is open. */
   protected readonly events = rxResource({
     params: () => (this.tab() === 'history' ? true : undefined),
-    stream: () => this.adminApi.getApiAdminLoginEvents({ limit: 100 }),
+    stream: () => this.adminApi.getApiAdminLoginEvents({ limit: HISTORY_LIMIT }),
   });
 
   protected readonly allUsers = computed(() => (this.users.hasValue() ? this.users.value() : []));
@@ -105,6 +113,10 @@ export default class Admin {
 
   protected eventTime(iso: string): string {
     return formatDayMonthTime(iso);
+  }
+
+  protected failureLabel(reason: string | null | undefined): string {
+    return reason ? (FAILURE_LABELS[reason] ?? reason) : '-';
   }
 
   protected approve(id: string): void {
