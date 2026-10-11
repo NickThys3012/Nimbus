@@ -84,6 +84,8 @@ with **FluentValidation** for request validation.
 - `DependencyInjection.cs` (`AddApplication`) registers MediatR handlers
   (scanned from this assembly) and FluentValidation validators (scanned from
   `Nimbus.Contracts`), plus the validation pipeline behaviour.
+- `Common/Ownership/` — the owner-scoping foundation for user-owned entities
+  (see [owner-scoping.md](owner-scoping.md)).
 
 ### Nimbus.Infrastructure
 Implements interfaces defined in `Nimbus.Application`/`Nimbus.Domain` using
