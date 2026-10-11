@@ -1,6 +1,9 @@
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+using Nimbus.Application.Abstraction;
+using Nimbus.Application.Common.Interfaces;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
 using Nimbus.Infrastructure.Persistence;
@@ -90,6 +93,10 @@ public sealed class NimbusApiFactory : WebApplicationFactory<Program>
         // Test-only controller that sits behind the default [Authorize] policy.
         builder.ConfigureServices(services =>
         {
+            // Records every queued email so tests can assert which template fired.
+            services.RemoveAll<IEmailQueue>();
+            services.AddSingleton<RecordingEmailQueue>();
+            services.AddSingleton<IEmailQueue>(sp => sp.GetRequiredService<RecordingEmailQueue>());
             services.AddControllers().AddApplicationPart(typeof(NimbusApiFactory).Assembly);
             // TestServer has no socket peer: pretend every request comes from a loopback proxy,
             // as it does behind Caddy, so ForwardedHeaders can be exercised.
@@ -132,6 +139,29 @@ public sealed class NimbusApiFactory : WebApplicationFactory<Program>
     {
         await base.DisposeAsync();
         await _sqlServer.DisposeAsync();
+    }
+}
+
+public sealed class RecordingEmailQueue : IEmailQueue
+{
+    private readonly List<EmailMessage> _sent = [];
+
+    public ValueTask EnqueueAsync(EmailMessage message, CancellationToken cancellationToken = default)
+    {
+        lock (_sent)
+        {
+            _sent.Add(message);
+        }
+
+        return ValueTask.CompletedTask;
+    }
+
+    public IReadOnlyList<EmailMessage> To(string address)
+    {
+        lock (_sent)
+        {
+            return _sent.Where(m => string.Equals(m.ToAddress, address, StringComparison.OrdinalIgnoreCase)).ToList();
+        }
     }
 }
 

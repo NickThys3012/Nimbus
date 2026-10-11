@@ -6,6 +6,8 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using Nimbus.Application.Features.Admin.Commands.RecordLoginAttempt;
 using Nimbus.Application.Features.Auth.Command.CreateUser;
+using Nimbus.Application.Features.Auth.Command.ForgotPassword;
+using Nimbus.Application.Features.Auth.Command.ResetPassword;
 using Nimbus.Application.Features.Auth.Command.ResendVerificationEmail;
 using Nimbus.Application.Features.Auth.Queries.GetUserByEmail;
 using Nimbus.Contracts.DTOs.Features.Auth;
@@ -24,6 +26,7 @@ public class AuthenticationController : ControllerBase
     private readonly UserManager<ApplicationUser> _users;
     private readonly ILogger<AuthenticationController> _logger;
     private readonly IWebHostEnvironment _environment;
+    private readonly IConfiguration _configuration;
 
     public AuthenticationController(
         ISender mediator,
@@ -31,8 +34,10 @@ public class AuthenticationController : ControllerBase
         UserManager<ApplicationUser> users,
         SignInManager<ApplicationUser> signInManager,
         ILogger<AuthenticationController> logger,
-        IWebHostEnvironment environment)
+        IWebHostEnvironment environment,
+        IConfiguration configuration)
     {
+        _configuration = configuration;
         _mediator = mediator;
         _tokens = tokens;
         _users = users;
@@ -126,6 +131,32 @@ public class AuthenticationController : ControllerBase
     {
         await _mediator.Send(new ResendVerificationEmailCommand(request, $"{Request.Scheme}://{Request.Host}"), ct);
         return Ok();
+    }
+
+    // Always 202 with an empty body, whether or not the address has an account (no enumeration).
+    [EnableRateLimiting(AuthorizationPolicies.LoginRateLimit)]
+    [HttpPost("forgot-password")]
+    public async Task<ActionResult> ForgotPassword(ForgotPasswordRequestDto request, CancellationToken ct)
+    {
+        // UI and API share one origin, so the link is built from the request, like the register flow.
+        // App:WebBaseUrl is an optional override for setups where they ever diverge.
+        var configured = _configuration["App:WebBaseUrl"];
+        var webBaseUrl = string.IsNullOrWhiteSpace(configured) ? $"{Request.Scheme}://{Request.Host}" : configured;
+
+        if (!string.IsNullOrWhiteSpace(request.Email))
+        {
+            await _mediator.Send(new ForgotPasswordCommand(request.Email.Trim(), webBaseUrl), ct);
+        }
+
+        return Accepted();
+    }
+
+    [EnableRateLimiting(AuthorizationPolicies.LoginRateLimit)]
+    [HttpPost("reset-password")]
+    public async Task<ActionResult> ResetPassword(ResetPasswordRequestDto request, CancellationToken ct)
+    {
+        var ok = await _mediator.Send(new ResetPasswordCommand(request.Email.Trim(), request.Token, request.NewPassword), ct);
+        return ok ? NoContent() : BadRequest("The reset link is invalid or has expired.");
     }
 
     [HttpGet("confirm-email")]

@@ -35,7 +35,7 @@ public class VerificationEmailHandlerTests
             Assert.That(user!.VerificationEmailSendCount, Is.EqualTo(1));
             Assert.That(user.VerificationEmailCooldownEndUtc, Is.GreaterThan(DateTimeOffset.UtcNow));
             Assert.That(user.VerificationEmailLocked, Is.False);
-            Assert.That(queue.Messages, Has.Count.EqualTo(1));
+            Assert.That(queue.Messages.Select(m => m.Template), Is.EqualTo(new[] { EmailTemplates.EmailConfirmation, EmailTemplates.AccountPending }));
         });
     }
 
@@ -191,6 +191,16 @@ public class VerificationEmailHandlerTests
         public Task<string> GenerateEmailConfrimTokenAsync(string id)
         {
             return Task.FromResult("verification-token");
+        }
+
+        public Task RequestPasswordResetAsync(string email, string webBaseUrl, CancellationToken ct = default)
+        {
+            return Task.CompletedTask;
+        }
+
+        public Task<bool> ResetPasswordAsync(string email, string token, string newPassword, CancellationToken ct = default)
+        {
+            return Task.FromResult(false);
         }
     }
 

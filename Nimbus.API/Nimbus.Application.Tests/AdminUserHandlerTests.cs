@@ -16,7 +16,7 @@ public class AdminUserHandlerTests
         var target = NewUser("target@example.com");
         var other = NewUser("other@example.com");
         var repo = new Repo(target, other);
-        var handler = new ApproveUserCommandHandler(repo, new Admin(Guid.NewGuid()), NullLogger<ApproveUserCommandHandler>.Instance);
+        var handler = new ApproveUserCommandHandler(repo, new Admin(Guid.NewGuid()), new NoopQueue(), NullLogger<ApproveUserCommandHandler>.Instance);
 
         await handler.Handle(new ApproveUserCommand(target.Id), CancellationToken.None);
 
@@ -30,7 +30,7 @@ public class AdminUserHandlerTests
     [Test]
     public void ApproveUser_UnknownUser_ThrowsNotFound()
     {
-        var handler = new ApproveUserCommandHandler(new Repo(), new Admin(Guid.NewGuid()), NullLogger<ApproveUserCommandHandler>.Instance);
+        var handler = new ApproveUserCommandHandler(new Repo(), new Admin(Guid.NewGuid()), new NoopQueue(), NullLogger<ApproveUserCommandHandler>.Instance);
 
         Assert.ThrowsAsync<NotFoundException>(() => handler.Handle(new ApproveUserCommand(Guid.NewGuid()), CancellationToken.None));
     }

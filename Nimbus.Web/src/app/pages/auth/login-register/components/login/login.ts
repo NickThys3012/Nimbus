@@ -5,11 +5,11 @@ import { Button } from '../../../../../components/button/button';
 import { Banner } from '../../../../../components/banner/banner';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { AuthStore } from '../../../../../core/auth/auth.store';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { safeReturnUrl } from '../../../../../core/auth/return-url';
 
 @Component({
-  imports: [InputField, PasswordField, Button, Banner, ReactiveFormsModule],
+  imports: [InputField, PasswordField, Button, Banner, ReactiveFormsModule, RouterLink],
   selector: 'Nimbus-login',
   styleUrl: './login.css',
   templateUrl: './login.html',

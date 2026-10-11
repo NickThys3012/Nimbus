@@ -13,6 +13,7 @@ using Nimbus.API.Authorization;
 using Nimbus.API.Middleware;
 using Nimbus.Application;
 using Nimbus.Domain.Enums;
+using Nimbus.API.Identity;
 using Nimbus.Infrastructure;
 using Nimbus.Infrastructure.Identity;
 using Nimbus.Infrastructure.Persistence;
@@ -59,6 +60,8 @@ try
     builder.Services.AddObservabilityMetrics();
 
     builder.Services.AddIdentityServices();
+    builder.Services.AddPasswordResetTokens();
+    builder.Services.AddScoped<Microsoft.AspNetCore.Identity.IEmailSender<Nimbus.Infrastructure.Identity.ApplicationUser>, Nimbus.API.Identity.IdentityEmailSender>();
 
     // ── JWT ───────────────────────────────────────────────────────────
     builder.Services

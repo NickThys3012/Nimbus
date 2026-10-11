@@ -39,7 +39,7 @@ public class AdminConsoleHandlerTests
     {
         var target = Pilot();
         var (repo, svc) = (new Repo(target), new Administration());
-        var handler = new RejectUserCommandHandler(repo, svc, new Me(AdminId), NullLogger<RejectUserCommandHandler>.Instance);
+        var handler = new RejectUserCommandHandler(repo, svc, new Me(AdminId), new NoopQueue(), NullLogger<RejectUserCommandHandler>.Instance);
 
         await handler.Handle(new RejectUserCommand(target.Id), CancellationToken.None);
 
@@ -55,10 +55,10 @@ public class AdminConsoleHandlerTests
     public void Reject_Self_Unknown_AndApproved_AreRefused()
     {
         var approved = Pilot(true);
-        var handler = new RejectUserCommandHandler(new Repo(approved), new Administration(), new Me(approved.Id), NullLogger<RejectUserCommandHandler>.Instance);
+        var handler = new RejectUserCommandHandler(new Repo(approved), new Administration(), new Me(approved.Id), new NoopQueue(), NullLogger<RejectUserCommandHandler>.Instance);
 
         Assert.ThrowsAsync<ProcessingException>(() => handler.Handle(new RejectUserCommand(approved.Id), CancellationToken.None));
-        var other = new RejectUserCommandHandler(new Repo(approved), new Administration(), new Me(AdminId), NullLogger<RejectUserCommandHandler>.Instance);
+        var other = new RejectUserCommandHandler(new Repo(approved), new Administration(), new Me(AdminId), new NoopQueue(), NullLogger<RejectUserCommandHandler>.Instance);
         Assert.ThrowsAsync<DomainException>(() => other.Handle(new RejectUserCommand(approved.Id), CancellationToken.None));
         Assert.ThrowsAsync<NotFoundException>(() => other.Handle(new RejectUserCommand(Guid.NewGuid()), CancellationToken.None));
     }
@@ -67,7 +67,7 @@ public class AdminConsoleHandlerTests
     public void Approve_RejectedUser_IsRefused()
     {
         var rejected = Pilot(rejected: true);
-        var handler = new ApproveUserCommandHandler(new Repo(rejected), new Me(AdminId), NullLogger<ApproveUserCommandHandler>.Instance);
+        var handler = new ApproveUserCommandHandler(new Repo(rejected), new Me(AdminId), new NoopQueue(), NullLogger<ApproveUserCommandHandler>.Instance);
 
         Assert.ThrowsAsync<DomainException>(() => handler.Handle(new ApproveUserCommand(rejected.Id), CancellationToken.None));
         Assert.That(rejected.IsApproved, Is.False);

@@ -2,6 +2,7 @@ using MediatR;
 using Microsoft.Extensions.Logging;
 using Nimbus.Application.Common.Exceptions;
 using Nimbus.Application.Common.Interfaces;
+using Nimbus.Application.Helpers;
 using Nimbus.Domain.Entities;
 using Nimbus.Domain.Interfaces;
 namespace Nimbus.Application.Features.Admin.Commands.ApproveUser;
@@ -9,16 +10,19 @@ namespace Nimbus.Application.Features.Admin.Commands.ApproveUser;
 public sealed class ApproveUserCommandHandler : IRequestHandler<ApproveUserCommand>
 {
     private readonly ICurrentUserService _currentUser;
+    private readonly IEmailQueue _emailQueue;
     private readonly ILogger<ApproveUserCommandHandler> _logger;
     private readonly IUserRepository _userRepository;
 
     public ApproveUserCommandHandler(
         IUserRepository userRepository,
         ICurrentUserService currentUser,
+        IEmailQueue emailQueue,
         ILogger<ApproveUserCommandHandler> logger)
     {
         _userRepository = userRepository;
         _currentUser = currentUser;
+        _emailQueue = emailQueue;
         _logger = logger;
     }
 
@@ -33,5 +37,15 @@ public sealed class ApproveUserCommandHandler : IRequestHandler<ApproveUserComma
         await _userRepository.UpdateAsync(user);
 
         _logger.LogInformation("Admin {AdminUserId} approved user {TargetUserId}", adminId, user.Id);
+
+        // After the approval is persisted, and best-effort: a mail failure must not undo or fail it.
+        try
+        {
+            await _emailQueue.EnqueueAsync(EmailHelpers.CreateAccountApproved(user.FirstName, user.Email), ct);
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            _logger.LogWarning(ex, "Could not queue the approval email for user {TargetUserId}", user.Id);
+        }
     }
 }
