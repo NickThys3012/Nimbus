@@ -71,16 +71,22 @@ public class AuthenticationController : ControllerBase
             return Unauthorized("Invalid credentials");
         }
 
-        var roles = await _users.GetRolesAsync(user);
-        var (accessToken, expiry) = _tokens.GenerateAccessToken(user, roles);
-        var (rawRefresh, refreshEntity) = await _tokens.GenerateRefreshTokenAsync(user.Id, request.RememberMe);
+        // Tokens are minted under the session lock after re-reading the account, so a login racing an
+        // admin block/delete cannot end up with a live session (see TokenService).
+        var session = await _tokens.IssueSessionAsync(user.Id, user.SecurityStamp, request.RememberMe);
+        if (session is null)
+        {
+            await RecordLoginAttemptAsync(user, user.Email, false);
+            return Unauthorized("Account temporarily locked. Try again later.");
+        }
 
-        SetRefreshCookie(rawRefresh, request.RememberMe ? new DateTimeOffset(refreshEntity.ExpiresAt) : null);
+        SetRefreshCookie(session.RawRefresh, request.RememberMe ? new DateTimeOffset(session.RefreshEntity.ExpiresAt) : null);
 
         // Only now — access and refresh tokens issued and saved — is the sign-in a success.
         await RecordLoginAttemptAsync(user, user.Email, true);
 
-        return Ok(new LoginResponseDto(accessToken, expiry, user.Email!, roles.FirstOrDefault() ?? nameof(UserRole.Pilot), user.IsApproved, user.IsRejected, user.RequestedAt));
+        var fresh = session.User;
+        return Ok(new LoginResponseDto(session.AccessToken, session.AccessExpiry, fresh.Email!, session.Roles.FirstOrDefault() ?? nameof(UserRole.Pilot), fresh.IsApproved, fresh.IsRejected, fresh.RequestedAt));
     }
 
     // Audit trail for the admin "Sign-in history" tab. Failure-isolated: the repository detaches a failed row so it can never break or be re-saved by the login.

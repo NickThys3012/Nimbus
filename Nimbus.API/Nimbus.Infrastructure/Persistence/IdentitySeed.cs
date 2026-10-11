@@ -29,20 +29,34 @@ public static class IdentitySeed
         // The initial admin comes from configuration (Seed:AdminEmail / Seed:AdminPassword, i.e. the
         // Seed__AdminEmail / Seed__AdminPassword environment variables) so no credential lives in
         // source. Only Development falls back to a well-known local-dev account; elsewhere, without
-        // configuration, no admin is created (an existing one is left as it is).
+        // configuration, no admin is created. Seeding happens only while NO Admin exists at all.
         var config = scope.ServiceProvider.GetRequiredService<IConfiguration>();
         var env = scope.ServiceProvider.GetRequiredService<IHostEnvironment>();
-        var adminEmail = config["Seed:AdminEmail"];
-        var adminPassword = config["Seed:AdminPassword"];
-        if (env.IsDevelopment())
+        var logger = scope.ServiceProvider.GetRequiredService<ILoggerFactory>().CreateLogger("IdentitySeed");
+        await SeedAdminAsync(users, config["Seed:AdminEmail"], config["Seed:AdminPassword"], env.IsDevelopment(), logger);
+    }
+
+    /// <summary>
+    ///     Creates the initial admin ONLY when no Admin exists yet. Once any user is in the Admin role this is a
+    ///     no-op, so changing the configured seed email on an existing deployment can never create or promote an
+    ///     extra permanent Admin, and a re-run is idempotent.
+    /// </summary>
+    public static async Task SeedAdminAsync(
+        UserManager<ApplicationUser> users, string? adminEmail, string? adminPassword, bool isDevelopment, ILogger logger)
+    {
+        if ((await users.GetUsersInRoleAsync(nameof(UserRole.Admin))).Count > 0)
+        {
+            return;
+        }
+
+        if (isDevelopment)
         {
             adminEmail ??= "admin@nimbus.local";
             adminPassword ??= "Admin1234!";
         }
         if (string.IsNullOrWhiteSpace(adminEmail) || string.IsNullOrWhiteSpace(adminPassword))
         {
-            scope.ServiceProvider.GetRequiredService<ILoggerFactory>().CreateLogger("IdentitySeed")
-                .LogWarning("Seed:AdminEmail / Seed:AdminPassword are not configured; no admin user was seeded.");
+            logger.LogWarning("No Admin exists and Seed:AdminEmail / Seed:AdminPassword are not configured; no admin user was seeded.");
             return;
         }
 

@@ -1,6 +1,6 @@
 import { computed, inject, Injectable, signal } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
-import { catchError, finalize, map, Observable, of, tap, throwError } from 'rxjs';
+import { catchError, finalize, map, Observable, of, shareReplay, tap, throwError } from 'rxjs';
 
 import {
   ApiError,
@@ -161,6 +161,8 @@ export class AuthStore {
       );
   }
 
+  private restoreInFlight: Observable<boolean> | null = null;
+
   refresh(): void {
     this.restoreSession().subscribe();
   }
@@ -173,15 +175,28 @@ export class AuthStore {
    * request. Never throws — resolves to `false` on any failure.
    */
   restoreSession(): Observable<boolean> {
-    return this.authApi.postApiAuthenticationRefresh().pipe(
+    // Refresh tokens are single-use: the API treats a second use of the same cookie as a replay
+    // and revokes the whole family. Concurrent callers (several 401s at once, or the route guard
+    // plus the interceptor) therefore share one in-flight request instead of each firing their own.
+    if (this.restoreInFlight) {
+      return this.restoreInFlight;
+    }
+
+    const request = this.authApi.postApiAuthenticationRefresh().pipe(
       tap((response) => this.applyLoginResponse(response)),
       map(() => true),
       catchError(() => {
         this.clearSession();
         return of(false);
       }),
-      finalize(() => this._isRestored.set(true)),
+      finalize(() => {
+        this._isRestored.set(true);
+        this.restoreInFlight = null;
+      }),
+      shareReplay({ bufferSize: 1, refCount: false }),
     );
+    this.restoreInFlight = request;
+    return request;
   }
 
   logout(): void {

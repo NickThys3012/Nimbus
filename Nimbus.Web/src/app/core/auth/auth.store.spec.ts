@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { of } from 'rxjs';
+import { of, Subject } from 'rxjs';
 
 import { AuthStore } from './auth.store';
 import { AuthenticationService, type LoginResponseDto } from '../api-client';
@@ -53,5 +53,64 @@ describe('AuthStore approval state', () => {
     expect(store.isAccessRejected()).toBe(true);
     expect(store.isPendingApproval()).toBe(false);
     expect(store.requestedAt()).toBe('2026-07-26T10:00:00Z');
+  });
+});
+
+describe('AuthStore restoreSession', () => {
+  const response: LoginResponseDto = {
+    accessToken: 't',
+    expiration: '2099-01-01T00:00:00Z',
+    email: 'pilot@example.com',
+    role: 'Pilot',
+    isApproved: true,
+    isRejected: false,
+    requestedAt: '2026-07-26T10:00:00Z',
+  };
+
+  function setup() {
+    const pending: Subject<LoginResponseDto>[] = [];
+    const refresh = vi.fn(() => {
+      const subject = new Subject<LoginResponseDto>();
+      pending.push(subject);
+      return subject.asObservable();
+    });
+    TestBed.configureTestingModule({
+      providers: [
+        {
+          provide: AuthenticationService,
+          useValue: {
+            postApiAuthenticationRefresh: refresh,
+            getApiAuthenticationMe: () => new Promise(() => undefined) as never,
+          },
+        },
+      ],
+    });
+    return { store: TestBed.inject(AuthStore), refresh, pending };
+  }
+
+  it('shares one refresh request between concurrent callers (refresh tokens are single-use)', () => {
+    const { store, refresh, pending } = setup();
+    const results: boolean[] = [];
+
+    store.restoreSession().subscribe((ok) => results.push(ok));
+    store.restoreSession().subscribe((ok) => results.push(ok));
+    store.restoreSession().subscribe((ok) => results.push(ok));
+
+    expect(refresh).toHaveBeenCalledTimes(1);
+
+    pending[0].next(response);
+    pending[0].complete();
+    expect(results).toEqual([true, true, true]);
+  });
+
+  it('starts a new refresh once the previous one has finished', () => {
+    const { store, refresh, pending } = setup();
+
+    store.restoreSession().subscribe();
+    pending[0].next(response);
+    pending[0].complete();
+
+    store.restoreSession().subscribe();
+    expect(refresh).toHaveBeenCalledTimes(2);
   });
 });

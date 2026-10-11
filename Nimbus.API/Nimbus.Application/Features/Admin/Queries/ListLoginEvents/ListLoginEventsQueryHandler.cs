@@ -1,5 +1,6 @@
 using MediatR;
 using Nimbus.Contracts.DTOs.Features.Admin;
+using Nimbus.Contracts.Mappers;
 using Nimbus.Domain.Interfaces;
 namespace Nimbus.Application.Features.Admin.Queries.ListLoginEvents;
 
@@ -15,6 +16,6 @@ public sealed class ListLoginEventsQueryHandler : IRequestHandler<ListLoginEvent
     public async Task<IReadOnlyList<LoginEventDto>> Handle(ListLoginEventsQuery request, CancellationToken ct)
     {
         var events = await _events.ListRecentAsync(request.Limit, ct);
-        return events.Select(e => new LoginEventDto(e.OccurredAt, e.Email, e.Succeeded, e.MaskedIp)).ToList();
+        return events.Select(e => e.MapToLoginEventDto()).ToList();
     }
 }

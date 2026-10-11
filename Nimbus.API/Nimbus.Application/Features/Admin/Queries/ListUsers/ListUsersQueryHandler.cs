@@ -1,5 +1,6 @@
 using MediatR;
 using Nimbus.Contracts.DTOs.Features.Admin;
+using Nimbus.Contracts.Mappers;
 using Nimbus.Domain.Interfaces;
 namespace Nimbus.Application.Features.Admin.Queries.ListUsers;
 
@@ -15,8 +16,6 @@ public sealed class ListUsersQueryHandler : IRequestHandler<ListUsersQuery, IRea
     public async Task<IReadOnlyList<AdminUserDto>> Handle(ListUsersQuery request, CancellationToken ct)
     {
         var users = await _userRepository.ListAllAsync(ct);
-        return users
-            .Select(u => new AdminUserDto(u.Id, u.Email, u.FirstName, u.Name, u.IsApproved, u.IsRejected, u.IsBlocked, u.RequestedAt, u.Roles))
-            .ToList();
+        return users.Select(u => u.MapToAdminUserDto()).ToList();
     }
 }

@@ -122,7 +122,8 @@ public class UserAdministrationService : IUserAdministrationService
             _db.ChangeTracker.Clear();
             await using var tx = await _db.Database.BeginTransactionAsync(ct);
             // Serialises every mutation that may reduce the set of active Admins or revoke sessions;
-            // refresh-token rotation takes the same lock Shared (see AppLocks).
+            // login and refresh-token rotation take the same lock Shared (see AppLocks and
+            // TokenService.UnderSessionLockAsync), so no refresh token is minted after the revoke below.
             await AppLocks.AcquireAsync(_db, AppLocks.AdminSet, true, ct);
             await work();
             await tx.CommitAsync(ct);

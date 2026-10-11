@@ -372,6 +372,54 @@ public class AdminUsersTests
     }
 
     [Test]
+    public async Task ConcurrentLoginAndBlock_NeverLeavesALiveRefreshToken()
+    {
+        using var client = _factory.CreateClient();
+        var adminToken = await LoginAdminAsync(client);
+        for (var i = 0; i < 8; i++)
+        {
+            var user = await _factory.CreateUserAsync();
+            var login = client.PostAsJsonAsync("/api/authentication/login", new LoginRequestDto(user.Email, user.Password));
+            var block = Send(client, HttpMethod.Post, $"/api/admin/users/{user.Id}/block", adminToken);
+            await Task.WhenAll(login, block);
+            Assert.That(block.Result.StatusCode, Is.EqualTo(HttpStatusCode.NoContent));
+
+            using (var scope = _factory.Services.CreateScope())
+            {
+                var db = scope.ServiceProvider.GetRequiredService<Nimbus.Infrastructure.Persistence.AppDbContext>();
+                Assert.That(db.RefreshTokens.Count(t => t.UserId == user.Id.ToString() && !t.IsRevoked), Is.Zero, $"iteration {i}: a login minted a refresh token past the block");
+            }
+
+            await Send(client, HttpMethod.Post, $"/api/admin/users/{user.Id}/unblock", adminToken);
+            if (login.Result.IsSuccessStatusCode)
+            {
+                var cookie = login.Result.Headers.GetValues("Set-Cookie").First(v => v.StartsWith("refreshToken=", StringComparison.OrdinalIgnoreCase)).Split(';')[0].Substring("refreshToken=".Length);
+                Assert.That((await RefreshAsync(client, cookie)).StatusCode, Is.EqualTo(HttpStatusCode.Unauthorized), "the cookie from a login racing the block must be dead after unblock");
+            }
+        }
+    }
+
+    [Test]
+    public async Task ParallelRefreshesOfTheSameCookie_AtMostOneSucceeds_AndNoSecondTokenSurvives()
+    {
+        using var client = _factory.CreateClient();
+        for (var round = 0; round < 3; round++)
+        {
+            var user = await _factory.CreateUserAsync();
+            var cookie = await LoginForRefreshCookieAsync(client, user);
+
+            var results = await Task.WhenAll(Enumerable.Range(0, 8).Select(_ => Task.Run(() => RefreshAsync(client, cookie))));
+
+            Assert.That(results.Count(r => r.IsSuccessStatusCode), Is.LessThanOrEqualTo(1), "exactly one rotation may win");
+            Assert.That(results.Count(r => r.IsSuccessStatusCode), Is.EqualTo(1));
+            using var scope = _factory.Services.CreateScope();
+            var db = scope.ServiceProvider.GetRequiredService<Nimbus.Infrastructure.Persistence.AppDbContext>();
+            // Losers are replays: per the reuse semantics they revoke the family, so nothing stays alive.
+            Assert.That(db.RefreshTokens.Count(t => t.UserId == user.Id.ToString() && !t.IsRevoked), Is.LessThanOrEqualTo(1));
+        }
+    }
+
+    [Test]
     public async Task Refresh_ForRejectedAccount_IsRejected()
     {
         using var client = _factory.CreateClient();
