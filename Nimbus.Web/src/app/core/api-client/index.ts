@@ -24,6 +24,5 @@ export type { UnblockVerificationEmailRequestDto } from './models/UnblockVerific
 export type { UserDto } from './models/UserDto';
 
 export { AdminService } from './services/AdminService';
-export { AntiforgeryService } from './services/AntiforgeryService';
 export { AuthenticationService } from './services/AuthenticationService';
 export { TelemetryService } from './services/TelemetryService';

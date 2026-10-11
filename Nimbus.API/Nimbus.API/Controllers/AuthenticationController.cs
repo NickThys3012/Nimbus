@@ -1,6 +1,5 @@
 using System.Security.Claims;
 using MediatR;
-using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -12,7 +11,6 @@ using Nimbus.Application.Features.Auth.Queries.GetUserByEmail;
 using Nimbus.Contracts.DTOs.Features.Auth;
 using Nimbus.Contracts.DTOs.Features.Auth.Register;
 using Nimbus.Domain.Enums;
-using Nimbus.API.Security;
 using Nimbus.Infrastructure.Identity;
 namespace Nimbus.API.Controllers;
 
@@ -22,25 +20,25 @@ public class AuthenticationController : ControllerBase
 {
     private readonly ISender _mediator;
     private readonly SignInManager<ApplicationUser> _signInManager;
+    private readonly TokenService _tokens;
     private readonly UserManager<ApplicationUser> _users;
     private readonly ILogger<AuthenticationController> _logger;
-    private readonly XsrfTokenWriter _xsrf;
-    private readonly IConfiguration _config;
+    private readonly IWebHostEnvironment _environment;
 
     public AuthenticationController(
         ISender mediator,
+        TokenService tokens,
         UserManager<ApplicationUser> users,
         SignInManager<ApplicationUser> signInManager,
         ILogger<AuthenticationController> logger,
-        XsrfTokenWriter xsrf,
-        IConfiguration config)
+        IWebHostEnvironment environment)
     {
         _mediator = mediator;
+        _tokens = tokens;
         _users = users;
         _signInManager = signInManager;
         _logger = logger;
-        _xsrf = xsrf;
-        _config = config;
+        _environment = environment;
     }
 
     [EnableRateLimiting(AuthorizationPolicies.LoginRateLimit)]
@@ -73,27 +71,22 @@ public class AuthenticationController : ControllerBase
             return Unauthorized("Invalid credentials");
         }
 
-        // The principal is built from the account as it is now. A block/delete/role change that races this
-        // login has rotated the security stamp (or locked the account), so the cookie is refused on its
-        // very next request (see AccessTokenValidator) — no session can outlive an admin action.
-        var principal = await _signInManager.CreateUserPrincipalAsync(user);
-        var properties = new AuthenticationProperties { IsPersistent = request.RememberMe };
-        if (request.RememberMe)
+        // Tokens are minted under the session lock after re-reading the account, so a login racing an
+        // admin block/delete cannot end up with a live session (see TokenService).
+        var session = await _tokens.IssueSessionAsync(user.Id, user.SecurityStamp, request.RememberMe);
+        if (session is null)
         {
-            properties.ExpiresUtc = DateTimeOffset.UtcNow.AddDays(_config.GetValue("Auth:RememberMeDays", 7));
+            await RecordLoginAttemptAsync(user, user.Email, false, LoginFailureReason.LockedOut);
+            return Unauthorized("Account temporarily locked. Try again later.");
         }
 
-        await HttpContext.SignInAsync(IdentityConstants.ApplicationScheme, principal, properties);
+        SetRefreshCookie(session.RawRefresh, request.RememberMe ? new DateTimeOffset(session.RefreshEntity.ExpiresAt) : null);
 
-        // Only now — the session cookie issued — is the sign-in a success.
+        // Only now — access and refresh tokens issued and saved — is the sign-in a success.
         await RecordLoginAttemptAsync(user, user.Email, true);
 
-        // Antiforgery tokens are bound to the identity: hand out one for the signed-in user.
-        HttpContext.User = principal;
-        _xsrf.Issue(HttpContext);
-
-        var roles = await _users.GetRolesAsync(user);
-        return Ok(new LoginResponseDto(user.Email!, roles.FirstOrDefault() ?? nameof(UserRole.Pilot), user.IsApproved, user.IsRejected, user.RequestedAt));
+        var fresh = session.User;
+        return Ok(new LoginResponseDto(session.AccessToken, session.AccessExpiry, fresh.Email!, session.Roles.FirstOrDefault() ?? nameof(UserRole.Pilot), fresh.IsApproved, fresh.IsRejected, fresh.RequestedAt));
     }
 
     // Audit trail for the admin "Sign-in history" tab. Only enqueues; LoginEventWriterService persists it, so a slow or failing write never touches the login.
@@ -139,15 +132,48 @@ public class AuthenticationController : ControllerBase
         return Redirect(!result.Succeeded ? $"{handoffPath}?status=error" : $"{handoffPath}?status=success");
     }
 
+    // ── POST /api/auth/refresh ──────────────────────────────────────
+    [HttpPost("refresh")]
+    public async Task<ActionResult<LoginResponseDto>> Refresh()
+    {
+        var raw = Request.Cookies["refreshToken"];
+        if (raw is null)
+        {
+            _logger.LogInformation("Refresh rejected: no refreshToken cookie on the request.");
+            return Unauthorized();
+        }
+
+        // Rotation is atomic with respect to admin block/delete/role changes (see TokenService).
+        var rotation = await _tokens.RotateRefreshTokenAsync(raw);
+        if (rotation is null)
+        {
+            _logger.LogInformation(
+                "Refresh rejected: unknown, expired or reused refresh token, or the account is locked out, rejected or deleted.");
+            return Unauthorized();
+        }
+
+        var user = rotation.User;
+        // Carry the "remember me" choice forward across rotation — it was fixed at login time.
+        SetRefreshCookie(rotation.RawRefresh, rotation.RememberMe ? rotation.RefreshEntity.ExpiresAt : null);
+
+        return Ok(new LoginResponseDto(rotation.AccessToken, rotation.AccessExpiry, user.Email!, rotation.Roles.FirstOrDefault() ?? nameof(UserRole.Pilot), user.IsApproved, user.IsRejected, user.RequestedAt));
+    }
+
     // ── POST /api/auth/logout ───────────────────────────────────────
     [HttpPost("logout")]
     public async Task<ActionResult> Logout()
     {
-        await HttpContext.SignOutAsync(IdentityConstants.ApplicationScheme);
+        var raw = Request.Cookies["refreshToken"];
+        if (raw is not null)
+        {
+            var token = await _tokens.ValidateRefreshTokenAsync(raw);
+            if (token is not null)
+            {
+                await _tokens.RevokeTokenAsync(token);
+            }
+        }
 
-        // Signed out: swap the token for the anonymous identity's, so the next login POST still validates.
-        HttpContext.User = new ClaimsPrincipal(new ClaimsIdentity());
-        _xsrf.Issue(HttpContext);
+        Response.Cookies.Delete("refreshToken");
         return Ok();
     }
 
@@ -176,5 +202,31 @@ public class AuthenticationController : ControllerBase
 
         var roles = await _users.GetRolesAsync(user);
         return Ok(new CurrentUserDto(user.Id, user.Email!, user.FirstName, user.Name, roles.ToList(), user.IsApproved, user.IsRejected, user.RequestedAt));
+    }
+
+
+    // ── Cookie helper ───────────────────────────────────────────────
+    // `expires`: null means "session cookie" — the browser drops it when it closes, which is
+    // the behaviour we want when the user did NOT check "remember me". A value means
+    // persistent, surviving browser restarts (and matching the underlying refresh token's own
+    // expiry exactly, so the cookie and the DB record it authenticates always agree).
+    private void SetRefreshCookie(string raw, DateTimeOffset? expires)
+    {
+        // Secure=true requires the cookie to actually travel over HTTPS. In every real
+        // deployment that's true (Caddy/VPS terminate TLS), but a plain `dotnet run`/
+        // docker compose local dev loop (ASPNETCORE_ENVIRONMENT=Development) is typically
+        // served over plain HTTP. Chrome/Firefox special-case `localhost` as a "secure
+        // context" and still store/send Secure cookies there, but Safari does not — the
+        // cookie is silently dropped by the browser, login "succeeds" (access token comes
+        // back fine), and the very next /refresh call 401s because no refreshToken cookie
+        // was ever actually stored. Only relax Secure in Development so production keeps
+        // the hardened cookie.
+        Response.Cookies.Append("refreshToken", raw, new CookieOptions
+        {
+            HttpOnly = true,
+            Secure = !_environment.IsDevelopment(),
+            SameSite = SameSiteMode.Strict,
+            Expires = expires
+        });
     }
 }

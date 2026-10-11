@@ -85,6 +85,16 @@ export class AuthenticationService {
         });
     }
     /**
+     * @returns LoginResponseDto OK
+     * @throws ApiError
+     */
+    public postApiAuthenticationRefresh(): Observable<LoginResponseDto> {
+        return this.httpRequest.request({
+            method: 'POST',
+            url: '/api/Authentication/refresh',
+        });
+    }
+    /**
      * @returns any OK
      * @throws ApiError
      */

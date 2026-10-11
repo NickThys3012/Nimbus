@@ -1,18 +1,16 @@
 using System.Security.Claims;
 using System.Net;
+using System.Text;
 using Microsoft.AspNetCore.HttpOverrides;
-using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.DataProtection;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.FileProviders;
+using Microsoft.IdentityModel.Tokens;
 using Nimbus.API;
 using Microsoft.AspNetCore.Authorization;
 using Nimbus.API.Authorization;
 using Nimbus.API.Middleware;
-using Nimbus.API.Security;
 using Nimbus.Application;
 using Nimbus.Domain.Enums;
 using Nimbus.Infrastructure;
@@ -62,52 +60,47 @@ try
 
     builder.Services.AddIdentityServices();
 
-    // ── Cookie authentication ─────────────────────────────────────────
-    // Identity's application cookie is the only credential: HttpOnly (no script can read it),
-    // Secure, SameSite=Strict. Every request re-checks the account (AccessTokenValidator), so a
-    // block, delete, reject or role change (all rotate the security stamp) ends the session at once.
-    builder.Services.ConfigureApplicationCookie(opts =>
-    {
-        opts.Cookie.Name = "nimbus.auth";
-        opts.Cookie.HttpOnly = true;
-        opts.Cookie.SameSite = SameSiteMode.Strict;
-        // Plain-HTTP local dev (Safari drops Secure cookies off https); every real deployment is HTTPS.
-        opts.Cookie.SecurePolicy = builder.Environment.IsDevelopment() ? CookieSecurePolicy.SameAsRequest : CookieSecurePolicy.Always;
-        opts.ExpireTimeSpan = TimeSpan.FromHours(builder.Configuration.GetValue("Auth:SessionHours", 12));
-        opts.SlidingExpiration = false;
-        // An API, not a site: unauthenticated/forbidden callers get a status code, never a redirect to a login page.
-        opts.Events.OnRedirectToLogin = ctx => { ctx.Response.StatusCode = StatusCodes.Status401Unauthorized; return Task.CompletedTask; };
-        opts.Events.OnRedirectToAccessDenied = ctx => { ctx.Response.StatusCode = StatusCodes.Status403Forbidden; return Task.CompletedTask; };
-        opts.Events.OnValidatePrincipal = async context =>
+    // ── JWT ───────────────────────────────────────────────────────────
+    builder.Services
+        .AddAuthentication(opts =>
         {
-            var db = context.HttpContext.RequestServices.GetRequiredService<AppDbContext>();
-            var failure = await AccessTokenValidator.ValidateAsync(context.Principal, db, context.HttpContext.RequestAborted);
-            if (failure is not null)
+            opts.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+            opts.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+        })
+        .AddJwtBearer(opts =>
+        {
+            // Ensure JWT "role"/"nameid" claims are mapped to ClaimTypes so
+            // [Authorize(Roles=...)] and CurrentUserService continue to work.
+            opts.MapInboundClaims = true;
+            // One indexed lookup per request: the token must still match a live, unlocked account
+            // with the same security stamp (role change/block/reject/delete rotate it).
+            opts.Events = new JwtBearerEvents
             {
-                context.RejectPrincipal();
-                await context.HttpContext.SignOutAsync(IdentityConstants.ApplicationScheme);
-            }
-        };
-    });
-
-    // ── Antiforgery (cookie auth makes every state-changing request CSRF-able) ──
-    // Double submit: the SPA reads the readable XSRF-TOKEN cookie (see XsrfTokenWriter) and echoes it
-    // in X-XSRF-TOKEN; the server pairs it with the HttpOnly antiforgery cookie.
-    builder.Services.AddAntiforgery(opts =>
-    {
-        opts.HeaderName = XsrfTokenWriter.HeaderName;
-        opts.Cookie.Name = "nimbus.antiforgery";
-        opts.Cookie.HttpOnly = true;
-        opts.Cookie.SameSite = SameSiteMode.Strict;
-        opts.Cookie.SecurePolicy = builder.Environment.IsDevelopment() ? CookieSecurePolicy.SameAsRequest : CookieSecurePolicy.Always;
-    });
-    builder.Services.AddScoped<XsrfTokenWriter>();
-
-    // Both cookies are encrypted with these keys; stored in the database so a restart or redeploy
-    // does not sign everyone out or invalidate every antiforgery token.
-    builder.Services.AddDataProtection()
-        .SetApplicationName("Nimbus")
-        .PersistKeysToDbContext<AppDbContext>();
+                OnTokenValidated = async context =>
+                {
+                    var db = context.HttpContext.RequestServices.GetRequiredService<AppDbContext>();
+                    var failure = await AccessTokenValidator.ValidateAsync(context.Principal, db, context.HttpContext.RequestAborted);
+                    if (failure is not null)
+                    {
+                        context.Fail(failure);
+                    }
+                }
+            };
+            opts.TokenValidationParameters = new TokenValidationParameters
+            {
+                ValidateIssuer = true,
+                ValidateAudience = true,
+                ValidateLifetime = true,
+                ValidateIssuerSigningKey = true,
+                NameClaimType = ClaimTypes.Name,
+                RoleClaimType = ClaimTypes.Role,
+                ValidIssuer = builder.Configuration["Jwt:Issuer"],
+                ValidAudience = builder.Configuration["Jwt:Audience"],
+                IssuerSigningKey = new SymmetricSecurityKey(
+                    Encoding.UTF8.GetBytes(JwtSecretValidator.Require(builder.Configuration["Jwt:Secret"]))),
+                ClockSkew = TimeSpan.Zero
+            };
+        });
 
     builder.Services.AddHsts(options =>
     {
@@ -170,12 +163,11 @@ try
                     PermitLimit = loginPermits, Window = loginWindow, QueueLimit = 0
                 }));
     });
+    builder.Services.AddScoped<TokenService>();
     builder.Services.AddSingleton(TimeProvider.System);
 
     // Add services to the container.
-    builder.Services.AddControllers(opts =>
-        // Every POST/PUT/PATCH/DELETE must carry a valid antiforgery token (GET/HEAD/OPTIONS are exempt).
-        opts.Filters.Add<AntiforgeryValidationFilter>());
+    builder.Services.AddControllers();
     // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
     builder.Services.AddOpenApi();
 

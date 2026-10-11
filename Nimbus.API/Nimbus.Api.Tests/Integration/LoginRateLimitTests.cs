@@ -29,23 +29,22 @@ public class LoginRateLimitTests
     public async Task Login_IsRejectedWith429_AfterTheLimit()
     {
         using var client = _factory.CreateClient();
-        var session = await TestSession.StartAsync(client);
         var statuses = new List<HttpStatusCode>();
         for (var i = 0; i < 5; i++)
         {
-            statuses.Add((await session.SendAsync(client, HttpMethod.Post, "/api/authentication/login", new LoginRequestDto("nobody@example.test", "x"))).StatusCode);
+            statuses.Add((await client.PostAsJsonAsync("/api/authentication/login", new LoginRequestDto("nobody@example.test", "x"))).StatusCode);
         }
 
         Assert.That(statuses.Take(3), Is.All.EqualTo(HttpStatusCode.Unauthorized));
         Assert.That(statuses.Skip(3), Is.All.EqualTo(HttpStatusCode.TooManyRequests));
     }
 
-    private static async Task<HttpStatusCode> LoginFromAsync(HttpClient client, TestSession session, string forwardedFor)
+    private static async Task<HttpStatusCode> LoginFromAsync(HttpClient client, string forwardedFor)
     {
-        using var req = session.Apply(new HttpRequestMessage(HttpMethod.Post, "/api/authentication/login")
+        using var req = new HttpRequestMessage(HttpMethod.Post, "/api/authentication/login")
         {
             Content = JsonContent.Create(new LoginRequestDto("nobody@example.test", "x"))
-        });
+        };
         req.Headers.Add("X-Forwarded-For", forwardedFor);
         return (await client.SendAsync(req)).StatusCode;
     }
@@ -54,13 +53,12 @@ public class LoginRateLimitTests
     public async Task TrustedProxy_DifferentForwardedClients_GetSeparateLimiterPartitions_AndMaskedIpIsTheClients()
     {
         using var client = _factory.CreateClient();
-        var session = await TestSession.StartAsync(client);
         for (var i = 0; i < 3; i++)
         {
-            Assert.That(await LoginFromAsync(client, session, "84.198.12.9"), Is.EqualTo(HttpStatusCode.Unauthorized));
+            Assert.That(await LoginFromAsync(client, "84.198.12.9"), Is.EqualTo(HttpStatusCode.Unauthorized));
         }
-        Assert.That(await LoginFromAsync(client, session, "84.198.12.9"), Is.EqualTo(HttpStatusCode.TooManyRequests), "client A is throttled");
-        Assert.That(await LoginFromAsync(client, session, "45.227.1.2"), Is.EqualTo(HttpStatusCode.Unauthorized), "client B is not");
+        Assert.That(await LoginFromAsync(client, "84.198.12.9"), Is.EqualTo(HttpStatusCode.TooManyRequests), "client A is throttled");
+        Assert.That(await LoginFromAsync(client, "45.227.1.2"), Is.EqualTo(HttpStatusCode.Unauthorized), "client B is not");
 
         // The audit row carries the forwarded client, masked, not the proxy address.
         // (Failed attempts for unknown accounts are recorded too.)
@@ -98,14 +96,13 @@ public class UntrustedProxyForwardedHeadersTests
     public async Task SpoofedForwardedFor_IsIgnored_SoClientsShareThePeersPartition()
     {
         using var client = _factory.CreateClient();
-        var session = await TestSession.StartAsync(client);
         var statuses = new List<HttpStatusCode>();
         for (var i = 0; i < 4; i++)
         {
-            using var req = session.Apply(new HttpRequestMessage(HttpMethod.Post, "/api/authentication/login")
+            using var req = new HttpRequestMessage(HttpMethod.Post, "/api/authentication/login")
             {
                 Content = JsonContent.Create(new LoginRequestDto("nobody@example.test", "x"))
-            });
+            };
             req.Headers.Add("X-Forwarded-For", $"198.51.100.{i + 1}");
             statuses.Add((await client.SendAsync(req)).StatusCode);
         }

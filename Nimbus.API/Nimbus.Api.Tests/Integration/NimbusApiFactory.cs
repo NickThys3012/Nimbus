@@ -12,7 +12,7 @@ namespace Nimbus.Api.Tests.Integration;
 ///     Boots the real <c>Nimbus.API</c> host in-process against a disposable SQL Server
 ///     instance (Testcontainers — same pattern as <c>AppDbContextMigrationTests</c> in
 ///     Nimbus.Infrastructure.Tests), so the auth integration tests exercise the actual
-///     ASP.NET Core pipeline (cookie auth, antiforgery, cookie options, Identity lockout, etc.)
+///     ASP.NET Core pipeline (JWT bearer auth, cookie options, Identity lockout, etc.)
 ///     rather than calling handlers directly.
 /// </summary>
 public sealed class NimbusApiFactory : WebApplicationFactory<Program>
@@ -36,7 +36,7 @@ public sealed class NimbusApiFactory : WebApplicationFactory<Program>
     {
         await _sqlServer.StartAsync();
 
-        // Nimbus.API/Program.cs reads several settings (connection string, Auth:*) directly off
+        // Nimbus.API/Program.cs reads several settings (connection string, Jwt:*) directly off
         // `builder.Configuration` *before* `builder.Build()` runs, so overrides registered via
         // WebApplicationFactory's ConfigureWebHost/ConfigureAppConfiguration (which only land in
         // the final merged configuration produced by Build()) arrive too late for those reads.
@@ -45,7 +45,14 @@ public sealed class NimbusApiFactory : WebApplicationFactory<Program>
         // before the host is built makes them visible to Program.cs's early reads too.
         Environment.SetEnvironmentVariable("ConnectionStrings__Database", _sqlServer.GetConnectionString());
 
-        Environment.SetEnvironmentVariable("Auth__RememberMeDays", "7");
+        // Fixed (not the "REPLACE-ME" placeholder) so tokens minted during a run validate
+        // within that same run; irrelevant across runs since each run gets a fresh
+        // container/database.
+        Environment.SetEnvironmentVariable("Jwt__Secret", Convert.ToBase64String(System.Security.Cryptography.RandomNumberGenerator.GetBytes(48)));
+        Environment.SetEnvironmentVariable("Jwt__Issuer", "Nimbus.Server.Tests");
+        Environment.SetEnvironmentVariable("Jwt__Audience", "Nimbus.Client.Tests");
+        Environment.SetEnvironmentVariable("Jwt__AccessTokenMinutes", "15");
+        Environment.SetEnvironmentVariable("Jwt__RefreshTokenDays", "7");
 
         // Email:Enabled already defaults to false in appsettings.json (NullEmailSender), so
         // register() never touches a real SMTP server here; kept explicit for clarity.
@@ -75,15 +82,6 @@ public sealed class NimbusApiFactory : WebApplicationFactory<Program>
         // Force host creation now (rather than lazily on the first HTTP request) so any startup
         // failure surfaces during OneTimeSetUp instead of inside the first test.
         _ = Server;
-    }
-
-    // Outside Development the auth and antiforgery cookies are Secure (and antiforgery refuses a non-TLS
-    // request), so tests talk to the in-memory server the way browsers reach production: over https.
-    public NimbusApiFactory()
-    {
-        ClientOptions.BaseAddress = new Uri("https://localhost");
-        // One client serves many users per test; each user's cookies live in a TestSession, not in a shared jar.
-        ClientOptions.HandleCookies = false;
     }
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)

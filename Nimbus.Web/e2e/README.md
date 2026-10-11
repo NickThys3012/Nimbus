@@ -1,6 +1,6 @@
 # End-to-end tests (Playwright)
 
-Real browser tests for the login/register/session/logout flow (issue #15),
+Real browser tests for the login/register/refresh/logout flow (issue #15),
 run against the actual local Docker dev stack — not mocked. See
 `global-setup.ts` for how the stack (API, SQL Server, MinIO, Mailpit) is
 brought up, and `mailpit.ts` for how confirmation emails are read back out
@@ -40,13 +40,12 @@ docker compose -f ../docker-compose.yml -f docker-compose.e2e.yml --profile dev 
   Mailpit (`docker-compose.e2e.yml` points the API's SMTP settings at it —
   the base `docker-compose.yml` doesn't send real mail by default), and
   following the real confirmation link.
-- Real login, and asserting the `nimbus.auth` session cookie Set by the API is
-  `httpOnly`, `SameSite=Strict` and invisible to `document.cookie`.
+- Real login, and asserting the `refreshToken` cookie Set by the API is
+  actually `httpOnly`.
 - A full page reload followed by navigating to a guarded route (`/settings`)
-  — this only works if `authGuard`'s `restoreSession()` (a real
-  `GET /api/authentication/me` carrying the HttpOnly cookie) succeeds.
-- A signed-out visit to a guarded route lands on `/login?returnUrl=…` and returns there after login.
+  — this only works if `authGuard`'s silent `restoreSession()` (a real
+  `POST /api/authentication/refresh` using the httpOnly cookie) succeeds.
 - "Logout": this currently calls `POST /api/authentication/logout` directly via `page.request`
-  (shares the browser context's cookie jar, sending the `X-XSRF-TOKEN` header like the app does) and then confirms the guarded route no longer works
+  (shares the browser context's cookie jar) and then confirms the guarded route no longer works
   afterwards. Consider switching this to a UI click if/when the logout button is stable in the shell.
 - Wrong-password handling and the 5-attempt account lockout.

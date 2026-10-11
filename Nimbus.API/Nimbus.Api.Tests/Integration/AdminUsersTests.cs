@@ -1,4 +1,5 @@
 using System.Net;
+using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.DependencyInjection;
@@ -172,11 +173,11 @@ public class AdminUsersTests
 
         Assert.That((await Send(client, HttpMethod.Post, $"/api/admin/users/{pilotId}/block", adminToken)).StatusCode, Is.EqualTo(HttpStatusCode.NoContent));
         Assert.That((await ListUsersAsync(client, adminToken)).Single(u => u.Id == pilotId).IsBlocked, Is.True);
-        var blockedLogin = await AnonPostAsync(client, "/api/authentication/login", new LoginRequestDto(email, Password));
+        var blockedLogin = await client.PostAsJsonAsync("/api/authentication/login", new LoginRequestDto(email, Password));
         Assert.That(blockedLogin.StatusCode, Is.EqualTo(HttpStatusCode.Unauthorized));
 
         Assert.That((await Send(client, HttpMethod.Post, $"/api/admin/users/{pilotId}/unblock", adminToken)).StatusCode, Is.EqualTo(HttpStatusCode.NoContent));
-        var okLogin = await AnonPostAsync(client, "/api/authentication/login", new LoginRequestDto(email, Password));
+        var okLogin = await client.PostAsJsonAsync("/api/authentication/login", new LoginRequestDto(email, Password));
         Assert.That(okLogin.StatusCode, Is.EqualTo(HttpStatusCode.OK));
 
         var selfId = await AdminIdAsync(client, adminToken);
@@ -186,7 +187,7 @@ public class AdminUsersTests
 
     // ── delete ──
     [Test]
-    public async Task Admin_CanDeleteUser_ButNotSelf()
+    public async Task Admin_CanDeleteUser_RemovingTheirSessions_ButNotSelf()
     {
         using var client = _factory.CreateClient();
         var (_, pilotId) = await RegisterAndLoginAsync(client, approved: false);
@@ -195,6 +196,10 @@ public class AdminUsersTests
 
         Assert.That((await Send(client, HttpMethod.Delete, $"/api/admin/users/{pilotId}", adminToken)).StatusCode, Is.EqualTo(HttpStatusCode.NoContent));
         Assert.That((await ListUsersAsync(client, adminToken)).Any(u => u.Id == pilotId), Is.False);
+
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<Nimbus.Infrastructure.Persistence.AppDbContext>();
+        Assert.That(db.RefreshTokens.Any(t => t.UserId == pilotId.ToString()), Is.False, "refresh tokens must not be orphaned");
 
         var selfId = await AdminIdAsync(client, adminToken);
         Assert.That((await Send(client, HttpMethod.Delete, $"/api/admin/users/{selfId}", adminToken)).StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
@@ -216,6 +221,8 @@ public class AdminUsersTests
 
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<Nimbus.Infrastructure.Persistence.AppDbContext>();
+        Assert.That(db.RefreshTokens.Any(t => t.UserId == doomedId.ToString()), Is.False, "deleted user's personal data cascades");
+        Assert.That(db.RefreshTokens.Any(t => t.UserId == survivorId.ToString()), Is.True, "another user's data is untouched");
         Assert.That(db.Users.Any(u => u.Id == survivorId.ToString()), Is.True);
         Assert.That(db.LoginEvents.Any(e => e.Email == doomedEmail), Is.True, "audit trail is retained");
     }
@@ -226,8 +233,8 @@ public class AdminUsersTests
     {
         using var client = _factory.CreateClient();
         var (_, _) = await RegisterAndLoginAsync(client, approved: true, out var email);
-        await AnonPostAsync(client, "/api/authentication/login", new LoginRequestDto(email, "wrong-password"));
-        await AnonPostAsync(client, "/api/authentication/login", new LoginRequestDto("nobody@example.test", "x"));
+        await client.PostAsJsonAsync("/api/authentication/login", new LoginRequestDto(email, "wrong-password"));
+        await client.PostAsJsonAsync("/api/authentication/login", new LoginRequestDto("nobody@example.test", "x"));
         var adminToken = await LoginAdminAsync(client);
         await _factory.DrainLoginEventsAsync();
 
@@ -360,28 +367,120 @@ public class AdminUsersTests
         Assert.That(db.LoginEvents.Any(e => e.Succeeded), Is.True, "the writer keeps persisting after a bad batch");
     }
 
-    // ── login vs block ──
+    // ── refresh vs block ──
+    private static async Task<string> LoginForRefreshCookieAsync(HttpClient client, TestUser user)
+    {
+        var res = await client.PostAsJsonAsync("/api/authentication/login", new LoginRequestDto(user.Email, user.Password));
+        res.EnsureSuccessStatusCode();
+        var line = res.Headers.GetValues("Set-Cookie").First(v => v.StartsWith("refreshToken=", StringComparison.OrdinalIgnoreCase));
+        return line.Split(';')[0].Substring("refreshToken=".Length);
+    }
+
+    private static Task<HttpResponseMessage> RefreshAsync(HttpClient client, string cookie)
+    {
+        var req = new HttpRequestMessage(HttpMethod.Post, "/api/authentication/refresh");
+        req.Headers.Add("Cookie", $"refreshToken={cookie}");
+        return client.SendAsync(req);
+    }
+
     [Test]
-    public async Task ConcurrentLoginAndBlock_NeverLeavesAUsableSession()
+    public async Task Refresh_AfterBlock_IsRejected_AndNothingSurvivesUnblock()
+    {
+        using var client = _factory.CreateClient();
+        var user = await _factory.CreateUserAsync();
+        var cookie = await LoginForRefreshCookieAsync(client, user);
+        var adminToken = await LoginAdminAsync(client);
+
+        await Send(client, HttpMethod.Post, $"/api/admin/users/{user.Id}/block", adminToken);
+        Assert.That((await RefreshAsync(client, cookie)).StatusCode, Is.EqualTo(HttpStatusCode.Unauthorized));
+
+        await Send(client, HttpMethod.Post, $"/api/admin/users/{user.Id}/unblock", adminToken);
+        Assert.That((await RefreshAsync(client, cookie)).StatusCode, Is.EqualTo(HttpStatusCode.Unauthorized), "token revoked by the block must not revive on unblock");
+    }
+
+    [Test]
+    public async Task ConcurrentLoginAndBlock_NeverLeavesALiveRefreshToken()
     {
         using var client = _factory.CreateClient();
         var adminToken = await LoginAdminAsync(client);
         for (var i = 0; i < 8; i++)
         {
             var user = await _factory.CreateUserAsync();
-            var session = await TestSession.StartAsync(client);
-            var login = session.SendAsync(client, HttpMethod.Post, "/api/authentication/login", new LoginRequestDto(user.Email, user.Password));
+            var login = client.PostAsJsonAsync("/api/authentication/login", new LoginRequestDto(user.Email, user.Password));
             var block = Send(client, HttpMethod.Post, $"/api/admin/users/{user.Id}/block", adminToken);
             await Task.WhenAll(login, block);
             Assert.That(block.Result.StatusCode, Is.EqualTo(HttpStatusCode.NoContent));
 
-            // Whether the login won or lost the race, nothing it issued may work now, and unblocking
-            // must not revive it (the block rotated the security stamp).
+            using (var scope = _factory.Services.CreateScope())
+            {
+                var db = scope.ServiceProvider.GetRequiredService<Nimbus.Infrastructure.Persistence.AppDbContext>();
+                Assert.That(db.RefreshTokens.Count(t => t.UserId == user.Id.ToString() && !t.IsRevoked), Is.Zero, $"iteration {i}: a login minted a refresh token past the block");
+            }
+
+            await Send(client, HttpMethod.Post, $"/api/admin/users/{user.Id}/unblock", adminToken);
             if (login.Result.IsSuccessStatusCode)
             {
-                Assert.That((await Send(client, HttpMethod.Get, "/api/authentication/me", session)).StatusCode, Is.EqualTo(HttpStatusCode.Unauthorized), $"iteration {i}: a login survived the block");
-                await Send(client, HttpMethod.Post, $"/api/admin/users/{user.Id}/unblock", adminToken);
-                Assert.That((await Send(client, HttpMethod.Get, "/api/authentication/me", session)).StatusCode, Is.EqualTo(HttpStatusCode.Unauthorized), $"iteration {i}: the session from a login racing the block revived on unblock");
+                var cookie = login.Result.Headers.GetValues("Set-Cookie").First(v => v.StartsWith("refreshToken=", StringComparison.OrdinalIgnoreCase)).Split(';')[0].Substring("refreshToken=".Length);
+                Assert.That((await RefreshAsync(client, cookie)).StatusCode, Is.EqualTo(HttpStatusCode.Unauthorized), "the cookie from a login racing the block must be dead after unblock");
+            }
+        }
+    }
+
+    [Test]
+    public async Task ParallelRefreshesOfTheSameCookie_AtMostOneSucceeds_AndNoSecondTokenSurvives()
+    {
+        using var client = _factory.CreateClient();
+        for (var round = 0; round < 3; round++)
+        {
+            var user = await _factory.CreateUserAsync();
+            var cookie = await LoginForRefreshCookieAsync(client, user);
+
+            var results = await Task.WhenAll(Enumerable.Range(0, 8).Select(_ => Task.Run(() => RefreshAsync(client, cookie))));
+
+            Assert.That(results.Count(r => r.IsSuccessStatusCode), Is.LessThanOrEqualTo(1), "exactly one rotation may win");
+            Assert.That(results.Count(r => r.IsSuccessStatusCode), Is.EqualTo(1));
+            using var scope = _factory.Services.CreateScope();
+            var db = scope.ServiceProvider.GetRequiredService<Nimbus.Infrastructure.Persistence.AppDbContext>();
+            // Losers are replays: per the reuse semantics they revoke the family, so nothing stays alive.
+            Assert.That(db.RefreshTokens.Count(t => t.UserId == user.Id.ToString() && !t.IsRevoked), Is.LessThanOrEqualTo(1));
+        }
+    }
+
+    [Test]
+    public async Task Refresh_ForRejectedAccount_IsRejected()
+    {
+        using var client = _factory.CreateClient();
+        var user = await _factory.CreateUserAsync(approved: false, rejected: true);
+        var cookie = await LoginForRefreshCookieAsync(client, user);
+        Assert.That((await RefreshAsync(client, cookie)).StatusCode, Is.EqualTo(HttpStatusCode.Unauthorized));
+    }
+
+    [Test]
+    public async Task ConcurrentRefreshAndBlock_NeverLeavesAUsableRefreshToken()
+    {
+        using var client = _factory.CreateClient();
+        var adminToken = await LoginAdminAsync(client);
+        for (var i = 0; i < 8; i++)
+        {
+            var user = await _factory.CreateUserAsync();
+            var cookie = await LoginForRefreshCookieAsync(client, user);
+
+            var refresh = RefreshAsync(client, cookie);
+            var block = Send(client, HttpMethod.Post, $"/api/admin/users/{user.Id}/block", adminToken);
+            await Task.WhenAll(refresh, block);
+            Assert.That(block.Result.StatusCode, Is.EqualTo(HttpStatusCode.NoContent));
+
+            using var scope = _factory.Services.CreateScope();
+            var db = scope.ServiceProvider.GetRequiredService<Nimbus.Infrastructure.Persistence.AppDbContext>();
+            var live = db.RefreshTokens.Count(t => t.UserId == user.Id.ToString() && !t.IsRevoked);
+            Assert.That(live, Is.Zero, $"iteration {i}: a refresh token survived the block");
+
+            await Send(client, HttpMethod.Post, $"/api/admin/users/{user.Id}/unblock", adminToken);
+            if (refresh.Result.IsSuccessStatusCode)
+            {
+                // The rotated cookie (if any) was minted before the block and must be dead now.
+                var rotated = refresh.Result.Headers.GetValues("Set-Cookie").First(v => v.StartsWith("refreshToken=", StringComparison.OrdinalIgnoreCase)).Split(';')[0].Substring("refreshToken=".Length);
+                Assert.That((await RefreshAsync(client, rotated)).StatusCode, Is.EqualTo(HttpStatusCode.Unauthorized));
             }
         }
     }
@@ -409,67 +508,67 @@ public class AdminUsersTests
         Assert.That(ips, Does.Contain("8.8.x.x"));
     }
 
-    private static Task<HttpResponseMessage> Send(HttpClient client, HttpMethod method, string url, TestSession token, object? body = null)
+    private static async Task<HttpResponseMessage> Send(HttpClient client, HttpMethod method, string url, string token, object? body = null)
     {
-        return token.SendAsync(client, method, url, body);
+        using var req = Authed(method, url, token);
+        if (body is not null)
+        {
+            req.Content = JsonContent.Create(body);
+        }
+        return await client.SendAsync(req);
     }
 
-    private static async Task<HttpResponseMessage> AnonPostAsync(HttpClient client, string url, object body)
-    {
-        return await (await TestSession.StartAsync(client)).SendAsync(client, HttpMethod.Post, url, body);
-    }
-
-    private static async Task<List<AdminUserDto>> ListUsersAsync(HttpClient client, TestSession adminToken)
+    private static async Task<List<AdminUserDto>> ListUsersAsync(HttpClient client, string adminToken)
     {
         return (await (await Send(client, HttpMethod.Get, "/api/admin/users", adminToken)).Content.ReadFromJsonAsync<List<AdminUserDto>>())!;
     }
 
-    private static async Task<Guid> AdminIdAsync(HttpClient client, TestSession adminToken)
+    private static async Task<Guid> AdminIdAsync(HttpClient client, string adminToken)
     {
         var me = await (await Send(client, HttpMethod.Get, "/api/authentication/me", adminToken)).Content.ReadFromJsonAsync<CurrentUserDto>();
         return Guid.Parse(me!.Id);
     }
 
-    private static async Task<TestSession> LoginAsync(HttpClient client, string email, string password)
+    private static async Task<string> LoginAsync(HttpClient client, string email, string password)
     {
-        var session = await TestSession.StartAsync(client);
-        var res = await session.SendAsync(client, HttpMethod.Post, "/api/authentication/login", new LoginRequestDto(email, password));
+        var res = await client.PostAsJsonAsync("/api/authentication/login", new LoginRequestDto(email, password));
         res.EnsureSuccessStatusCode();
-        Assert.That(session.IsSignedIn, Is.True, "login must set the auth cookie");
-        return session;
+        return (await res.Content.ReadFromJsonAsync<LoginResponseDto>())!.AccessToken;
     }
 
-    private Task<(TestSession Token, Guid Id)> RegisterAndLoginAsync(HttpClient client, bool approved, out string email)
+    private Task<(string Token, Guid Id)> RegisterAndLoginAsync(HttpClient client, bool approved, out string email)
     {
         var e = $"user-{Guid.NewGuid():N}@example.test";
         email = e;
         return RegisterAndLoginCoreAsync(client, approved, e);
     }
 
-    private static HttpRequestMessage Authed(HttpMethod method, string url, TestSession token)
+    private static HttpRequestMessage Authed(HttpMethod method, string url, string token)
     {
-        return token.Apply(new HttpRequestMessage(method, url));
+        var req = new HttpRequestMessage(method, url);
+        req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        return req;
     }
 
     // The seeded admin's credential is generated per factory (see NimbusApiFactory).
-    private Task<TestSession> LoginAdminAsync(HttpClient client)
+    private Task<string> LoginAdminAsync(HttpClient client)
     {
         return LoginAsync(client, _factory.AdminEmail, _factory.AdminPassword);
     }
 
-    private async Task<TestSession> LoginAsAsync(HttpClient client, TestUser user)
+    private async Task<string> LoginAsAsync(HttpClient client, TestUser user)
     {
         return await LoginAsync(client, user.Email, user.Password);
     }
 
-    private Task<(TestSession Token, Guid Id)> RegisterAndLoginAsync(HttpClient client, bool approved)
+    private Task<(string Token, Guid Id)> RegisterAndLoginAsync(HttpClient client, bool approved)
     {
         return RegisterAndLoginCoreAsync(client, approved, $"user-{Guid.NewGuid():N}@example.test");
     }
 
-    private async Task<(TestSession Token, Guid Id)> RegisterAndLoginCoreAsync(HttpClient client, bool approved, string email)
+    private async Task<(string Token, Guid Id)> RegisterAndLoginCoreAsync(HttpClient client, bool approved, string email)
     {
-        (await AnonPostAsync(client, "/api/authentication/register",
+        (await client.PostAsJsonAsync("/api/authentication/register",
             new RegisterRequestDto(email, Password, "Jane", "Doe"))).EnsureSuccessStatusCode();
 
         using var scope = _factory.Services.CreateScope();
@@ -480,11 +579,10 @@ public class AdminUsersTests
         user.IsApproved = approved;
         await um.UpdateAsync(user);
 
-        var session = await TestSession.StartAsync(client);
-        var login = await session.SendAsync(client, HttpMethod.Post, "/api/authentication/login", new LoginRequestDto(email, Password));
+        var login = await client.PostAsJsonAsync("/api/authentication/login", new LoginRequestDto(email, Password));
         login.EnsureSuccessStatusCode();
         var body = (await login.Content.ReadFromJsonAsync<LoginResponseDto>())!;
         Assert.That(body.IsApproved, Is.EqualTo(approved), "login must report approval without blocking unapproved users");
-        return (session, Guid.Parse(user.Id));
+        return (body.AccessToken, Guid.Parse(user.Id));
     }
 }

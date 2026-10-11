@@ -330,6 +330,7 @@ echo "MINIO_ROOT_PASSWORD=$(openssl rand -base64 24)"
 echo "MINIO_APP_SECRET_KEY=$(openssl rand -base64 24)"
 echo "MINIO_CONSOLE_PASSWORD=$(openssl rand -base64 18)"
 echo "GRAFANA_ADMIN_PASSWORD=$(openssl rand -base64 24)"
+echo "JWT_SECRET=$(openssl rand -base64 48 | tr -d '\n')"
 echo "SEED_ADMIN_PASSWORD=$(openssl rand -base64 24 | tr -d '\n=+/')Aa1!"
 docker run --rm caddy:2-alpine caddy hash-password --plaintext '<paste MINIO_CONSOLE_PASSWORD>'
 ```
@@ -365,6 +366,8 @@ MINIO_CONSOLE_PASSWORD_HASH=<paste-the-bcrypt-hash-with-every-$-doubled>
 GRAFANA_ADMIN_USER=<pick-an-admin-login>
 GRAFANA_ADMIN_PASSWORD=<paste>
 
+# Signs API access tokens. Required: the API refuses to start without a strong value (>= 32 bytes).
+JWT_SECRET=<paste>
 # First admin account, created at API startup only when no admin exists yet.
 SEED_ADMIN_EMAIL=<your-admin-email>
 SEED_ADMIN_PASSWORD=<paste>
@@ -399,9 +402,9 @@ docker compose --profile app config | grep -E 'MINIO_CONSOLE_PASSWORD_HASH|MSSQL
 If the console hash was pasted correctly, `docker compose config` shows the `$$`-escaped form, while
 inside the container Caddy will see the original bcrypt hash.
 
-### D4. Set the seed admin on an existing `.env` [VPS]
+### D4. Set or rotate `JWT_SECRET` and the seed admin on an existing `.env` [VPS]
 
-Use this on a server whose `.env` predates these keys. Step 1 is safe to re-run: it
+Use this on a server whose `.env` predates these keys, or to rotate the JWT key. Step 1 is safe to re-run: it
 replaces each key instead of adding another line. Edit `ADMIN_EMAIL` first.
 
 ```bash
@@ -412,6 +415,7 @@ cd /opt/nimbus
 cp .env ".env.bak.$(date +%s)"
 set_key() { grep -v "^$1=" .env > .env.new || true; printf '%s=%s\n' "$1" "$2" >> .env.new; mv .env.new .env; }
 ADMIN_PW="$(openssl rand -base64 24 | tr -d '\n=+/')Aa1!"
+set_key JWT_SECRET "$(openssl rand -base64 48 | tr -d '\n')"
 set_key SEED_ADMIN_EMAIL "$ADMIN_EMAIL"
 set_key SEED_ADMIN_PASSWORD "$ADMIN_PW"
 chmod 600 .env
@@ -423,7 +427,8 @@ Check that each key appears exactly once (every line must end in `: 1`), validat
 
 ```bash
 cd /opt/nimbus
-for k in SEED_ADMIN_EMAIL SEED_ADMIN_PASSWORD; do echo "$k: $(grep -c "^$k=" .env)"; done
+for k in JWT_SECRET SEED_ADMIN_EMAIL SEED_ADMIN_PASSWORD; do echo "$k: $(grep -c "^$k=" .env)"; done
+echo "JWT length ok: $(grep -c '^JWT_SECRET=.\{32,\}' .env)"
 docker compose --profile app config > /dev/null && echo "CONFIG OK" && docker compose --profile app up -d
 docker compose --profile app ps && docker compose --profile app logs --tail=30 api
 ```
@@ -432,10 +437,14 @@ Once the API is healthy, delete the backups, which hold your other credentials: 
 
 Notes:
 
-- `JWT_SECRET` is no longer used (sessions are cookies since issue #17); delete it from `.env` if present. To force
-  everyone to sign in again, follow "Force every user to sign in again" in `docs/configuration.md`.
+- Rotating `JWT_SECRET` only invalidates existing **access** tokens (they expire in 15 minutes anyway). Refresh
+  tokens are server-side and keep working. To force everyone to sign in again, follow "Force every user to sign
+  in again" in `docs/configuration.md`.
 - `SEED_ADMIN_*` only creates an admin when none exists. It does not change the password of an existing admin:
   change that one yourself.
+- If the API exits at startup with a message about `JWT_SECRET`, the value is missing, a placeholder, or shorter
+  than 32 bytes.
+- The old placeholder key is in git history: treat it as compromised and rotate it in production.
 
 ## Part E: First deploy
 

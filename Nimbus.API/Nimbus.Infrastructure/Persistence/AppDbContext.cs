@@ -1,5 +1,4 @@
 using System.Linq.Expressions;
-using Microsoft.AspNetCore.DataProtection.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
@@ -8,12 +7,10 @@ using Nimbus.Domain.Entities.Base;
 using Nimbus.Infrastructure.Identity;
 namespace Nimbus.Infrastructure.Persistence;
 
-public class AppDbContext : IdentityDbContext<ApplicationUser>, IDataProtectionKeyContext
+public class AppDbContext : IdentityDbContext<ApplicationUser>
 {
 
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) {}
-    // Keys protecting the auth cookie and antiforgery tokens; persisted so a restart or a second instance still reads them.
-    public DbSet<DataProtectionKey> DataProtectionKeys => Set<DataProtectionKey>();
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
     public DbSet<SentEmail> SentEmails => Set<SentEmail>();
     public DbSet<LoginEvent> LoginEvents => Set<LoginEvent>();

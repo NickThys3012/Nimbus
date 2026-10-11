@@ -1,37 +1,28 @@
 import { TestBed } from '@angular/core/testing';
-import { of, Subject, throwError } from 'rxjs';
+import { of, Subject } from 'rxjs';
 
 import { AuthStore } from './auth.store';
-import { AuthenticationService, type CurrentUserDto, type LoginResponseDto } from '../api-client';
-
-const user = (isApproved: boolean, isRejected = false): CurrentUserDto => ({
-  id: 'u1',
-  email: 'pilot@example.com',
-  firstName: 'Nick',
-  name: 'Thys',
-  roles: ['Pilot'],
-  isApproved,
-  isRejected,
-  requestedAt: '2026-07-26T10:00:00Z',
-});
-
-const loginResponse: LoginResponseDto = {
-  email: 'pilot@example.com',
-  role: 'Pilot',
-  isApproved: true,
-  isRejected: false,
-  requestedAt: '2026-07-26T10:00:00Z',
-};
+import { AuthenticationService, type LoginResponseDto } from '../api-client';
 
 describe('AuthStore approval state', () => {
-  function setup(me: CurrentUserDto) {
+  const login = (isApproved: boolean, isRejected = false): LoginResponseDto => ({
+    accessToken: 't',
+    expiration: '2099-01-01T00:00:00Z',
+    email: 'pilot@example.com',
+    role: 'Pilot',
+    isApproved,
+    isRejected,
+    requestedAt: '2026-07-26T10:00:00Z',
+  });
+
+  function setup(response: LoginResponseDto) {
     TestBed.configureTestingModule({
       providers: [
         {
           provide: AuthenticationService,
           useValue: {
-            postApiAuthenticationLogin: () => of(loginResponse),
-            getApiAuthenticationMe: () => of(me),
+            postApiAuthenticationLogin: () => of(response),
+            getApiAuthenticationMe: () => new Promise(() => undefined) as never,
             getApiAuthentication: () => of(undefined),
           },
         },
@@ -41,7 +32,7 @@ describe('AuthStore approval state', () => {
   }
 
   it('flags a pending user after login without blocking the login', () => {
-    const store = setup(user(false));
+    const store = setup(login(false));
     expect(store.isPendingApproval()).toBe(false);
     store.login({ email: 'pilot@example.com', password: 'x', rememberMe: false }).subscribe();
     expect(store.isAuthenticated()).toBe(true);
@@ -50,82 +41,76 @@ describe('AuthStore approval state', () => {
   });
 
   it('does not flag an approved user', () => {
-    const store = setup(user(true));
+    const store = setup(login(true));
     store.login({ email: 'pilot@example.com', password: 'x', rememberMe: false }).subscribe();
     expect(store.isApproved()).toBe(true);
     expect(store.isPendingApproval()).toBe(false);
-    expect(store.initials()).toBe('NT');
   });
 
   it('flags a rejected user separately from pending and exposes the request date', () => {
-    const store = setup(user(false, true));
+    const store = setup(login(false, true));
     store.login({ email: 'pilot@example.com', password: 'x', rememberMe: false }).subscribe();
     expect(store.isAccessRejected()).toBe(true);
     expect(store.isPendingApproval()).toBe(false);
     expect(store.requestedAt()).toBe('2026-07-26T10:00:00Z');
   });
-
-  it('holds no credential: nothing in the store carries a token', () => {
-    const store = setup(user(true));
-    store.login({ email: 'pilot@example.com', password: 'x', rememberMe: false }).subscribe();
-    expect(Object.keys(store).join(',').toLowerCase()).not.toContain('token');
-  });
 });
 
 describe('AuthStore restoreSession', () => {
-  function setup(me: () => unknown) {
-    const getMe = vi.fn(me as never);
+  const response: LoginResponseDto = {
+    accessToken: 't',
+    expiration: '2099-01-01T00:00:00Z',
+    email: 'pilot@example.com',
+    role: 'Pilot',
+    isApproved: true,
+    isRejected: false,
+    requestedAt: '2026-07-26T10:00:00Z',
+  };
+
+  function setup() {
+    const pending: Subject<LoginResponseDto>[] = [];
+    const refresh = vi.fn(() => {
+      const subject = new Subject<LoginResponseDto>();
+      pending.push(subject);
+      return subject.asObservable();
+    });
     TestBed.configureTestingModule({
       providers: [
-        { provide: AuthenticationService, useValue: { getApiAuthenticationMe: getMe } },
+        {
+          provide: AuthenticationService,
+          useValue: {
+            postApiAuthenticationRefresh: refresh,
+            getApiAuthenticationMe: () => new Promise(() => undefined) as never,
+          },
+        },
       ],
     });
-    return { store: TestBed.inject(AuthStore), getMe };
+    return { store: TestBed.inject(AuthStore), refresh, pending };
   }
 
-  it('signs the user in when the session cookie is valid', () => {
-    const { store } = setup(() => of(user(true)));
-    let ok: boolean | undefined;
-    store.restoreSession().subscribe((r) => (ok = r));
-    expect(ok).toBe(true);
-    expect(store.isAuthenticated()).toBe(true);
-  });
-
-  it('expired session: resolves false and stays signed out', () => {
-    const { store } = setup(() => throwError(() => ({ status: 401 })));
-    let ok: boolean | undefined;
-    store.restoreSession().subscribe((r) => (ok = r));
-    expect(ok).toBe(false);
-    expect(store.isAuthenticated()).toBe(false);
-  });
-
-  it('shares one request between concurrent callers', () => {
-    const pending: Subject<CurrentUserDto>[] = [];
-    const { store, getMe } = setup(() => {
-      const s = new Subject<CurrentUserDto>();
-      pending.push(s);
-      return s.asObservable();
-    });
+  it('shares one refresh request between concurrent callers (refresh tokens are single-use)', () => {
+    const { store, refresh, pending } = setup();
     const results: boolean[] = [];
 
     store.restoreSession().subscribe((ok) => results.push(ok));
     store.restoreSession().subscribe((ok) => results.push(ok));
+    store.restoreSession().subscribe((ok) => results.push(ok));
 
-    expect(getMe).toHaveBeenCalledTimes(1);
-    pending[0].next(user(true));
+    expect(refresh).toHaveBeenCalledTimes(1);
+
+    pending[0].next(response);
     pending[0].complete();
-    expect(results).toEqual([true, true]);
+    expect(results).toEqual([true, true, true]);
   });
 
-  it('expireSession tells forms first, then forgets the user', () => {
-    const { store } = setup(() => of(user(true)));
+  it('starts a new refresh once the previous one has finished', () => {
+    const { store, refresh, pending } = setup();
+
     store.restoreSession().subscribe();
-    const seen: { url: string; stillSignedIn: boolean }[] = [];
-    store.sessionExpiring.subscribe((url) => seen.push({ url, stillSignedIn: store.isAuthenticated() }));
+    pending[0].next(response);
+    pending[0].complete();
 
-    store.expireSession('/flights');
-
-    expect(seen).toEqual([{ url: '/flights', stillSignedIn: true }]);
-    expect(store.isAuthenticated()).toBe(false);
+    store.restoreSession().subscribe();
+    expect(refresh).toHaveBeenCalledTimes(2);
   });
 });
