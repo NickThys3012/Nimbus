@@ -272,6 +272,37 @@ public class AdminUsersTests
         Assert.That((await Send(client, HttpMethod.Get, "/api/admin/users", doomedToken)).StatusCode, Is.EqualTo(HttpStatusCode.Unauthorized));
     }
 
+    [Test]
+    public async Task TokenCarryingAnActiveStatusClaim_DoesNotKeepIt_WhenTheAccountIsPendingOrRejected()
+    {
+        var pending = await _factory.CreateUserAsync(approved: false);
+        var rejected = await _factory.CreateUserAsync(approved: false, rejected: true);
+        var approved = await _factory.CreateUserAsync();
+
+        foreach (var (user, expected) in new[]
+                 {
+                     (pending, AccessTokenValidator.StatusPending), (rejected, AccessTokenValidator.StatusRejected),
+                     (approved, AccessTokenValidator.StatusActive)
+                 })
+        {
+            using var scope = _factory.Services.CreateScope();
+            var db = scope.ServiceProvider.GetRequiredService<Nimbus.Infrastructure.Persistence.AppDbContext>();
+            var stamp = db.Users.Where(u => u.Id == user.Id.ToString()).Select(u => u.SecurityStamp).Single();
+
+            // A token whose own claims already say "active" (e.g. forged or copied and edited).
+            var identity = new System.Security.Claims.ClaimsIdentity(new[]
+            {
+                new System.Security.Claims.Claim(System.Security.Claims.ClaimTypes.NameIdentifier, user.Id.ToString()),
+                new System.Security.Claims.Claim(AccessTokenValidator.SecurityStampClaim, stamp!),
+                new System.Security.Claims.Claim(AccessTokenValidator.StatusClaim, AccessTokenValidator.StatusActive)
+            }, "test");
+            var principal = new System.Security.Claims.ClaimsPrincipal(identity);
+
+            Assert.That(await AccessTokenValidator.ValidateAsync(principal, db, CancellationToken.None), Is.Null, user.Email);
+            Assert.That(principal.FindAll(AccessTokenValidator.StatusClaim).Select(c => c.Value), Is.EqualTo(new[] { expected }), user.Email);
+        }
+    }
+
     // ── pending / rejected users are gated server-side ──
     [Test]
     public async Task PendingAndRejectedUsers_Get403_OnProtectedEndpoints_But_CanReadMe()

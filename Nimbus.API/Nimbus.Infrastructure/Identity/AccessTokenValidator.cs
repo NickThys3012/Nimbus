@@ -58,6 +58,12 @@ public static class AccessTokenValidator
             identity.AddClaim(new Claim(identity.RoleClaimType, role));
         }
 
+        // The status is derived from the database only: drop any status claim the token itself carries,
+        // otherwise a token holding "active" would keep it while the account is pending or rejected.
+        foreach (var claim in identity.FindAll(StatusClaim).ToList())
+        {
+            identity.RemoveClaim(claim);
+        }
         var status = state.IsRejected ? StatusRejected : state.IsApproved ? StatusActive : StatusPending;
         identity.AddClaim(new Claim(StatusClaim, status));
         return null;
