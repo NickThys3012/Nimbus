@@ -6,12 +6,12 @@ namespace Nimbus.Application.Features.Admin.Commands.RecordLoginAttempt;
 
 public sealed class RecordLoginAttemptCommandHandler : IRequestHandler<RecordLoginAttemptCommand>
 {
-    private readonly ILoginEventRepository _events;
+    private readonly ILoginEventQueue _queue;
     private readonly TimeProvider _time;
 
-    public RecordLoginAttemptCommandHandler(ILoginEventRepository events, TimeProvider time)
+    public RecordLoginAttemptCommandHandler(ILoginEventQueue queue, TimeProvider time)
     {
-        _events = events;
+        _queue = queue;
         _time = time;
     }
 
@@ -19,7 +19,9 @@ public sealed class RecordLoginAttemptCommandHandler : IRequestHandler<RecordLog
     {
         // The email is only kept for attempts that matched an account.
         var email = request.UserId is null ? null : request.Email;
-        var evt = new LoginEvent(_time.GetUtcNow().UtcDateTime, request.UserId, email, request.Succeeded, IpMasker.Mask(request.RemoteIp));
-        return _events.AddAsync(evt, ct);
+        var evt = new LoginEvent(_time.GetUtcNow().UtcDateTime, request.UserId, email, request.Succeeded, IpMasker.Mask(request.RemoteIp), request.FailureReason);
+        // Persisted by the background writer; a full queue drops the event rather than slowing the login.
+        _queue.TryEnqueue(evt);
+        return Task.CompletedTask;
     }
 }

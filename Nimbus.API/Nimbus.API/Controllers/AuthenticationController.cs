@@ -48,26 +48,26 @@ public class AuthenticationController : ControllerBase
         var user = await _users.FindByEmailAsync(request.Email);
         if (user is null)
         {
-            await RecordLoginAttemptAsync(null, null, false);
+            await RecordLoginAttemptAsync(null, null, false, LoginFailureReason.InvalidPassword);
             return Unauthorized("Invalid credentials");
         }
 
         var signInResult = await _signInManager.CheckPasswordSignInAsync(user, request.Password, true);
         if (signInResult.IsNotAllowed)
         {
-            await RecordLoginAttemptAsync(user, user.Email, false);
+            await RecordLoginAttemptAsync(user, user.Email, false, LoginFailureReason.NotApproved);
             return Unauthorized("Please verify your email before logging in.");
         }
 
         if (signInResult.IsLockedOut)
         {
-            await RecordLoginAttemptAsync(user, user.Email, false);
+            await RecordLoginAttemptAsync(user, user.Email, false, LoginFailureReason.LockedOut);
             return Unauthorized("Account temporarily locked. Try again later.");
         }
 
         if (!signInResult.Succeeded)
         {
-            await RecordLoginAttemptAsync(user, user.Email, false);
+            await RecordLoginAttemptAsync(user, user.Email, false, LoginFailureReason.InvalidPassword);
             return Unauthorized("Invalid credentials");
         }
 
@@ -76,7 +76,7 @@ public class AuthenticationController : ControllerBase
         var session = await _tokens.IssueSessionAsync(user.Id, user.SecurityStamp, request.RememberMe);
         if (session is null)
         {
-            await RecordLoginAttemptAsync(user, user.Email, false);
+            await RecordLoginAttemptAsync(user, user.Email, false, LoginFailureReason.LockedOut);
             return Unauthorized("Account temporarily locked. Try again later.");
         }
 
@@ -89,13 +89,13 @@ public class AuthenticationController : ControllerBase
         return Ok(new LoginResponseDto(session.AccessToken, session.AccessExpiry, fresh.Email!, session.Roles.FirstOrDefault() ?? nameof(UserRole.Pilot), fresh.IsApproved, fresh.IsRejected, fresh.RequestedAt));
     }
 
-    // Audit trail for the admin "Sign-in history" tab. Failure-isolated: the repository detaches a failed row so it can never break or be re-saved by the login.
-    private async Task RecordLoginAttemptAsync(ApplicationUser? user, string? email, bool succeeded)
+    // Audit trail for the admin "Sign-in history" tab. Only enqueues; LoginEventWriterService persists it, so a slow or failing write never touches the login.
+    private async Task RecordLoginAttemptAsync(ApplicationUser? user, string? email, bool succeeded, LoginFailureReason? failureReason = null)
     {
         try
         {
             await _mediator.Send(new RecordLoginAttemptCommand(
-                user is null ? null : Guid.Parse(user.Id), email, succeeded, HttpContext.Connection.RemoteIpAddress?.ToString()));
+                user is null ? null : Guid.Parse(user.Id), email, succeeded, HttpContext.Connection.RemoteIpAddress?.ToString(), failureReason));
         }
         catch (Exception ex)
         {

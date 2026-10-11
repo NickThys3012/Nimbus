@@ -215,12 +215,15 @@ public class AdminUsersTests
         await client.PostAsJsonAsync("/api/authentication/login", new LoginRequestDto(email, "wrong-password"));
         await client.PostAsJsonAsync("/api/authentication/login", new LoginRequestDto("nobody@example.test", "x"));
         var adminToken = await LoginAdminAsync(client);
+        await _factory.DrainLoginEventsAsync();
 
         var events = await (await Send(client, HttpMethod.Get, "/api/admin/login-events?limit=5", adminToken)).Content.ReadFromJsonAsync<List<LoginEventDto>>();
         Assert.That(events, Has.Count.LessThanOrEqualTo(5));
         Assert.That(events, Is.Ordered.Descending.By(nameof(LoginEventDto.OccurredAt)));
         Assert.That(events!.Any(e => e is { Succeeded: true }), Is.True);
-        Assert.That(events.Any(e => e is { Succeeded: false, UserEmail: null }), Is.True, "unknown account: no email stored");
+        Assert.That(events.Any(e => e is { Succeeded: false, UserEmail: null, FailureReason: "InvalidPassword" }), Is.True, "unknown account: no email stored");
+        Assert.That(events.Any(e => e is { Succeeded: false, UserEmail: not null, FailureReason: "InvalidPassword" }), Is.True, "wrong password for a known account");
+        Assert.That(events.Where(e => e.Succeeded).All(e => e.FailureReason is null), Is.True);
         Assert.That(events.Where(e => e.MaskedIp is not null).All(e => e.MaskedIp!.EndsWith(".x.x") || e.MaskedIp.EndsWith(":x:x")), Is.True);
 
         Assert.That((await Send(client, HttpMethod.Get, "/api/admin/login-events?limit=0", adminToken)).StatusCode, Is.EqualTo(HttpStatusCode.UnprocessableEntity));
@@ -326,18 +329,21 @@ public class AdminUsersTests
 
     // ── audit recording is failure-isolated ──
     [Test]
-    public async Task FailedAuditInsert_IsDetached_AndNeverBreaksALaterSave()
+    public async Task FailedAuditInsert_DoesNotStopTheWriter_OrTheLogin()
     {
+        var queue = _factory.Services.GetRequiredService<Nimbus.Infrastructure.Persistence.LoginEventQueue>();
+        // MaskedIp is limited to 64 characters, so persisting this event fails.
+        queue.TryEnqueue(new Nimbus.Domain.Entities.LoginEvent(DateTime.UtcNow, null, null, false, new string('x', 200),
+            Nimbus.Domain.Enums.LoginFailureReason.InvalidPassword));
+        await _factory.DrainLoginEventsAsync();
+
+        using var client = _factory.CreateClient();
+        await RegisterAndLoginAsync(client, approved: true);
+        await _factory.DrainLoginEventsAsync();
+
         using var scope = _factory.Services.CreateScope();
-        var repo = scope.ServiceProvider.GetRequiredService<Nimbus.Domain.Interfaces.ILoginEventRepository>();
         var db = scope.ServiceProvider.GetRequiredService<Nimbus.Infrastructure.Persistence.AppDbContext>();
-
-        // MaskedIp is limited to 64 characters, so SaveChanges fails.
-        var bad = new Nimbus.Domain.Entities.LoginEvent(DateTime.UtcNow, null, null, false, new string('x', 200));
-        Assert.CatchAsync(async () => await repo.AddAsync(bad));
-
-        Assert.That(db.ChangeTracker.Entries<Nimbus.Domain.Entities.LoginEvent>(), Is.Empty, "failed row must not stay tracked");
-        Assert.DoesNotThrowAsync(async () => await db.SaveChangesAsync(), "a later save must not retry the failed row");
+        Assert.That(db.LoginEvents.Any(e => e.Succeeded), Is.True, "the writer keeps persisting after a bad batch");
     }
 
     // ── refresh vs block ──

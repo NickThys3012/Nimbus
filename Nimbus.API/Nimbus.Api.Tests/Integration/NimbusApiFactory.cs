@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
 using Nimbus.Infrastructure.Persistence;
+using NUnit.Framework;
 using Testcontainers.MsSql;
 namespace Nimbus.Api.Tests.Integration;
 
@@ -94,6 +95,19 @@ public sealed class NimbusApiFactory : WebApplicationFactory<Program>
             // as it does behind Caddy, so ForwardedHeaders can be exercised.
             services.AddTransient<IStartupFilter, LoopbackPeerStartupFilter>();
         });
+    }
+
+    /// <summary>Waits until the background writer has persisted every login event accepted so far.</summary>
+    public async Task DrainLoginEventsAsync()
+    {
+        var queue = Services.GetRequiredService<LoginEventQueue>();
+        var deadline = DateTime.UtcNow.AddSeconds(10);
+        while (queue.Pending > 0 && DateTime.UtcNow < deadline)
+        {
+            await Task.Delay(20);
+        }
+
+        Assert.That(queue.Pending, Is.Zero, "login events were not drained in time");
     }
 
     /// <summary>Creates a confirmed user directly through Identity (bypassing e-mail) with a generated password.</summary>

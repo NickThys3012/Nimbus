@@ -165,6 +165,10 @@ namespace Nimbus.Infrastructure.Persistence.EntityFramework.Migrations
                         .HasMaxLength(320)
                         .HasColumnType("nvarchar(320)");
 
+                    b.Property<string>("FailureReason")
+                        .HasMaxLength(32)
+                        .HasColumnType("nvarchar(32)");
+
                     b.Property<string>("MaskedIp")
                         .HasMaxLength(64)
                         .HasColumnType("nvarchar(64)");
@@ -181,6 +185,8 @@ namespace Nimbus.Infrastructure.Persistence.EntityFramework.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("OccurredAt");
+
+                    b.HasIndex("Email", "OccurredAt");
 
                     b.ToTable("LoginEvents");
                 });
