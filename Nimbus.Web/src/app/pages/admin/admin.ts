@@ -130,7 +130,9 @@ export default class Admin {
   }
 
   protected remove(user: AdminUserDto): void {
-    if (confirm(`Permanently delete ${user.email}?`)) {
+    // The server rejects self-deletion too; this guard just keeps the UI honest.
+    if (this.isSelf(user)) return;
+    if (confirm(`Permanently delete ${user.email}? Their account, sessions and personal settings are removed. This cannot be undone.`)) {
       this.run(user.id, this.adminApi.deleteApiAdminUsers({ id: user.id }));
     }
   }

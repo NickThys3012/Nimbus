@@ -70,6 +70,9 @@
           </div>
 
           @if (user.isRejected) {
+            @for (role of user.roles; track role) {
+              <Nimbus-role-chip>{{ roleLabel(role) }}</Nimbus-role-chip>
+            }
             <Nimbus-status-pill tone="danger">rejected</Nimbus-status-pill>
           } @else {
             @if (user.isApproved && !isSelf(user)) {
@@ -100,33 +103,30 @@
 
           <span class="spacer"></span>
 
-          @if (!isSelf(user)) {
-            @if (user.isRejected) {
-              <Nimbus-button
-                [attr.data-testid]="'delete-' + user.id"
-                [disabled]="isBusy(user.id)"
-                [fullWidth]="false"
-                [id]="'delete-btn-' + user.id"
-                (click)="remove(user)"
-                ariaLabel="Delete user"
-                icon="ti-trash"
-                size="sm"
-                variant="ghost"
-              ></Nimbus-button>
-            } @else if (user.isApproved) {
-              <Nimbus-button
-                [attr.data-testid]="'block-' + user.id"
-                [ariaLabel]="user.isBlocked ? 'Unblock user' : 'Block user'"
-                [disabled]="isBusy(user.id)"
-                [fullWidth]="false"
-                [icon]="user.isBlocked ? 'ti-lock-open' : 'ti-ban'"
-                [id]="'block-btn-' + user.id"
-                (click)="toggleBlock(user)"
-                size="sm"
-                variant="ghost"
-              ></Nimbus-button>
-            }
+          @if (!isSelf(user) && user.isApproved && !user.isRejected) {
+            <Nimbus-button
+              [attr.data-testid]="'block-' + user.id"
+              [ariaLabel]="user.isBlocked ? 'Unblock user' : 'Block user'"
+              [disabled]="isBusy(user.id)"
+              [fullWidth]="false"
+              [icon]="user.isBlocked ? 'ti-lock-open' : 'ti-ban'"
+              [id]="'block-btn-' + user.id"
+              (click)="toggleBlock(user)"
+              size="sm"
+              variant="ghost"
+            ></Nimbus-button>
           }
+          <Nimbus-button
+            [attr.data-testid]="'delete-' + user.id"
+            [ariaLabel]="isSelf(user) ? 'You cannot delete your own account' : 'Delete user'"
+            [disabled]="isBusy(user.id) || isSelf(user)"
+            [fullWidth]="false"
+            [id]="'delete-btn-' + user.id"
+            (click)="remove(user)"
+            icon="ti-trash"
+            size="sm"
+            variant="ghost"
+          ></Nimbus-button>
         </div>
       } @empty {
         <Nimbus-empty-state icon="ti-users">No users.</Nimbus-empty-state>

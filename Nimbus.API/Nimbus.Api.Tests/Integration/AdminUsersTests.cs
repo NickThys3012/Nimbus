@@ -206,6 +206,27 @@ public class AdminUsersTests
         Assert.That((await Send(client, HttpMethod.Delete, $"/api/admin/users/{Guid.NewGuid()}", adminToken)).StatusCode, Is.EqualTo(HttpStatusCode.NotFound));
     }
 
+    // Flight ownership policy (docs/architecture.md, "Deleting users"): personal data cascades with the
+    // account, other users' data is never touched, and security-audit rows are retained.
+    [Test]
+    public async Task DeleteUser_CascadesPersonalData_ButLeavesOtherUsersAndAuditRowsIntact()
+    {
+        using var client = _factory.CreateClient();
+        var (_, doomedId) = await RegisterAndLoginAsync(client, approved: true, out var doomedEmail);
+        var (_, survivorId) = await RegisterAndLoginAsync(client, approved: true);
+        await _factory.DrainLoginEventsAsync();
+        var adminToken = await LoginAdminAsync(client);
+
+        Assert.That((await Send(client, HttpMethod.Delete, $"/api/admin/users/{doomedId}", adminToken)).StatusCode, Is.EqualTo(HttpStatusCode.NoContent));
+
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<Nimbus.Infrastructure.Persistence.AppDbContext>();
+        Assert.That(db.RefreshTokens.Any(t => t.UserId == doomedId.ToString()), Is.False, "deleted user's personal data cascades");
+        Assert.That(db.RefreshTokens.Any(t => t.UserId == survivorId.ToString()), Is.True, "another user's data is untouched");
+        Assert.That(db.Users.Any(u => u.Id == survivorId.ToString()), Is.True);
+        Assert.That(db.LoginEvents.Any(e => e.Email == doomedEmail), Is.True, "audit trail is retained");
+    }
+
     // ── login events ──
     [Test]
     public async Task LoginEvents_AreRecorded_MaskedAndBounded()

@@ -232,6 +232,27 @@ to be consumed reactively via signals.
   self-hosted MinIO store used for flight images/tracks/exports and map
   tiles — see [`docs/object-storage.md`](object-storage.md).
 
+## Deleting users (admin console)
+
+`DELETE /api/admin/users/{id}` (Admin only) hard-deletes an account. Rules:
+
+- An admin cannot delete their own account (rejected server-side with 400, and the
+  SPA control is disabled), and the last active Admin can never be deleted.
+- **Personal data cascades**: the account, its roles, refresh tokens/sessions and
+  any per-user settings are removed in one transaction. Access tokens stop
+  validating because the account no longer exists.
+- **Flights and shared data**: all Nimbus data is owned by exactly one user and is
+  never visible to other users, so deleting an owner removes only that owner's
+  own flights and their `{ownerId}/...` objects (see object-storage.md). Flights
+  are never silently re-assigned to, or destroyed on behalf of, another user:
+  once flights are persisted, a flight another user can still see (e.g. a future
+  share) must make the delete fail with a conflict until it is unshared or
+  transferred. The flight entity does not exist yet, so that guard is to be added
+  with it; the current test covers the real cascade (personal data removed,
+  other users' data and the login/email audit rows kept).
+- Login-audit and email-send rows hold no foreign key to the user (masked IP and
+  email snapshot only) and are intentionally retained for security review.
+
 ## Deployment
 
 - **Pipeline**: `ci.yml` builds/tests on every PR and push to `main`; `cd.yml`

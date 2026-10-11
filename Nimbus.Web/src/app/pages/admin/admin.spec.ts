@@ -151,13 +151,14 @@ describe('Admin', () => {
     expect(el.querySelector('[data-testid="user-r1"]')?.textContent).toContain('rejected');
   });
 
-  it('users tab: no block/delete for yourself; delete only for rejected', async () => {
+  it('users tab: no block for yourself; delete disabled for yourself, available for others', async () => {
     const { el, open } = await setup();
     await open('users');
     expect(el.querySelector('[data-testid="block-me"]')).toBeNull();
-    expect(el.querySelector('[data-testid="delete-me"]')).toBeNull();
-    expect(el.querySelector('[data-testid="delete-u1"]')).toBeNull();
+    expect((el.querySelector('[data-testid="delete-me"] button') as HTMLButtonElement).disabled).toBe(true);
+    expect((el.querySelector('[data-testid="delete-u1"] button') as HTMLButtonElement).disabled).toBe(false);
     expect(el.querySelector('[data-testid="delete-r1"]')).toBeTruthy();
+    expect(el.querySelector('[data-testid="user-r1"] Nimbus-role-chip')?.textContent).toContain('pilot');
     expect(el.querySelector('[data-testid="block-r1"]')).toBeNull();
   });
 
@@ -191,6 +192,15 @@ describe('Admin', () => {
     vi.spyOn(window, 'confirm').mockReturnValue(true);
     await click('delete-r1');
     expect(api['deleteApiAdminUsers']).toHaveBeenCalledWith({ id: 'r1' });
+  });
+
+  it('does not delete without confirmation, and never deletes yourself', async () => {
+    const { open, click } = await setup();
+    await open('users');
+    vi.spyOn(window, 'confirm').mockReturnValue(false);
+    await click('delete-u1');
+    await click('delete-me');
+    expect(api['deleteApiAdminUsers']).not.toHaveBeenCalled();
   });
 
   it('history tab loads and renders the login events lazily', async () => {
