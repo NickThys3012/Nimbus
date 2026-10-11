@@ -10,13 +10,16 @@ export { CancelablePromise, CancelError } from './core/CancelablePromise';
 export { OpenAPI } from './core/OpenAPI';
 export type { OpenAPIConfig } from './core/OpenAPI';
 
+export type { AdminUserDto } from './models/AdminUserDto';
 export type { ClientTelemetryEventDto } from './models/ClientTelemetryEventDto';
 export { ClientTelemetryEventType } from './models/ClientTelemetryEventType';
 export type { CurrentUserDto } from './models/CurrentUserDto';
+export type { LoginEventDto } from './models/LoginEventDto';
 export type { LoginRequestDto } from './models/LoginRequestDto';
 export type { LoginResponseDto } from './models/LoginResponseDto';
 export type { RegisterRequestDto } from './models/RegisterRequestDto';
 export type { ResendVerificationEmailCommandDto } from './models/ResendVerificationEmailCommandDto';
+export type { SetUserRoleRequestDto } from './models/SetUserRoleRequestDto';
 export type { UnblockVerificationEmailRequestDto } from './models/UnblockVerificationEmailRequestDto';
 export type { UserDto } from './models/UserDto';
 

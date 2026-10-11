@@ -1,7 +1,7 @@
 #!/bin/sh
 # Idempotent MinIO bootstrap for the Nimbus production stack (issue #95).
 #
-# Runs once per `docker compose up` via the `minio-init` service (minio/mc image),
+# Runs once per `docker compose up` via the `minio-init` service (the Chainguard MinIO image, which bundles `mc` and a shell),
 # using the ROOT credentials only for this bootstrap. It:
 #   1. creates the four buckets the application needs (per issue #11's convention)
 #   2. enables versioning on each (confirmed supported on this single-node topology

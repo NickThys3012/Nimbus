@@ -1,0 +1,27 @@
+:host {
+    display: inline-flex;
+    flex: 0 0 auto;
+}
+
+.avatar {
+    width: var(--avatar-size, 34px);
+    height: var(--avatar-size, 34px);
+    border-radius: 50%;
+    background: var(--acbg);
+    color: var(--ac);
+    font-size: 12px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.avatar.pending {
+    background: var(--ab);
+    color: var(--a);
+}
+
+.avatar.danger {
+    background: var(--rb);
+    color: var(--r);
+}

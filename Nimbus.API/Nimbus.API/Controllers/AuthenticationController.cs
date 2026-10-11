@@ -3,6 +3,8 @@ using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
+using Nimbus.Application.Features.Admin.Commands.RecordLoginAttempt;
 using Nimbus.Application.Features.Auth.Command.CreateUser;
 using Nimbus.Application.Features.Auth.Command.ResendVerificationEmail;
 using Nimbus.Application.Features.Auth.Queries.GetUserByEmail;
@@ -39,38 +41,66 @@ public class AuthenticationController : ControllerBase
         _environment = environment;
     }
 
+    [EnableRateLimiting(AuthorizationPolicies.LoginRateLimit)]
     [HttpPost("login")]
     public async Task<ActionResult<LoginResponseDto>> Login(LoginRequestDto request)
     {
         var user = await _users.FindByEmailAsync(request.Email);
         if (user is null)
         {
+            await RecordLoginAttemptAsync(null, null, false);
             return Unauthorized("Invalid credentials");
         }
 
         var signInResult = await _signInManager.CheckPasswordSignInAsync(user, request.Password, true);
         if (signInResult.IsNotAllowed)
         {
+            await RecordLoginAttemptAsync(user, user.Email, false);
             return Unauthorized("Please verify your email before logging in.");
         }
 
         if (signInResult.IsLockedOut)
         {
+            await RecordLoginAttemptAsync(user, user.Email, false);
             return Unauthorized("Account temporarily locked. Try again later.");
         }
 
         if (!signInResult.Succeeded)
         {
+            await RecordLoginAttemptAsync(user, user.Email, false);
             return Unauthorized("Invalid credentials");
         }
 
-        var roles = await _users.GetRolesAsync(user);
-        var (accessToken, expiry) = _tokens.GenerateAccessToken(user, roles);
-        var (rawRefresh, refreshEntity) = await _tokens.GenerateRefreshTokenAsync(user.Id, request.RememberMe);
+        // Tokens are minted under the session lock after re-reading the account, so a login racing an
+        // admin block/delete cannot end up with a live session (see TokenService).
+        var session = await _tokens.IssueSessionAsync(user.Id, user.SecurityStamp, request.RememberMe);
+        if (session is null)
+        {
+            await RecordLoginAttemptAsync(user, user.Email, false);
+            return Unauthorized("Account temporarily locked. Try again later.");
+        }
 
-        SetRefreshCookie(rawRefresh, request.RememberMe ? new DateTimeOffset(refreshEntity.ExpiresAt) : null);
+        SetRefreshCookie(session.RawRefresh, request.RememberMe ? new DateTimeOffset(session.RefreshEntity.ExpiresAt) : null);
 
-        return Ok(new LoginResponseDto(accessToken, expiry, user.Email!, roles.FirstOrDefault() ?? nameof(UserRole.Pilot)));
+        // Only now — access and refresh tokens issued and saved — is the sign-in a success.
+        await RecordLoginAttemptAsync(user, user.Email, true);
+
+        var fresh = session.User;
+        return Ok(new LoginResponseDto(session.AccessToken, session.AccessExpiry, fresh.Email!, session.Roles.FirstOrDefault() ?? nameof(UserRole.Pilot), fresh.IsApproved, fresh.IsRejected, fresh.RequestedAt));
+    }
+
+    // Audit trail for the admin "Sign-in history" tab. Failure-isolated: the repository detaches a failed row so it can never break or be re-saved by the login.
+    private async Task RecordLoginAttemptAsync(ApplicationUser? user, string? email, bool succeeded)
+    {
+        try
+        {
+            await _mediator.Send(new RecordLoginAttemptCommand(
+                user is null ? null : Guid.Parse(user.Id), email, succeeded, HttpContext.Connection.RemoteIpAddress?.ToString()));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Could not record login attempt for the audit list.");
+        }
     }
 
     [HttpPost("register")]
@@ -113,32 +143,20 @@ public class AuthenticationController : ControllerBase
             return Unauthorized();
         }
 
-        var existing = await _tokens.ValidateRefreshTokenAsync(raw);
-        if (existing is null)
+        // Rotation is atomic with respect to admin block/delete/role changes (see TokenService).
+        var rotation = await _tokens.RotateRefreshTokenAsync(raw);
+        if (rotation is null)
         {
             _logger.LogInformation(
-                "Refresh rejected: refreshToken cookie did not match a valid, non-expired token (unknown, expired, or reuse of an already-rotated/revoked token).");
+                "Refresh rejected: unknown, expired or reused refresh token, or the account is locked out, rejected or deleted.");
             return Unauthorized();
         }
 
-        var user = await _users.FindByIdAsync(existing.UserId);
-        if (user is null)
-        {
-            _logger.LogInformation("Refresh rejected: token was valid but its UserId {UserId} no longer exists.", existing.UserId);
-            return Unauthorized();
-        }
+        var user = rotation.User;
+        // Carry the "remember me" choice forward across rotation — it was fixed at login time.
+        SetRefreshCookie(rotation.RawRefresh, rotation.RememberMe ? rotation.RefreshEntity.ExpiresAt : null);
 
-        var roles = await _users.GetRolesAsync(user);
-        var (newAccess, expiry) = _tokens.GenerateAccessToken(user, roles);
-        // Carry the "remember me" choice forward across rotation — it was fixed at login time
-        // and shouldn't silently flip just because the token got rotated on this refresh.
-        var (newRaw, newEntity) = await _tokens.GenerateRefreshTokenAsync(user.Id, existing.RememberMe);
-
-        await _tokens.RevokeTokenAsync(existing, TokenService.HashToken(newRaw));
-
-        SetRefreshCookie(newRaw, existing.RememberMe ? newEntity.ExpiresAt : null);
-
-        return Ok(new LoginResponseDto(newAccess, expiry, user.Email!, roles.FirstOrDefault() ?? nameof(UserRole.Pilot)));
+        return Ok(new LoginResponseDto(rotation.AccessToken, rotation.AccessExpiry, user.Email!, rotation.Roles.FirstOrDefault() ?? nameof(UserRole.Pilot), user.IsApproved, user.IsRejected, user.RequestedAt));
     }
 
     // ── POST /api/auth/logout ───────────────────────────────────────
@@ -171,7 +189,7 @@ public class AuthenticationController : ControllerBase
     // can decide what to render (issue #15) — separate from login/refresh so the app can
     // re-check approval state at any point during an active session, not only right after
     // authenticating.
-    [Authorize]
+    [Authorize(Policy = AuthorizationPolicies.Authenticated)]
     [HttpGet("me")]
     public async Task<ActionResult<CurrentUserDto>> Me()
     {
@@ -183,7 +201,7 @@ public class AuthenticationController : ControllerBase
         }
 
         var roles = await _users.GetRolesAsync(user);
-        return Ok(new CurrentUserDto(user.Id, user.Email!, user.FirstName, user.Name, roles.ToList(), user.IsApproved));
+        return Ok(new CurrentUserDto(user.Id, user.Email!, user.FirstName, user.Name, roles.ToList(), user.IsApproved, user.IsRejected, user.RequestedAt));
     }
 
 

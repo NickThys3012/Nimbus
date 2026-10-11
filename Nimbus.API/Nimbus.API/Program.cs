@@ -1,12 +1,18 @@
 using System.Security.Claims;
+using System.Net;
 using System.Text;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.IdentityModel.Tokens;
+using Nimbus.API;
+using Microsoft.AspNetCore.Authorization;
+using Nimbus.API.Authorization;
 using Nimbus.API.Middleware;
 using Nimbus.Application;
+using Nimbus.Domain.Enums;
 using Nimbus.Infrastructure;
 using Nimbus.Infrastructure.Identity;
 using Nimbus.Infrastructure.Persistence;
@@ -14,6 +20,8 @@ using Nimbus.Logging;
 using Nimbus.Mailing;
 using Nimbus.Observability;
 using Prometheus;
+using System.Threading.RateLimiting;
+using Microsoft.AspNetCore.RateLimiting;
 using Scalar.AspNetCore;
 using Serilog;
 using SkiaSharp;
@@ -64,6 +72,20 @@ try
             // Ensure JWT "role"/"nameid" claims are mapped to ClaimTypes so
             // [Authorize(Roles=...)] and CurrentUserService continue to work.
             opts.MapInboundClaims = true;
+            // One indexed lookup per request: the token must still match a live, unlocked account
+            // with the same security stamp (role change/block/reject/delete rotate it).
+            opts.Events = new JwtBearerEvents
+            {
+                OnTokenValidated = async context =>
+                {
+                    var db = context.HttpContext.RequestServices.GetRequiredService<AppDbContext>();
+                    var failure = await AccessTokenValidator.ValidateAsync(context.Principal, db, context.HttpContext.RequestAborted);
+                    if (failure is not null)
+                    {
+                        context.Fail(failure);
+                    }
+                }
+            };
             opts.TokenValidationParameters = new TokenValidationParameters
             {
                 ValidateIssuer = true,
@@ -75,7 +97,7 @@ try
                 ValidIssuer = builder.Configuration["Jwt:Issuer"],
                 ValidAudience = builder.Configuration["Jwt:Audience"],
                 IssuerSigningKey = new SymmetricSecurityKey(
-                    Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Secret"]!)),
+                    Encoding.UTF8.GetBytes(JwtSecretValidator.Require(builder.Configuration["Jwt:Secret"]))),
                 ClockSkew = TimeSpan.Zero
             };
         });
@@ -88,7 +110,59 @@ try
     });
 
     builder.Services.AddNimbusEmail(builder.Configuration);
-    builder.Services.AddAuthorization();
+    builder.Services.AddAuthorization(opts =>
+    {
+        // Default for a bare [Authorize]: signed in AND approved/not rejected. Pending and
+        // rejected accounts therefore get 403 everywhere except [Authorize(Policy = Authenticated)].
+        opts.DefaultPolicy = new AuthorizationPolicyBuilder()
+            .RequireAuthenticatedUser()
+            .AddRequirements(new ActiveAccountRequirement())
+            .Build();
+        opts.AddPolicy(AuthorizationPolicies.Authenticated, policy => policy.RequireAuthenticatedUser());
+        opts.AddPolicy(AuthorizationPolicies.AdminOnly, policy => policy
+            .RequireAuthenticatedUser()
+            .RequireRole(nameof(UserRole.Admin))
+            .AddRequirements(new ActiveAccountRequirement()));
+    });
+    builder.Services.AddSingleton<IAuthorizationHandler, ActiveAccountHandler>();
+
+    // Behind Caddy every request arrives from the proxy, so the real client IP must come from
+    // X-Forwarded-For — but only when the immediate peer is a trusted proxy. Trust is limited to
+    // loopback and the private ranges Docker bridge networks use, and is configurable
+    // (ForwardedHeaders:KnownNetworks / KnownProxies); never "trust everyone".
+    builder.Services.Configure<ForwardedHeadersOptions>(opts =>
+    {
+        opts.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+        opts.ForwardLimit = 1; // Caddy appends exactly one hop
+        opts.KnownIPNetworks.Clear();
+        opts.KnownProxies.Clear();
+        var networks = builder.Configuration.GetSection("ForwardedHeaders:KnownNetworks").Get<string[]>()
+                       ?? ["127.0.0.0/8", "::1/128", "10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16"];
+        foreach (var cidr in networks)
+        {
+            opts.KnownIPNetworks.Add(System.Net.IPNetwork.Parse(cidr));
+        }
+        foreach (var proxy in builder.Configuration.GetSection("ForwardedHeaders:KnownProxies").Get<string[]>() ?? [])
+        {
+            opts.KnownProxies.Add(IPAddress.Parse(proxy));
+        }
+    });
+
+    // Per-IP limit on the login endpoint: bounds password guessing and the growth of the login
+    // audit table (rejected requests never reach the action, so they are not recorded).
+    var loginPermits = builder.Configuration.GetValue("RateLimiting:Login:PermitLimit", 10);
+    var loginWindow = TimeSpan.FromSeconds(builder.Configuration.GetValue("RateLimiting:Login:WindowSeconds", 60));
+    builder.Services.AddRateLimiter(limiter =>
+    {
+        limiter.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+        limiter.AddPolicy(AuthorizationPolicies.LoginRateLimit, httpContext =>
+            RateLimitPartition.GetFixedWindowLimiter(
+                httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+                _ => new FixedWindowRateLimiterOptions
+                {
+                    PermitLimit = loginPermits, Window = loginWindow, QueueLimit = 0
+                }));
+    });
     builder.Services.AddScoped<TokenService>();
     builder.Services.AddSingleton(TimeProvider.System);
 
@@ -121,6 +195,7 @@ try
     await app.Services.SeedUsers();
 
     // ── Middleware pipeline ───────────────────────────────────────────
+    app.UseForwardedHeaders();                        // real client IP first: limiter, audit and logs all use it
     app.UseSerilogRequestLogging();                   // HTTP request logging (#48)
     app.UseMiddleware<ExceptionHandlingMiddleware>(); // maps known exceptions to API responses
     app.UseHttpsRedirection();
@@ -134,6 +209,7 @@ try
     // http_request_duration_seconds, http_requests_in_progress (#47).
     app.UseHttpMetrics();
 
+    app.UseRateLimiter();
     app.UseAuthentication();
     app.UseAuthorization();
 

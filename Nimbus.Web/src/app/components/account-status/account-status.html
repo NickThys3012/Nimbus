@@ -1,0 +1,35 @@
+<div class="stage">
+  <div class="card" [id]="status() === 'pending' ? 'pending-approval-notice' : 'rejected-notice'">
+    @if (status() === 'pending') {
+      <Nimbus-glyph icon="ti-clock" variant="Warning"></Nimbus-glyph>
+      <div class="hd">Your account is awaiting approval</div>
+      <div class="lede">
+        Your password is correct, but an administrator still has to activate your account. Please
+        check back later or contact an administrator.
+      </div>
+
+      @if (requestedOn(); as date) {
+        <div class="meta-line" id="meta-requested"><span>requested</span><span>{{ date }}</span></div>
+      }
+      @if (roleLabel(); as role) {
+        <div class="meta-line meta-line-tight" id="meta-role"><span>role</span><span>{{ role }}</span></div>
+      }
+    } @else {
+      <Nimbus-glyph icon="ti-user-off" variant="Error"></Nimbus-glyph>
+      <div class="hd">No access to Nimbus</div>
+      <div class="lede">
+        This request was rejected by an administrator. If that is not right, please get in touch.
+      </div>
+    }
+
+    <Nimbus-button
+      href="mailto:beheer@nimbus.be"
+      icon="ti-mail"
+      id="contact-admin"
+      variant="ghost"
+    >Contact administrator</Nimbus-button>
+    <a class="back-link" id="back-to-login" href="/login" (click)="backToLogin($event)">
+      <i class="ti ti-arrow-left" aria-hidden="true"></i> Back to sign in
+    </a>
+  </div>
+</div>

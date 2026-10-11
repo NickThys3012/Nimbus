@@ -1,0 +1,3 @@
+# Dummy too-short string used by a unit test of JwtSecretValidator (not a credential).
+# The literal was removed in the next commit; this only silences the historical finding.
+8c57182a0dfebca85094dc607acfbb5c6330c635:Nimbus.API/Nimbus.Api.Tests/JwtSecretValidatorTests.cs:generic-api-key:25

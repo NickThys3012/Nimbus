@@ -1,6 +1,6 @@
 import { computed, inject, Injectable, signal } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
-import { catchError, finalize, map, Observable, of, tap, throwError } from 'rxjs';
+import { catchError, finalize, map, Observable, of, shareReplay, tap, throwError } from 'rxjs';
 
 import {
   ApiError,
@@ -30,7 +30,26 @@ export class AuthStore {
   readonly lookupEmail = signal<string | null>(null);
   // Mutations (login/logout/refresh) are one-off actions, not reactive
   readonly roles = computed(() => this.currentUser.value()?.roles ?? []);
-  readonly isApproved = computed(() => this.currentUser.value()?.isApproved ?? false);
+  /** Approval state from the login/refresh response; used until `/me` has loaded. */
+  private readonly _loginIsApproved = signal(false);
+  readonly isApproved = computed(
+    () => this.currentUser.value()?.isApproved ?? this._loginIsApproved(),
+  );
+  private readonly _loginIsRejected = signal(false);
+  private readonly _loginRequestedAt = signal<string | null>(null);
+  readonly isRejected = computed(
+    () => this.currentUser.value()?.isRejected ?? this._loginIsRejected(),
+  );
+  /** ISO timestamp of when the account was requested. */
+  readonly requestedAt = computed(
+    () => this.currentUser.value()?.requestedAt ?? this._loginRequestedAt(),
+  );
+  /** True for a signed-in user still awaiting admin approval (drives the "pending" notice). */
+  readonly isPendingApproval = computed(
+    () => this.isAuthenticated() && !this.isApproved() && !this.isRejected(),
+  );
+  /** True for a signed-in user an admin has rejected (drives the "no access" card). */
+  readonly isAccessRejected = computed(() => this.isAuthenticated() && this.isRejected());
   readonly firstName = computed(() => this.currentUser.value()?.firstName ?? null);
   readonly name = computed(() => this.currentUser.value()?.name ?? null);
   /** e.g. "N. Thys" */
@@ -142,6 +161,8 @@ export class AuthStore {
       );
   }
 
+  private restoreInFlight: Observable<boolean> | null = null;
+
   refresh(): void {
     this.restoreSession().subscribe();
   }
@@ -154,15 +175,28 @@ export class AuthStore {
    * request. Never throws — resolves to `false` on any failure.
    */
   restoreSession(): Observable<boolean> {
-    return this.authApi.postApiAuthenticationRefresh().pipe(
+    // Refresh tokens are single-use: the API treats a second use of the same cookie as a replay
+    // and revokes the whole family. Concurrent callers (several 401s at once, or the route guard
+    // plus the interceptor) therefore share one in-flight request instead of each firing their own.
+    if (this.restoreInFlight) {
+      return this.restoreInFlight;
+    }
+
+    const request = this.authApi.postApiAuthenticationRefresh().pipe(
       tap((response) => this.applyLoginResponse(response)),
       map(() => true),
       catchError(() => {
         this.clearSession();
         return of(false);
       }),
-      finalize(() => this._isRestored.set(true)),
+      finalize(() => {
+        this._isRestored.set(true);
+        this.restoreInFlight = null;
+      }),
+      shareReplay({ bufferSize: 1, refCount: false }),
     );
+    this.restoreInFlight = request;
+    return request;
   }
 
   logout(): void {
@@ -218,11 +252,17 @@ export class AuthStore {
     this._accessToken.set(response.accessToken);
     this._email.set(response.email);
     this._role.set(response.role);
+    this._loginIsApproved.set(response.isApproved);
+    this._loginIsRejected.set(response.isRejected);
+    this._loginRequestedAt.set(response.requestedAt);
   }
 
   private clearSession(): void {
     this._accessToken.set(null);
     this._email.set(null);
     this._role.set(null);
+    this._loginIsApproved.set(false);
+    this._loginIsRejected.set(false);
+    this._loginRequestedAt.set(null);
   }
 }

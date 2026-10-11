@@ -50,6 +50,15 @@ services:
       # "" in appsettings.json) and no logs ever reach Loki — the Grafana log-based dashboards
       # (e.g. nimbus-mail-overview) then always show no data, not just for recent events.
       Loki__Url: http://loki:3100
+      # Initial admin created by IdentitySeed (no credential lives in source). Without both,
+      # no admin is seeded outside Development.
+      Seed__AdminEmail: ${SEED_ADMIN_EMAIL}
+      Seed__AdminPassword: ${SEED_ADMIN_PASSWORD}
+      # Signing key for access tokens. Required: the API refuses to start without a strong one
+      # (>= 32 bytes, not a placeholder). Rotating it invalidates existing access tokens only; refresh
+      # tokens are server-side, so to end all sessions follow docs/configuration.md ("Force every
+      # user to sign in again").
+      Jwt__Secret: ${JWT_SECRET:?JWT_SECRET must be set in .env (openssl rand -base64 48)}
     # /health/live performs no dependency checks (issue #97) — this only confirms the process
     # itself is up and answering, which is exactly what a container orchestrator should use to
     # decide whether to keep routing traffic here. Deploy-gating on SQL Server/MinIO reachability
@@ -153,7 +162,7 @@ services:
     networks: [nimbus]
 
   minio:
-    image: minio/minio:latest
+    image: cgr.dev/chainguard/minio:latest
     restart: unless-stopped
     user: "1000:1000"
     # No ports: published — reachable only on the internal `nimbus` network.
@@ -181,7 +190,7 @@ services:
   # One-shot, idempotent bucket/policy/app-user bootstrap (issue #95). Safe to
   # re-run on every `docker compose up` — see infra/minio/minio-init.sh.
   minio-init:
-    image: minio/mc:latest
+    image: cgr.dev/chainguard/minio:latest
     restart: "no"
     entrypoint: ["/bin/sh", "/init/minio-init.sh"]
     environment:

@@ -148,7 +148,7 @@ services:
   # one object-store product in every environment, never an emulator locally
   # and a different product in production).
   minio:
-    image: minio/minio:latest
+    image: cgr.dev/chainguard/minio:latest
     restart: unless-stopped
     command: server /data --console-address ":9001"
     environment:
@@ -173,7 +173,7 @@ services:
   # One-shot, idempotent bucket/policy/app-user bootstrap — safe to re-run on
   # every `docker compose up`. See infra/minio/minio-init.sh.
   minio-init:
-    image: minio/mc:latest
+    image: cgr.dev/chainguard/minio:latest
     restart: "no"
     entrypoint: ["/bin/sh", "/init/minio-init.sh"]
     environment:

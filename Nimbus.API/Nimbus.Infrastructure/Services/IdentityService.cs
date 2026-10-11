@@ -18,7 +18,7 @@ public class IdentityService : IIdentityService
     {
         var user = new ApplicationUser
         {
-            UserName = email, Email = email, FirstName = firstName, Name = lastName
+            UserName = email, Email = email, FirstName = firstName, Name = lastName, Role = UserRole.Pilot, RequestedAt = DateTime.UtcNow
         };
         var result = await _userManager.CreateAsync(user, password);
         if (!result.Succeeded)

@@ -1,4 +1,6 @@
+using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
 using Nimbus.Infrastructure.Persistence;
@@ -22,7 +24,14 @@ public sealed class NimbusApiFactory : WebApplicationFactory<Program>
     ///     migrations. Must be awaited (e.g. from <c>OneTimeSetUp</c>) before any test issues
     ///     HTTP requests against this factory.
     /// </summary>
-    public async Task InitializeAsync()
+    /// <summary>Credential of the admin created by the startup seed — generated per factory, never hard-coded.</summary>
+    public string AdminEmail { get; } = $"admin-{Guid.NewGuid():N}@example.test";
+
+    public string AdminPassword { get; } = $"Aa1!{Guid.NewGuid():N}";
+
+    /// <param name="loginPermitLimit">Per-IP login limit per window. Relaxed by default because every test client shares one (unknown) IP.</param>
+    /// <param name="trustedProxyNetwork">CIDR trusted to send X-Forwarded-For; null keeps the production default (loopback + private ranges).</param>
+    public async Task InitializeAsync(int loginPermitLimit = 100_000, string? trustedProxyNetwork = null)
     {
         await _sqlServer.StartAsync();
 
@@ -38,7 +47,7 @@ public sealed class NimbusApiFactory : WebApplicationFactory<Program>
         // Fixed (not the "REPLACE-ME" placeholder) so tokens minted during a run validate
         // within that same run; irrelevant across runs since each run gets a fresh
         // container/database.
-        Environment.SetEnvironmentVariable("Jwt__Secret", "integration-test-signing-key-at-least-32-chars-long");
+        Environment.SetEnvironmentVariable("Jwt__Secret", Convert.ToBase64String(System.Security.Cryptography.RandomNumberGenerator.GetBytes(48)));
         Environment.SetEnvironmentVariable("Jwt__Issuer", "Nimbus.Server.Tests");
         Environment.SetEnvironmentVariable("Jwt__Audience", "Nimbus.Client.Tests");
         Environment.SetEnvironmentVariable("Jwt__AccessTokenMinutes", "15");
@@ -47,6 +56,12 @@ public sealed class NimbusApiFactory : WebApplicationFactory<Program>
         // Email:Enabled already defaults to false in appsettings.json (NullEmailSender), so
         // register() never touches a real SMTP server here; kept explicit for clarity.
         Environment.SetEnvironmentVariable("Email__Enabled", "false");
+
+        // The runtime seed reads its admin from configuration; the tests give it a generated one.
+        Environment.SetEnvironmentVariable("Seed__AdminEmail", AdminEmail);
+        Environment.SetEnvironmentVariable("Seed__AdminPassword", AdminPassword);
+        Environment.SetEnvironmentVariable("RateLimiting__Login__PermitLimit", loginPermitLimit.ToString());
+        Environment.SetEnvironmentVariable("ForwardedHeaders__KnownNetworks__0", trustedProxyNetwork);
 
         // Migrate with a standalone DbContext BEFORE ever touching `Server`/`Services` below.
         // Program.cs calls `await app.Services.SeedUsers()` as an integral part of its own
@@ -71,11 +86,66 @@ public sealed class NimbusApiFactory : WebApplicationFactory<Program>
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.UseEnvironment("Testing");
+        // Test-only controller that sits behind the default [Authorize] policy.
+        builder.ConfigureServices(services =>
+        {
+            services.AddControllers().AddApplicationPart(typeof(NimbusApiFactory).Assembly);
+            // TestServer has no socket peer: pretend every request comes from a loopback proxy,
+            // as it does behind Caddy, so ForwardedHeaders can be exercised.
+            services.AddTransient<IStartupFilter, LoopbackPeerStartupFilter>();
+        });
+    }
+
+    /// <summary>Creates a confirmed user directly through Identity (bypassing e-mail) with a generated password.</summary>
+    public async Task<TestUser> CreateUserAsync(string role = "Pilot", bool approved = true, bool rejected = false)
+    {
+        using var scope = Services.CreateScope();
+        var users = scope.ServiceProvider.GetRequiredService<Microsoft.AspNetCore.Identity.UserManager<Nimbus.Infrastructure.Identity.ApplicationUser>>();
+        var email = $"user-{Guid.NewGuid():N}@example.test";
+        var password = $"Aa1!{Guid.NewGuid():N}";
+        var user = new Nimbus.Infrastructure.Identity.ApplicationUser
+        {
+            UserName = email, Email = email, FirstName = "Test", Name = "User", EmailConfirmed = true,
+            IsApproved = approved, IsRejected = rejected,
+            Role = Enum.Parse<Nimbus.Domain.Enums.UserRole>(role)
+        };
+        (await users.CreateAsync(user, password)).Succeeded.ThrowIfFalse();
+        (await users.AddToRoleAsync(user, role)).Succeeded.ThrowIfFalse();
+        return new TestUser(Guid.Parse(user.Id), email, password);
     }
 
     public override async ValueTask DisposeAsync()
     {
         await base.DisposeAsync();
         await _sqlServer.DisposeAsync();
+    }
+}
+
+public sealed record TestUser(Guid Id, string Email, string Password);
+
+internal static class BoolExtensions
+{
+    public static void ThrowIfFalse(this bool value)
+    {
+        if (!value)
+        {
+            throw new InvalidOperationException("Test user setup failed.");
+        }
+    }
+}
+
+internal sealed class LoopbackPeerStartupFilter : IStartupFilter
+{
+    public Action<Microsoft.AspNetCore.Builder.IApplicationBuilder> Configure(Action<Microsoft.AspNetCore.Builder.IApplicationBuilder> next)
+    {
+        return app =>
+        {
+            app.Use((context, nxt) =>
+            {
+                context.Connection.RemoteIpAddress ??= System.Net.IPAddress.Loopback;
+                return nxt(context);
+            });
+            next(app);
+        };
     }
 }

@@ -1,1 +1,172 @@
-<p>admin works!</p>
+<div class="wrap">
+  <div class="head">
+    <Nimbus-status-pill tone="warn"><i class="ti ti-shield-check" aria-hidden="true"></i> admin access</Nimbus-status-pill>
+  </div>
+
+  <Nimbus-tabs [tabs]="tabs()" [active]="tab()" (activeChange)="setTab($event)" label="Admin sections"></Nimbus-tabs>
+
+  @if (users.isLoading()) {
+    <p class="note">Loading…</p>
+  }
+
+  @if (users.error()) {
+    <p class="note error" role="alert">Users could not be loaded.</p>
+  }
+
+  @if (actionError(); as msg) {
+    <p class="note error" role="alert">{{ msg }}</p>
+  }
+
+  <div id="panel-pending" role="tabpanel" aria-labelledby="tab-pending" [hidden]="tab() !== 'pending'">
+    @if (tab() === 'pending' && users.hasValue()) {
+      @for (user of pendingUsers(); track user.id) {
+        <div class="row">
+          <Nimbus-initials-avatar [initials]="initials(user)"></Nimbus-initials-avatar>
+          <div class="info">
+            <div class="nm">{{ displayName(user) }}</div>
+            <div class="em">{{ user.email }}</div>
+          </div>
+          @if (requestedOn(user); as date) {
+            <span class="meta">requested {{ date }}</span>
+          }
+          <Nimbus-button
+            [attr.data-testid]="'reject-' + user.id"
+            [disabled]="isBusy(user.id)"
+            [fullWidth]="false"
+            [id]="'reject-btn-' + user.id"
+            (click)="reject(user.id)"
+            icon="ti-x"
+            size="sm"
+            variant="danger"
+          >Reject</Nimbus-button>
+          <Nimbus-button
+            [attr.data-testid]="'approve-' + user.id"
+            [disabled]="isBusy(user.id)"
+            [fullWidth]="false"
+            [id]="'approve-btn-' + user.id"
+            (click)="approve(user.id)"
+            icon="ti-check"
+            size="sm"
+            variant="approve"
+          >Approve</Nimbus-button>
+        </div>
+      } @empty {
+        <Nimbus-empty-state data-testid="pending-empty" icon="ti-clipboard-check">No requests pending.</Nimbus-empty-state>
+      }
+    }
+  </div>
+
+  <div id="panel-users" role="tabpanel" aria-labelledby="tab-users" [hidden]="tab() !== 'users'">
+    @if (tab() === 'users' && users.hasValue()) {
+      @for (user of allUsers(); track user.id) {
+        <div class="row" [attr.data-testid]="'user-' + user.id">
+          <Nimbus-initials-avatar
+            [initials]="initials(user)"
+            [tone]="user.isRejected ? 'danger' : user.isApproved ? 'default' : 'pending'"
+          ></Nimbus-initials-avatar>
+          <div class="info">
+            <div class="nm">{{ displayName(user) }}</div>
+            <div class="em">{{ user.email }}</div>
+          </div>
+
+          @if (user.isRejected) {
+            <Nimbus-status-pill tone="danger">rejected</Nimbus-status-pill>
+          } @else {
+            @if (user.isApproved && !isSelf(user)) {
+              <select
+                class="role-select"
+                [attr.aria-label]="'Role of ' + user.email"
+                [attr.data-testid]="'role-' + user.id"
+                [disabled]="isBusy(user.id)"
+                (change)="changeRole(user, $event)"
+              >
+                @for (role of roles; track role) {
+                  <option [value]="role" [selected]="role === currentRole(user)">{{ roleLabel(role) }}</option>
+                }
+              </select>
+            } @else {
+              @for (role of user.roles; track role) {
+                <Nimbus-role-chip>{{ roleLabel(role) }}</Nimbus-role-chip>
+              }
+            }
+            @if (user.isBlocked) {
+              <Nimbus-status-pill tone="danger">blocked</Nimbus-status-pill>
+            } @else if (user.isApproved) {
+              <Nimbus-status-pill tone="ok">approved</Nimbus-status-pill>
+            } @else {
+              <Nimbus-status-pill tone="warn">pending</Nimbus-status-pill>
+            }
+          }
+
+          <span class="spacer"></span>
+
+          @if (!isSelf(user)) {
+            @if (user.isRejected) {
+              <Nimbus-button
+                [attr.data-testid]="'delete-' + user.id"
+                [disabled]="isBusy(user.id)"
+                [fullWidth]="false"
+                [id]="'delete-btn-' + user.id"
+                (click)="remove(user)"
+                ariaLabel="Delete user"
+                icon="ti-trash"
+                size="sm"
+                variant="ghost"
+              ></Nimbus-button>
+            } @else if (user.isApproved) {
+              <Nimbus-button
+                [attr.data-testid]="'block-' + user.id"
+                [ariaLabel]="user.isBlocked ? 'Unblock user' : 'Block user'"
+                [disabled]="isBusy(user.id)"
+                [fullWidth]="false"
+                [icon]="user.isBlocked ? 'ti-lock-open' : 'ti-ban'"
+                [id]="'block-btn-' + user.id"
+                (click)="toggleBlock(user)"
+                size="sm"
+                variant="ghost"
+              ></Nimbus-button>
+            }
+          }
+        </div>
+      } @empty {
+        <Nimbus-empty-state icon="ti-users">No users.</Nimbus-empty-state>
+      }
+    }
+  </div>
+
+  <div id="panel-history" role="tabpanel" aria-labelledby="tab-history" [hidden]="tab() !== 'history'">
+    @if (tab() === 'history') {
+      @if (events.isLoading()) {
+        <p class="note">Loading…</p>
+      }
+      @if (events.error()) {
+        <p class="note error" role="alert">Sign-in history could not be loaded.</p>
+      }
+      @if (events.hasValue()) {
+        @if (events.value().length > 0) {
+          <div class="table-scroll">
+            <table class="audit">
+              <thead>
+                <tr><th>TIME</th><th>USER</th><th>EVENT</th><th>IP</th></tr>
+              </thead>
+              <tbody>
+                @for (event of events.value(); track $index) {
+                  <tr>
+                    <td>{{ eventTime(event.occurredAt) }}</td>
+                    <td>{{ event.userEmail ?? 'unknown' }}</td>
+                    <td>
+                      <Nimbus-status-pill [tone]="event.succeeded ? 'ok' : 'danger'">{{ event.succeeded ? 'signed in' : 'failed attempt' }}</Nimbus-status-pill>
+                    </td>
+                    <td>{{ event.maskedIp ?? '-' }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        } @else {
+          <Nimbus-empty-state icon="ti-history">No sign-ins yet.</Nimbus-empty-state>
+        }
+      }
+    }
+  </div>
+</div>

@@ -22,7 +22,7 @@ public class S3ObjectStorageServiceTests
     [OneTimeSetUp]
     public async Task OneTimeSetUpAsync()
     {
-        _minio = new MinioBuilder("minio/minio:latest")
+        _minio = new MinioBuilder("cgr.dev/chainguard/minio:latest")
             .Build();
 
         await _minio.StartAsync();

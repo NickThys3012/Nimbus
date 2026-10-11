@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
 using Nimbus.Application.Common.Interfaces;
 using Nimbus.Domain.Interfaces;
@@ -67,6 +68,12 @@ public static class DependencyInjection
         services.AddScoped<ICurrentUserService, CurrentUserService>();
         services.AddScoped<IEmailAuditLogger, EmailAuditLogger>();
         services.AddScoped<IIdentityService, IdentityService>();
+        services.AddScoped<IUserAdministrationService, UserAdministrationService>();
+        services.AddScoped<ILoginEventRepository, LoginEventRepository>();
+
+        services.Configure<LoginEventRetentionOptions>(config.GetSection(LoginEventRetentionOptions.SectionName));
+        services.TryAddSingleton(TimeProvider.System);
+        services.AddHostedService<LoginEventRetentionService>();
 
         AddObjectStorage(services, config);
 

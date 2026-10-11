@@ -11,7 +11,7 @@
   </button>
   <div [hidden]="!isMenuOpen" aria-label="User menu" class="menu" id="av-menu" role="menu">
     <div class="menu-id">
-      <span class="av">{{ authStore.initials() }}</span>
+      <Nimbus-initials-avatar [initials]="authStore.initials() ?? ''" [size]="32"></Nimbus-initials-avatar>
       <div>
         <div class="nm">{{ authStore.abbreviatedName() }}</div>
         <div class="em">{{ authStore.email() }}</div>

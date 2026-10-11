@@ -13,7 +13,7 @@ memory ceiling and disk budget (already covers MinIO — issue #103) and
   (`infra/caddy/Caddyfile`), which adds HTTP Basic Auth (`MINIO_CONSOLE_USER` /
   `MINIO_CONSOLE_PASSWORD_HASH`) **in front of** MinIO's own root-credential login — two factors
   guarding the only admin surface for the object store, not one.
-- `minio-init` (image `minio/mc`) runs once per `docker compose up`, waits for `minio`'s healthcheck,
+- `minio-init` (image `cgr.dev/chainguard/minio`, which bundles `mc` and a shell) runs once per `docker compose up`, waits for `minio`'s healthcheck,
   and bootstraps buckets/policy/app-user. It is safe to re-run — see `infra/minio/minio-init.sh`.
 
 ## Credentials
@@ -43,7 +43,7 @@ idempotently, so a rebuild needs no console clicking.
 ### Versioning outcome (issue #11's open question)
 
 **Confirmed working** on this single-node topology. Tested directly against
-`minio/minio:latest` (RELEASE.2025-09-07): `mc version enable` on a single-drive, single-node
+`cgr.dev/chainguard/minio:latest` (MinIO RELEASE.2026-09-22; verified): `mc version enable` on a single-drive, single-node
 instance succeeds and `mc version info` reports versioning enabled. `minio-init.sh` therefore enables
 versioning on all four buckets unconditionally. This means #78's accidental-deletion recoverability
 *can* rely on bucket versioning here — it does not have to come from the backup job alone (the backup

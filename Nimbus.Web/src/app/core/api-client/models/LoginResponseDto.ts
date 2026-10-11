@@ -7,5 +7,8 @@ export type LoginResponseDto = {
     expiration: string;
     email: string;
     role: string;
+    isApproved: boolean;
+    isRejected: boolean;
+    requestedAt: string | null;
 };
 

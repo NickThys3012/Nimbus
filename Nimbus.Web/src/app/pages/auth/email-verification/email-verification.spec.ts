@@ -58,6 +58,9 @@ describe('EmailVerification', () => {
     const element = fixture.nativeElement as HTMLElement;
 
     expect(element.querySelector('#verification-success')).not.toBeNull();
+    // No approval email exists, so the copy must not promise one.
+    expect(element.textContent).toContain('approved your account');
+    expect(element.textContent).not.toMatch(/receive an email/i);
     expect(element.querySelector('#verification-error')).toBeNull();
     expect(element.querySelector('#resend-verification-link')).toBeNull();
   });
