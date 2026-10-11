@@ -103,12 +103,16 @@ public class AdminUsersTests
     public async Task Admin_CanReject_RejectedCannotBeApproved_AndSpaSeesFlag()
     {
         using var client = _factory.CreateClient();
-        var (oldToken, pilotId) = await RegisterAndLoginAsync(client, approved: false, out var pilotEmail);
+        var (oldToken, pilotId) = await RegisterAndLoginAsync(client, approved: true, out var pilotEmail);
         var adminToken = await LoginAdminAsync(client);
 
+        await SetApprovedAsync(pilotId, false); // only a pending account can be rejected
         Assert.That((await Send(client, HttpMethod.Post, $"/api/admin/users/{pilotId}/reject", adminToken)).StatusCode, Is.EqualTo(HttpStatusCode.NoContent));
         Assert.That((await Send(client, HttpMethod.Get, "/api/authentication/me", oldToken)).StatusCode, Is.EqualTo(HttpStatusCode.Unauthorized), "reject invalidates outstanding tokens");
-        var pilotToken = await LoginAsync(client, pilotEmail, Password);
+
+        var rejectedLogin = await client.PostAsJsonAsync("/api/authentication/login", new LoginRequestDto(pilotEmail, Password));
+        Assert.That(rejectedLogin.StatusCode, Is.EqualTo(HttpStatusCode.Unauthorized), "a rejected account cannot sign in");
+        Assert.That(await rejectedLogin.Content.ReadAsStringAsync(), Is.EqualTo("Invalid credentials"));
 
         var listed = (await ListUsersAsync(client, adminToken)).Single(u => u.Id == pilotId);
         Assert.That(listed.IsRejected, Is.True);
@@ -116,10 +120,6 @@ public class AdminUsersTests
         Assert.That(listed.RequestedAt, Is.Not.Null);
 
         Assert.That((await Send(client, HttpMethod.Post, $"/api/admin/users/{pilotId}/approve", adminToken)).StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
-
-        using var me = Authed(HttpMethod.Get, "/api/authentication/me", pilotToken);
-        var current = await (await client.SendAsync(me)).Content.ReadFromJsonAsync<CurrentUserDto>();
-        Assert.That(current!.IsRejected, Is.True);
 
         Assert.That((await Send(client, HttpMethod.Post, $"/api/admin/users/{Guid.NewGuid()}/reject", adminToken)).StatusCode, Is.EqualTo(HttpStatusCode.NotFound));
         Assert.That((await Send(client, HttpMethod.Post, $"/api/admin/users/{await AdminIdAsync(client, adminToken)}/reject", adminToken)).StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
@@ -296,42 +296,51 @@ public class AdminUsersTests
         Assert.That((await Send(client, HttpMethod.Get, "/api/admin/users", doomedToken)).StatusCode, Is.EqualTo(HttpStatusCode.Unauthorized));
     }
 
-    // ── pending / rejected users are gated server-side ──
+    // ── pending / rejected users cannot sign in, and approval is re-checked on every request ──
     [Test]
-    public async Task PendingAndRejectedUsers_Get403_OnProtectedEndpoints_But_CanReadMe()
+    public async Task PendingAndRejectedUsers_CannotLogIn_WithTheSameResponseAsAWrongPassword()
     {
         using var client = _factory.CreateClient();
         var pending = await _factory.CreateUserAsync(approved: false);
         var rejected = await _factory.CreateUserAsync(approved: false, rejected: true);
-        var approved = await _factory.CreateUserAsync();
         var pendingAdmin = await _factory.CreateUserAsync("Admin", approved: false);
+        var approved = await _factory.CreateUserAsync();
 
-        foreach (var (user, expected) in new[]
-                 {
-                     (pending, HttpStatusCode.Forbidden), (rejected, HttpStatusCode.Forbidden),
-                     (approved, HttpStatusCode.OK), (pendingAdmin, HttpStatusCode.Forbidden)
-                 })
+        foreach (var user in new[] { pending, rejected, pendingAdmin })
         {
-            var token = await LoginAsAsync(client, user);
-            Assert.That((await Send(client, HttpMethod.Get, "/api/test/protected", token)).StatusCode, Is.EqualTo(expected), user.Email);
-            Assert.That((await Send(client, HttpMethod.Get, "/api/authentication/me", token)).StatusCode, Is.EqualTo(HttpStatusCode.OK), user.Email);
+            var res = await client.PostAsJsonAsync("/api/authentication/login", new LoginRequestDto(user.Email, user.Password));
+            Assert.That(res.StatusCode, Is.EqualTo(HttpStatusCode.Unauthorized), user.Email);
+            Assert.That(await res.Content.ReadAsStringAsync(), Is.EqualTo("Invalid credentials"), user.Email);
+            Assert.That(res.Headers.Contains("Set-Cookie"), Is.False, user.Email);
         }
 
-        var pendingAdminToken = await LoginAsAsync(client, pendingAdmin);
-        Assert.That((await Send(client, HttpMethod.Get, "/api/admin/users", pendingAdminToken)).StatusCode, Is.EqualTo(HttpStatusCode.Forbidden));
+        var token = await LoginAsAsync(client, approved);
+        Assert.That((await Send(client, HttpMethod.Get, "/api/test/protected", token)).StatusCode, Is.EqualTo(HttpStatusCode.OK));
+        Assert.That((await Send(client, HttpMethod.Get, "/api/authentication/me", token)).StatusCode, Is.EqualTo(HttpStatusCode.OK));
     }
 
     [Test]
-    public async Task Approval_TakesEffectImmediately_ForAnExistingToken()
+    public async Task LosingApproval_TakesEffectImmediately_ForAnExistingToken()
     {
         using var client = _factory.CreateClient();
-        var pending = await _factory.CreateUserAsync(approved: false);
-        var token = await LoginAsAsync(client, pending);
-        var adminToken = await LoginAdminAsync(client);
+        var user = await _factory.CreateUserAsync();
+        var token = await LoginAsAsync(client, user);
+        Assert.That((await Send(client, HttpMethod.Get, "/api/test/protected", token)).StatusCode, Is.EqualTo(HttpStatusCode.OK));
+
+        await SetApprovedAsync(user.Id, false);
         Assert.That((await Send(client, HttpMethod.Get, "/api/test/protected", token)).StatusCode, Is.EqualTo(HttpStatusCode.Forbidden));
 
-        await Send(client, HttpMethod.Post, $"/api/admin/users/{pending.Id}/approve", adminToken);
+        await SetApprovedAsync(user.Id, true);
         Assert.That((await Send(client, HttpMethod.Get, "/api/test/protected", token)).StatusCode, Is.EqualTo(HttpStatusCode.OK));
+    }
+
+    private async Task SetApprovedAsync(Guid id, bool approved)
+    {
+        using var scope = _factory.Services.CreateScope();
+        var um = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+        var u = (await um.FindByIdAsync(id.ToString()))!;
+        u.IsApproved = approved;
+        await um.UpdateAsync(u);
     }
 
     // ── timestamps serialise as UTC ──
@@ -450,8 +459,11 @@ public class AdminUsersTests
     public async Task Refresh_ForRejectedAccount_IsRejected()
     {
         using var client = _factory.CreateClient();
-        var user = await _factory.CreateUserAsync(approved: false, rejected: true);
+        var user = await _factory.CreateUserAsync();
         var cookie = await LoginForRefreshCookieAsync(client, user);
+        var adminToken = await LoginAdminAsync(client);
+        await SetApprovedAsync(user.Id, false); // only a pending account can be rejected
+        Assert.That((await Send(client, HttpMethod.Post, $"/api/admin/users/{user.Id}/reject", adminToken)).StatusCode, Is.EqualTo(HttpStatusCode.NoContent));
         Assert.That((await RefreshAsync(client, cookie)).StatusCode, Is.EqualTo(HttpStatusCode.Unauthorized));
     }
 
@@ -579,10 +591,16 @@ public class AdminUsersTests
         user.IsApproved = approved;
         await um.UpdateAsync(user);
 
+        // Unapproved accounts cannot sign in (#16), so they have no token to hand back.
+        if (!approved)
+        {
+            return (string.Empty, Guid.Parse(user.Id));
+        }
+
         var login = await client.PostAsJsonAsync("/api/authentication/login", new LoginRequestDto(email, Password));
         login.EnsureSuccessStatusCode();
         var body = (await login.Content.ReadFromJsonAsync<LoginResponseDto>())!;
-        Assert.That(body.IsApproved, Is.EqualTo(approved), "login must report approval without blocking unapproved users");
+        Assert.That(body.IsApproved, Is.True);
         return (body.AccessToken, Guid.Parse(user.Id));
     }
 }
