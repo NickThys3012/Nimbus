@@ -5,7 +5,8 @@ import { Button } from '../../../../../components/button/button';
 import { Banner } from '../../../../../components/banner/banner';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { AuthStore } from '../../../../../core/auth/auth.store';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
+import { safeReturnUrl } from '../../../../../core/auth/return-url';
 
 @Component({
   imports: [InputField, PasswordField, Button, Banner, ReactiveFormsModule],
@@ -30,6 +31,7 @@ export class Login {
   });
   private authClient = inject(AuthStore);
   private router = inject(Router);
+  private route = inject(ActivatedRoute);
 
   constructor() {
     effect(() => {
@@ -52,7 +54,8 @@ export class Login {
         rememberMe: rememberMe ?? false,
       })
       .subscribe({
-        next: () => this.router.navigate(['/home']),
+        next: () =>
+          this.router.navigateByUrl(safeReturnUrl(this.route.snapshot.queryParamMap.get('returnUrl'))),
       });
   }
 }

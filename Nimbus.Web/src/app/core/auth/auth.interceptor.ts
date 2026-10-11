@@ -3,6 +3,7 @@ import {
   HttpErrorResponse,
   HttpInterceptorFn,
 } from '@angular/common/http';
+import { Router } from '@angular/router';
 import { catchError, switchMap, throwError } from 'rxjs';
 
 import { AuthStore } from './auth.store';
@@ -15,11 +16,14 @@ const AUTH_ENDPOINTS = ['/api/Authentication/login', '/api/Authentication/refres
 /**
  * Attaches the in-memory access token to outgoing API requests and
  * transparently retries once on a 401 by attempting a silent refresh
- * (via the httpOnly refresh-token cookie). Register with
+ * (via the httpOnly refresh-token cookie). If the session cannot be restored
+ * the user is routed to login with the current URL as `returnUrl`; a 403 routes
+ * to the access-denied screen. Register with
  * `provideHttpClient(withInterceptors([authInterceptor]))`.
  */
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
   const authStore = inject(AuthStore);
+  const router = inject(Router);
   const isAuthEndpoint = AUTH_ENDPOINTS.some((endpoint) => req.url.includes(endpoint));
 
   const token = authStore.accessToken();
@@ -27,18 +31,37 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
     ? req.clone({ setHeaders: { Authorization: 'Bearer ' + token } })
     : req;
 
+  const toLogin = () => {
+    const url = router.url;
+    // Already on a public auth screen: nothing to return to, and re-routing would loop.
+    if (url.startsWith('/login') || url.startsWith('/access-denied')) {
+      return;
+    }
+    void router.navigate(['/login'], { queryParams: { returnUrl: url } });
+  };
+
   return next(authedReq).pipe(
     catchError((error: unknown) => {
-      const shouldRetry =
-        error instanceof HttpErrorResponse && error.status === 401 && !isAuthEndpoint;
+      if (!(error instanceof HttpErrorResponse) || isAuthEndpoint) {
+        return throwError(() => error);
+      }
 
-      if (!shouldRetry) {
+      if (error.status === 403) {
+        // Pending/rejected accounts get 403s by design; the shell already explains that state.
+        if (!authStore.isPendingApproval() && !authStore.isAccessRejected()) {
+          void router.navigate(['/access-denied']);
+        }
+        return throwError(() => error);
+      }
+
+      if (error.status !== 401) {
         return throwError(() => error);
       }
 
       return authStore.restoreSession().pipe(
         switchMap((restored) => {
           if (!restored) {
+            toLogin();
             return throwError(() => error);
           }
 
