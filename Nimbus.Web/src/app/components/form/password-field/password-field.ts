@@ -10,6 +10,8 @@ import { FormControl, ReactiveFormsModule } from '@angular/forms';
 })
 export class PasswordField {
   placeholder = input.required<string>();
+  label = input<string>('PASSWORD');
+  fieldId = input<string>('pw-reg');
   control = input<FormControl<string> | null>(null);
 
   value = input<string>('');
@@ -41,7 +43,7 @@ export class PasswordField {
       return `Use at least ${control.errors['minlength'].requiredLength} characters.`;
     }
     if (control.errors['pattern']) {
-      return 'Use letters and numbers.';
+      return 'Use upper and lower case letters and a digit.';
     }
 
     return 'Invalid value.';

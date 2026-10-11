@@ -54,6 +54,7 @@ public sealed class CreateUserCommandHandler : IRequestHandler<CreateUserCommand
 
         await _userRepository.UpdateAsync(user);
         await _emailQueue.EnqueueAsync(email, ct);
+        await _emailQueue.EnqueueAsync(EmailHelpers.CreateAccountPending(user.FirstName, user.Email), ct);
 
         _businessMetrics.UsersRegistered();
         return id;

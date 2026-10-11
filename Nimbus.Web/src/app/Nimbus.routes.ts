@@ -58,6 +58,14 @@ export const routes: Routes = [
     loadComponent: () => import('./pages/auth/email-verification/email-verification'),
   },
   {
+    path: 'forgot-password',
+    loadComponent: () => import('./pages/auth/forgot-password/forgot-password'),
+  },
+  {
+    path: 'reset-password',
+    loadComponent: () => import('./pages/auth/reset-password/reset-password'),
+  },
+  {
     path: 'verification-email-sent',
     loadComponent: () => import('./pages/auth/verification-mail-sent/verification-mail-sent'),
   },
