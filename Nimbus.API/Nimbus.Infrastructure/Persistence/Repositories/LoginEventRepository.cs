@@ -12,20 +12,10 @@ public class LoginEventRepository : ILoginEventRepository
         _db = db;
     }
 
-    public async Task AddAsync(LoginEvent loginEvent, CancellationToken ct = default)
+    public async Task AddRangeAsync(IReadOnlyCollection<LoginEvent> loginEvents, CancellationToken ct = default)
     {
-        var entry = _db.LoginEvents.Add(loginEvent);
-        try
-        {
-            await _db.SaveChangesAsync(ct);
-        }
-        catch
-        {
-            // The context is shared with the rest of the request: never leave a failed audit row
-            // tracked, or a later SaveChanges (e.g. token issuance) would retry it and fail too.
-            entry.State = EntityState.Detached;
-            throw;
-        }
+        _db.LoginEvents.AddRange(loginEvents);
+        await _db.SaveChangesAsync(ct);
     }
 
     public async Task<IReadOnlyList<LoginEvent>> ListRecentAsync(int limit, CancellationToken ct = default)

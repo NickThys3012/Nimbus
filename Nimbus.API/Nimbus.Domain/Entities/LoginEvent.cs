@@ -1,3 +1,4 @@
+using Nimbus.Domain.Enums;
 namespace Nimbus.Domain.Entities;
 
 /// <summary>
@@ -13,7 +14,8 @@ public class LoginEvent
         // EF Core materialization.
     }
 
-    public LoginEvent(DateTime occurredAt, Guid? userId, string? email, bool succeeded, string? maskedIp)
+    public LoginEvent(DateTime occurredAt, Guid? userId, string? email, bool succeeded, string? maskedIp,
+        LoginFailureReason? failureReason = null)
     {
         Id = Guid.NewGuid();
         OccurredAt = occurredAt;
@@ -21,6 +23,7 @@ public class LoginEvent
         Email = email;
         Succeeded = succeeded;
         MaskedIp = maskedIp;
+        FailureReason = failureReason;
     }
 
     public Guid Id { get; private set; }
@@ -29,4 +32,7 @@ public class LoginEvent
     public string? Email { get; private set; }
     public bool Succeeded { get; private set; }
     public string? MaskedIp { get; private set; }
+
+    /// <summary>Set for failed attempts only.</summary>
+    public LoginFailureReason? FailureReason { get; private set; }
 }

@@ -17,6 +17,13 @@ public sealed class RecordLoginAttemptCommandValidator : AbstractValidator<Recor
             .NotEmpty()
             .MaximumLength(320)
             .When(c => c.UserId is not null);
+        RuleFor(c => c.FailureReason)
+            .NotNull().WithMessage("A failed login attempt must state why it failed.")
+            .When(c => !c.Succeeded);
+        RuleFor(c => c.FailureReason)
+            .Null().WithMessage("A successful login attempt has no failure reason.")
+            .When(c => c.Succeeded);
+        RuleFor(c => c.FailureReason).IsInEnum();
         RuleFor(c => c.RemoteIp).MaximumLength(64);
     }
 }

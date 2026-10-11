@@ -160,10 +160,12 @@ public class AdminConsoleHandlerTests
         {
             Assert.That(validator.Validate(new RecordLoginAttemptCommand(null, null, true, "1.2.3.4")).IsValid, Is.False);
             Assert.That(validator.Validate(new RecordLoginAttemptCommand(Guid.NewGuid(), "a@example.com", true, "1.2.3.4")).IsValid, Is.True);
-            Assert.That(validator.Validate(new RecordLoginAttemptCommand(null, null, false, null)).IsValid, Is.True);
-            Assert.That(validator.Validate(new RecordLoginAttemptCommand(Guid.NewGuid(), "", false, null)).IsValid, Is.False);
-            Assert.That(validator.Validate(new RecordLoginAttemptCommand(Guid.Empty, "a@example.com", false, null)).IsValid, Is.False);
-            Assert.That(validator.Validate(new RecordLoginAttemptCommand(null, null, false, new string('1', 65))).IsValid, Is.False);
+            Assert.That(validator.Validate(new RecordLoginAttemptCommand(null, null, false, null, LoginFailureReason.InvalidPassword)).IsValid, Is.True);
+            Assert.That(validator.Validate(new RecordLoginAttemptCommand(null, null, false, null)).IsValid, Is.False, "a failure needs a reason");
+            Assert.That(validator.Validate(new RecordLoginAttemptCommand(Guid.NewGuid(), "a@example.com", true, null, LoginFailureReason.LockedOut)).IsValid, Is.False, "a success has no reason");
+            Assert.That(validator.Validate(new RecordLoginAttemptCommand(Guid.NewGuid(), "", false, null, LoginFailureReason.LockedOut)).IsValid, Is.False);
+            Assert.That(validator.Validate(new RecordLoginAttemptCommand(Guid.Empty, "a@example.com", false, null, LoginFailureReason.LockedOut)).IsValid, Is.False);
+            Assert.That(validator.Validate(new RecordLoginAttemptCommand(null, null, false, new string('1', 65), LoginFailureReason.InvalidPassword)).IsValid, Is.False);
         });
     }
 
@@ -196,17 +198,19 @@ public class AdminConsoleHandlerTests
     [Test]
     public async Task RecordLoginAttempt_StoresMaskedIp_AndDropsEmailForUnknownAccounts()
     {
-        var events = new Events();
+        var events = new Queue();
         var handler = new RecordLoginAttemptCommandHandler(events, new FakeTimeProvider());
 
-        await handler.Handle(new RecordLoginAttemptCommand(null, "typo@example.com", false, "45.227.1.2"), CancellationToken.None);
+        await handler.Handle(new RecordLoginAttemptCommand(null, "typo@example.com", false, "45.227.1.2", LoginFailureReason.InvalidPassword), CancellationToken.None);
         await handler.Handle(new RecordLoginAttemptCommand(Guid.NewGuid(), "a@example.com", true, "84.198.1.2"), CancellationToken.None);
 
         Assert.Multiple(() =>
         {
             Assert.That(events.Items[0].Email, Is.Null);
             Assert.That(events.Items[0].MaskedIp, Is.EqualTo("45.227.x.x"));
+            Assert.That(events.Items[0].FailureReason, Is.EqualTo(LoginFailureReason.InvalidPassword));
             Assert.That(events.Items[1].Email, Is.EqualTo("a@example.com"));
+            Assert.That(events.Items[1].FailureReason, Is.Null);
         });
     }
 
@@ -259,7 +263,13 @@ public class AdminConsoleHandlerTests
     private sealed class Events : ILoginEventRepository
     {
         public List<LoginEvent> Items { get; } = [];
-        public Task AddAsync(LoginEvent loginEvent, CancellationToken ct = default) { Items.Add(loginEvent); return Task.CompletedTask; }
+        public Task AddRangeAsync(IReadOnlyCollection<LoginEvent> loginEvents, CancellationToken ct = default) { Items.AddRange(loginEvents); return Task.CompletedTask; }
         public Task<IReadOnlyList<LoginEvent>> ListRecentAsync(int limit, CancellationToken ct = default) => Task.FromResult<IReadOnlyList<LoginEvent>>(Items);
+    }
+
+    private sealed class Queue : ILoginEventQueue
+    {
+        public List<LoginEvent> Items { get; } = [];
+        public bool TryEnqueue(LoginEvent loginEvent) { Items.Add(loginEvent); return true; }
     }
 }

@@ -54,8 +54,10 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
             e.Property(l => l.OccurredAt).HasConversion(AsUtc);
             e.Property(l => l.Email).HasMaxLength(320);
             e.Property(l => l.MaskedIp).HasMaxLength(64);
-            // The admin list is always "newest N".
+            e.Property(l => l.FailureReason).HasConversion<string>().HasMaxLength(32);
+            // The admin list is always "newest N"; the audit lookup is "attempts for this email, newest first".
             e.HasIndex(l => l.OccurredAt);
+            e.HasIndex(l => new { l.Email, l.OccurredAt });
         });
 
         builder.ApplyConfigurationsFromAssembly(typeof(AppDbContext).Assembly);

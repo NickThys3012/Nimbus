@@ -14,6 +14,6 @@ public static class AdminMappers
 
     public static LoginEventDto MapToLoginEventDto(this LoginEvent loginEvent)
     {
-        return new LoginEventDto(loginEvent.OccurredAt, loginEvent.Email, loginEvent.Succeeded, loginEvent.MaskedIp);
+        return new LoginEventDto(loginEvent.OccurredAt, loginEvent.Email, loginEvent.Succeeded, loginEvent.MaskedIp, loginEvent.FailureReason?.ToString());
     }
 }

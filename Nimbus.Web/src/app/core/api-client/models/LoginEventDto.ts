@@ -7,5 +7,6 @@ export type LoginEventDto = {
     userEmail: string | null;
     succeeded: boolean;
     maskedIp: string | null;
+    failureReason?: string | null;
 };
 

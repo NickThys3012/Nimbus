@@ -75,6 +75,11 @@ public static class DependencyInjection
         services.TryAddSingleton(TimeProvider.System);
         services.AddHostedService<LoginEventRetentionService>();
 
+        // One queue instance feeds the writer hosted service (issue #18).
+        services.AddSingleton<LoginEventQueue>();
+        services.AddSingleton<ILoginEventQueue>(sp => sp.GetRequiredService<LoginEventQueue>());
+        services.AddHostedService<LoginEventWriterService>();
+
         AddObjectStorage(services, config);
 
         // Tagged "ready" (issue #97): /health/ready runs only checks carrying this tag, so

@@ -62,6 +62,7 @@ public class LoginRateLimitTests
 
         // The audit row carries the forwarded client, masked, not the proxy address.
         // (Failed attempts for unknown accounts are recorded too.)
+        await _factory.DrainLoginEventsAsync();
         using var scope = _factory.Services.CreateScope();
         var ips = scope.ServiceProvider.GetRequiredService<Nimbus.Infrastructure.Persistence.AppDbContext>()
             .LoginEvents.Select(e => e.MaskedIp).ToList();
