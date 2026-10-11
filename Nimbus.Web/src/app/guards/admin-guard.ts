@@ -13,5 +13,5 @@ export const adminGuard: CanActivateFn = () => {
   const authStore = inject(AuthStore);
   const router = inject(Router);
 
-  return authStore.role() === 'Admin' || router.createUrlTree(['/home']);
+  return authStore.role() === 'Admin' || router.createUrlTree(['/access-denied']);
 };

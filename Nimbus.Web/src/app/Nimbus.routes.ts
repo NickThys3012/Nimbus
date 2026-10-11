@@ -42,6 +42,10 @@ export const routes: Routes = [
     loadComponent: () => import('./pages/user-by-mail/user-by-mail'),
   },
   {
+    path: 'access-denied',
+    loadComponent: () => import('./pages/access-denied/access-denied'),
+  },
+  {
     path: 'login',
     loadComponent: () => import('./pages/auth/login-register/login-register'),
   },

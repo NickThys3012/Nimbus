@@ -9,7 +9,8 @@ import { AuthStore } from '../core/auth/auth.store';
  * in memory (see `AuthStore`), so on a fresh page load `isAuthenticated`
  * will be `false` even for a returning, still-logged-in user — before
  * denying access we attempt one silent `restoreSession()` via the httpOnly
- * refresh-token cookie.
+ * refresh-token cookie. Otherwise the user is sent to login with the
+ * requested URL as `returnUrl`. This is UX only: the API re-enforces access.
  */
 export const authGuard: CanActivateFn = (_route, state) => {
   const authStore = inject(AuthStore);
@@ -24,7 +25,7 @@ export const authGuard: CanActivateFn = (_route, state) => {
     .pipe(
       map(
         (restored) =>
-          restored || router.createUrlTree(['/home'], { queryParams: { redirectTo: state.url } }),
+          restored || router.createUrlTree(['/login'], { queryParams: { returnUrl: state.url } }),
       ),
     );
 };
