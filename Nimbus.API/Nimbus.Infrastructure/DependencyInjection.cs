@@ -70,6 +70,8 @@ public static class DependencyInjection
         services.AddScoped<IIdentityService, IdentityService>();
         services.AddScoped<IUserAdministrationService, UserAdministrationService>();
         services.AddScoped<ILoginEventRepository, LoginEventRepository>();
+        services.AddScoped<IBalloonRepository, BalloonRepository>();
+        services.AddScoped<IBalloonUsageReader, NoFlightsBalloonUsageReader>();
 
         services.Configure<LoginEventRetentionOptions>(config.GetSection(LoginEventRetentionOptions.SectionName));
         services.TryAddSingleton(TimeProvider.System);

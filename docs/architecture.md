@@ -86,6 +86,7 @@ with **FluentValidation** for request validation.
   `Nimbus.Contracts`), plus the validation pipeline behaviour.
 - `Common/Ownership/` — the owner-scoping foundation for user-owned entities
   (see [owner-scoping.md](owner-scoping.md)).
+- `Features/Balloons/` — a user-owned reference-data feature (see [balloons.md](balloons.md)).
 
 ### Nimbus.Infrastructure
 Implements interfaces defined in `Nimbus.Application`/`Nimbus.Domain` using

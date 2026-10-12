@@ -34,12 +34,16 @@ public static class OwnedServiceContract
         Assert.That(created.OwnerId, Is.EqualTo(owner.UserId), "create must stamp the caller as owner");
 
         // Reads: owner and admin yes, stranger no.
+        var listBefore = repo.ListCalls;
+        var byOwnerBefore = repo.ListByOwnerCalls;
         Assert.That(await service.GetAsync(owner, created.Id), Is.Not.Null);
         Assert.That(await service.GetAsync(admin, created.Id), Is.Not.Null);
         Assert.That(await service.GetAsync(stranger, created.Id), Is.Null, "stranger must not read");
         Assert.That(await service.ListAsync(stranger), Is.Empty, "list must be scoped to the caller");
         Assert.That(await service.ListAsync(owner), Has.Count.EqualTo(1));
         Assert.That(await service.ListAsync(admin), Has.Count.EqualTo(1));
+        Assert.That(repo.ListByOwnerCalls - byOwnerBefore, Is.EqualTo(2), "non-admin lists must use the owner-filtered query");
+        Assert.That(repo.ListCalls - listBefore, Is.EqualTo(1), "only admins list across owners");
 
         // Unauthorised update/delete no-op without throwing.
         var foreignEdit = newEntity();
@@ -72,6 +76,7 @@ public static class OwnedServiceContract
         where TEntity : class, IOwnedEntity
     {
         private readonly List<TEntity> _items = [];
+
         public int UpdateCount { get; private set; }
         public int Count => _items.Count;
 
@@ -79,7 +84,19 @@ public static class OwnedServiceContract
             => Task.FromResult(_items.FirstOrDefault(e => e.Id == id));
 
         public Task<IReadOnlyList<TEntity>> ListAsync(CancellationToken ct = default)
-            => Task.FromResult<IReadOnlyList<TEntity>>(_items.ToList());
+        {
+            ListCalls++;
+            return Task.FromResult<IReadOnlyList<TEntity>>(_items.ToList());
+        }
+
+        public int ListCalls { get; private set; }
+        public int ListByOwnerCalls { get; private set; }
+
+        public Task<IReadOnlyList<TEntity>> ListByOwnerAsync(Guid ownerId, CancellationToken ct = default)
+        {
+            ListByOwnerCalls++;
+            return Task.FromResult<IReadOnlyList<TEntity>>(_items.Where(e => e.OwnerId == ownerId).ToList());
+        }
 
         public Task AddAsync(TEntity entity, CancellationToken ct = default)
         {

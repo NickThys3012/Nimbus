@@ -1,4 +1,5 @@
 import { test, expect, type Page } from '@playwright/test';
+import { approveUser } from './admin';
 import { waitForConfirmationLink } from './mailpit';
 
 /**
@@ -47,6 +48,9 @@ async function registerAndConfirm(page: Page, email: string, firstName = 'Ada', 
   const confirmLink = await waitForConfirmationLink(email);
   await page.goto(confirmLink);
   await expect(page).toHaveURL(/\/email-verification\?status=success/);
+
+  // New accounts are pending until an admin approves them (#16); login is refused before that.
+  await approveUser(email);
 }
 
 async function login(page: Page, email: string) {

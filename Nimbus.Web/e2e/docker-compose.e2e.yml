@@ -1,11 +1,14 @@
 # Override merged on top of the root docker-compose.yml when running the
 # Playwright e2e suite (see global-setup.ts). Not used for regular
-# `docker compose up` local dev — it only changes two things:
+# `docker compose up` local dev — it only changes four things:
 #
 #   1. Points the API's email sender at mailpit instead of the default
 #      NullEmailSender, so registration e2e tests can pull the real
 #      confirmation link out of a captured message (see e2e/mailpit.ts).
-#   2. Makes the api service actually wait on mailpit, since the base
+#   2. Seeds a known admin (throwaway, e2e-only) so tests can approve the
+#      accounts they register — an unapproved account cannot sign in (#16).
+#   3. Relaxes the per-IP login rate limit, which the suite would otherwise exceed.
+#   4. Makes the api service actually wait on mailpit, since the base
 #      compose file has no reason to couple them together otherwise.
 #
 # Mailpit itself still needs `--profile dev` passed on the CLI to be started
@@ -19,6 +22,11 @@ services:
       Email__UseStartTls: "false"
       Email__FromAddress: noreply@nimbus.e2e
       Email__FromName: "Nimbus E2E"
+      Seed__AdminEmail: e2e-admin@nimbus.e2e
+      Seed__AdminPassword: "E2e-Admin-Pass1!"
+      # Every test shares one client IP and signs in repeatedly (plus one admin sign-in per
+      # approval), which would trip the production default of 10 logins/minute.
+      RateLimiting__Login__PermitLimit: "1000"
     depends_on:
       mailpit:
         condition: service_started

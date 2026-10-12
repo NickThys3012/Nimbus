@@ -14,6 +14,7 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
     public DbSet<SentEmail> SentEmails => Set<SentEmail>();
     public DbSet<LoginEvent> LoginEvents => Set<LoginEvent>();
+    public DbSet<Balloon> Balloons => Set<Balloon>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -58,6 +59,22 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
             // The admin list is always "newest N"; the audit lookup is "attempts for this email, newest first".
             e.HasIndex(l => l.OccurredAt);
             e.HasIndex(l => new { l.Email, l.OccurredAt });
+        });
+
+        builder.Entity<Balloon>(e =>
+        {
+            e.Property(b => b.Registration).IsRequired().HasMaxLength(20);
+            e.Property(b => b.Type).IsRequired().HasMaxLength(100);
+            e.Property(b => b.EnvelopeWeightKg).HasPrecision(7, 2);
+            e.Property(b => b.BasketWeightKg).HasPrecision(7, 2);
+            e.Property(b => b.BurnerWeightKg).HasPrecision(7, 2);
+            e.Property(b => b.CylindersWeightKg).HasPrecision(7, 2);
+            // Derived from the four reference weights; never persisted.
+            e.Ignore(b => b.EmptyWeightKg);
+            // Unique per owner, but a soft-deleted balloon frees its registration for reuse.
+            e.HasIndex(b => new { b.OwnerId, b.Registration })
+                .IsUnique()
+                .HasFilter("[IsDeleted] = 0");
         });
 
         builder.ApplyConfigurationsFromAssembly(typeof(AppDbContext).Assembly);

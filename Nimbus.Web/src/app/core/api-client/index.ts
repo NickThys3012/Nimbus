@@ -11,18 +11,25 @@ export { OpenAPI } from './core/OpenAPI';
 export type { OpenAPIConfig } from './core/OpenAPI';
 
 export type { AdminUserDto } from './models/AdminUserDto';
+export type { BalloonDto } from './models/BalloonDto';
+export type { BalloonFlightDto } from './models/BalloonFlightDto';
+export type { BalloonRequestDto } from './models/BalloonRequestDto';
+export type { BalloonUsageDto } from './models/BalloonUsageDto';
 export type { ClientTelemetryEventDto } from './models/ClientTelemetryEventDto';
 export { ClientTelemetryEventType } from './models/ClientTelemetryEventType';
 export type { CurrentUserDto } from './models/CurrentUserDto';
+export type { ForgotPasswordRequestDto } from './models/ForgotPasswordRequestDto';
 export type { LoginEventDto } from './models/LoginEventDto';
 export type { LoginRequestDto } from './models/LoginRequestDto';
 export type { LoginResponseDto } from './models/LoginResponseDto';
 export type { RegisterRequestDto } from './models/RegisterRequestDto';
 export type { ResendVerificationEmailCommandDto } from './models/ResendVerificationEmailCommandDto';
+export type { ResetPasswordRequestDto } from './models/ResetPasswordRequestDto';
 export type { SetUserRoleRequestDto } from './models/SetUserRoleRequestDto';
 export type { UnblockVerificationEmailRequestDto } from './models/UnblockVerificationEmailRequestDto';
 export type { UserDto } from './models/UserDto';
 
 export { AdminService } from './services/AdminService';
 export { AuthenticationService } from './services/AuthenticationService';
+export { BalloonsService } from './services/BalloonsService';
 export { TelemetryService } from './services/TelemetryService';

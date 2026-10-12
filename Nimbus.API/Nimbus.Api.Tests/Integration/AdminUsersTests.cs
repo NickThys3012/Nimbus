@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Nimbus.Contracts.DTOs.Features.Admin;
 using Nimbus.Contracts.DTOs.Features.Auth;
@@ -217,12 +218,21 @@ public class AdminUsersTests
         await _factory.DrainLoginEventsAsync();
         var adminToken = await LoginAdminAsync(client);
 
-        Assert.That((await Send(client, HttpMethod.Delete, $"/api/admin/users/{doomedId}", adminToken)).StatusCode, Is.EqualTo(HttpStatusCode.NoContent));
-
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<Nimbus.Infrastructure.Persistence.AppDbContext>();
+        var liveBalloon = new Nimbus.Domain.Entities.Balloon { Registration = "OO-LIV", Type = "T", EnvelopeVolumeM3 = 1, MaxEnvelopeTemperatureC = 1, OwnerId = doomedId };
+        var softDeletedBalloon = new Nimbus.Domain.Entities.Balloon { Registration = "OO-DEL", Type = "T", EnvelopeVolumeM3 = 1, MaxEnvelopeTemperatureC = 1, OwnerId = doomedId, IsDeleted = true };
+        var survivorBalloon = new Nimbus.Domain.Entities.Balloon { Registration = "OO-LIV", Type = "T", EnvelopeVolumeM3 = 1, MaxEnvelopeTemperatureC = 1, OwnerId = survivorId };
+        db.Balloons.AddRange(liveBalloon, softDeletedBalloon, survivorBalloon);
+        await db.SaveChangesAsync();
+        db.ChangeTracker.Clear();
+
+        Assert.That((await Send(client, HttpMethod.Delete, $"/api/admin/users/{doomedId}", adminToken)).StatusCode, Is.EqualTo(HttpStatusCode.NoContent));
+
         Assert.That(db.RefreshTokens.Any(t => t.UserId == doomedId.ToString()), Is.False, "deleted user's personal data cascades");
         Assert.That(db.RefreshTokens.Any(t => t.UserId == survivorId.ToString()), Is.True, "another user's data is untouched");
+        Assert.That(db.Balloons.IgnoreQueryFilters().Any(b => b.OwnerId == doomedId), Is.False, "balloons (including soft-deleted) cascade with the account");
+        Assert.That(db.Balloons.IgnoreQueryFilters().Any(b => b.Id == survivorBalloon.Id), Is.True, "another user's balloons are untouched");
         Assert.That(db.Users.Any(u => u.Id == survivorId.ToString()), Is.True);
         Assert.That(db.LoginEvents.Any(e => e.Email == doomedEmail), Is.True, "audit trail is retained");
     }

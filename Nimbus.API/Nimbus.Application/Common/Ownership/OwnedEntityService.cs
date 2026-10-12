@@ -37,11 +37,17 @@ public abstract class OwnedEntityService<TEntity> : IOwnedEntityService<TEntity>
 
     public async Task<IReadOnlyList<TEntity>> ListAsync(Caller caller, CancellationToken ct = default)
     {
-        var all = await _repository.ListAsync(ct);
-        return caller.IsAdmin ? all : all.Where(e => e.OwnerId == caller.UserId).ToList();
+        if (caller.IsAdmin)
+        {
+            return await _repository.ListAsync(ct);
+        }
+
+        // The query filters by owner in the database; the check here stays the authority.
+        var mine = await _repository.ListByOwnerAsync(caller.UserId, ct);
+        return mine.Where(e => e.OwnerId == caller.UserId).ToList();
     }
 
-    public async Task<TEntity> CreateAsync(Caller caller, TEntity entity, CancellationToken ct = default)
+    public virtual async Task<TEntity> CreateAsync(Caller caller, TEntity entity, CancellationToken ct = default)
     {
         // Any owner supplied by the caller is ignored.
         entity.OwnerId = caller.UserId;
@@ -49,7 +55,7 @@ public abstract class OwnedEntityService<TEntity> : IOwnedEntityService<TEntity>
         return entity;
     }
 
-    public async Task<OwnedResult> UpdateAsync(
+    public virtual async Task<OwnedResult> UpdateAsync(
         Caller caller, Guid id, TEntity incoming, CancellationToken ct = default)
     {
         var existing = await _repository.GetByIdAsync(id, ct);
@@ -66,7 +72,7 @@ public abstract class OwnedEntityService<TEntity> : IOwnedEntityService<TEntity>
         return OwnedResult.Success;
     }
 
-    public async Task<OwnedResult> DeleteAsync(Caller caller, Guid id, CancellationToken ct = default)
+    public virtual async Task<OwnedResult> DeleteAsync(Caller caller, Guid id, CancellationToken ct = default)
     {
         var existing = await _repository.GetByIdAsync(id, ct);
         if (existing is null || !CanAccess(caller, existing, "delete"))

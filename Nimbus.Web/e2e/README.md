@@ -40,6 +40,11 @@ docker compose -f ../docker-compose.yml -f docker-compose.e2e.yml --profile dev 
   Mailpit (`docker-compose.e2e.yml` points the API's SMTP settings at it —
   the base `docker-compose.yml` doesn't send real mail by default), and
   following the real confirmation link.
+- Admin approval: new accounts are pending until approved (#16) and cannot sign in, so each
+  test approves its user through the real admin API (`e2e/admin.ts`) using an admin seeded by
+  `docker-compose.e2e.yml` (`Seed__AdminEmail`/`Seed__AdminPassword`; the seed only runs while no
+  admin exists, so use a fresh database / `down -v` if you reuse a stack). The same override
+  relaxes the per-IP login rate limit, which the suite would otherwise exceed.
 - Real login, and asserting the `refreshToken` cookie Set by the API is
   actually `httpOnly`.
 - A full page reload followed by navigating to a guarded route (`/settings`)

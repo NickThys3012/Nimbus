@@ -75,8 +75,9 @@ incoming model carries another one); missing ids no-op.
 
 ## Limitations
 
-- `ListAsync` filters in memory after `IOwnedRepository.ListAsync`. For large tables, add an
-  owner-filtered query to the repository when the first real entity needs it, but keep the
-  service-layer check as the authority.
+- `ListAsync` for a non-admin calls `IOwnedRepository.ListByOwnerAsync`, so the database applies
+  `OwnerId`; the service still re-checks the owner on the returned rows and stays the authority.
+  Admins use `IOwnedRepository.ListAsync` (all owners). Each repository must implement both and
+  must filter `ListByOwnerAsync` by owner; `OwnedServiceContract` asserts which one is used.
 - The helper does not assert that the warning is logged.
 - No entity uses this yet; it is the foundation for the upcoming owned entities.

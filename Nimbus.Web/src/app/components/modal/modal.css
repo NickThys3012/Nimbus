@@ -12,7 +12,7 @@
   width: min(520px, 100%);
   background: var(--pan);
   border: 1px solid var(--ln);
-  border-radius: var(--r);
+  border-radius: 14px;
   box-shadow: 0 16px 48px var(--shadow-sm);
   padding: 20px;
 }
