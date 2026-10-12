@@ -253,6 +253,43 @@ namespace Nimbus.Infrastructure.Persistence.EntityFramework.Migrations
                     b.ToTable("LoginEvents");
                 });
 
+            modelBuilder.Entity("Nimbus.Domain.Entities.Pilot", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("CreatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<Guid>("OwnerId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("UpdatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<decimal>("WeightKg")
+                        .HasPrecision(5, 2)
+                        .HasColumnType("decimal(5,2)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("IsDeleted")
+                        .HasFilter("IsDeleted = 0");
+
+                    b.HasIndex("OwnerId");
+
+                    b.ToTable("Pilots");
+                });
+
             modelBuilder.Entity("Nimbus.Domain.Entities.SentEmail", b =>
                 {
                     b.Property<Guid>("Id")

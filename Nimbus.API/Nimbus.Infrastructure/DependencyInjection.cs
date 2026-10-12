@@ -71,6 +71,7 @@ public static class DependencyInjection
         services.AddScoped<IUserAdministrationService, UserAdministrationService>();
         services.AddScoped<ILoginEventRepository, LoginEventRepository>();
         services.AddScoped<IBalloonRepository, BalloonRepository>();
+        services.AddScoped<IPilotRepository, PilotRepository>();
         services.AddScoped<IBalloonUsageReader, NoFlightsBalloonUsageReader>();
 
         services.Configure<LoginEventRetentionOptions>(config.GetSection(LoginEventRetentionOptions.SectionName));

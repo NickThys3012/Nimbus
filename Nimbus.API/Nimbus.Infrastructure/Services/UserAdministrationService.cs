@@ -92,7 +92,7 @@ public class UserAdministrationService : IUserAdministrationService
     }
 
     /// <summary>
-    ///     Hard-deletes the account, its refresh tokens (no orphaned sessions) and its balloons; the deleted
+    ///     Hard-deletes the account, its refresh tokens (no orphaned sessions), its balloons and its pilots; the deleted
     ///     user's access tokens stop validating because the account no longer exists. Login-audit
     ///     rows and the email send audit are intentionally kept: they hold no foreign key to the
     ///     user, only a masked IP and an email snapshot, and exist for security review.
@@ -111,6 +111,7 @@ public class UserAdministrationService : IUserAdministrationService
             // Personal data cascades with the account. ExecuteDelete bypasses the soft-delete
             // conversion, and IgnoreQueryFilters also purges balloons the user already deleted.
             await _db.Balloons.IgnoreQueryFilters().Where(b => b.OwnerId == userId).ExecuteDeleteAsync(ct);
+            await _db.Pilots.IgnoreQueryFilters().Where(p => p.OwnerId == userId).ExecuteDeleteAsync(ct);
             Ensure(await _userManager.DeleteAsync(user), user);
         }, ct);
     }

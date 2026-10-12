@@ -224,6 +224,9 @@ public class AdminUsersTests
         var softDeletedBalloon = new Nimbus.Domain.Entities.Balloon { Registration = "OO-DEL", Type = "T", EnvelopeVolumeM3 = 1, MaxEnvelopeTemperatureC = 1, OwnerId = doomedId, IsDeleted = true };
         var survivorBalloon = new Nimbus.Domain.Entities.Balloon { Registration = "OO-LIV", Type = "T", EnvelopeVolumeM3 = 1, MaxEnvelopeTemperatureC = 1, OwnerId = survivorId };
         db.Balloons.AddRange(liveBalloon, softDeletedBalloon, survivorBalloon);
+        var doomedPilot = new Nimbus.Domain.Entities.Pilot { Name = "Gone", WeightKg = 80m, OwnerId = doomedId, IsDeleted = true };
+        var survivorPilot = new Nimbus.Domain.Entities.Pilot { Name = "Stays", WeightKg = 80m, OwnerId = survivorId };
+        db.Pilots.AddRange(doomedPilot, survivorPilot);
         await db.SaveChangesAsync();
         db.ChangeTracker.Clear();
 
@@ -233,6 +236,8 @@ public class AdminUsersTests
         Assert.That(db.RefreshTokens.Any(t => t.UserId == survivorId.ToString()), Is.True, "another user's data is untouched");
         Assert.That(db.Balloons.IgnoreQueryFilters().Any(b => b.OwnerId == doomedId), Is.False, "balloons (including soft-deleted) cascade with the account");
         Assert.That(db.Balloons.IgnoreQueryFilters().Any(b => b.Id == survivorBalloon.Id), Is.True, "another user's balloons are untouched");
+        Assert.That(db.Pilots.IgnoreQueryFilters().Any(p => p.OwnerId == doomedId), Is.False, "pilots (including soft-deleted) cascade with the account");
+        Assert.That(db.Pilots.IgnoreQueryFilters().Any(p => p.Id == survivorPilot.Id), Is.True, "another user's pilots are untouched");
         Assert.That(db.Users.Any(u => u.Id == survivorId.ToString()), Is.True);
         Assert.That(db.LoginEvents.Any(e => e.Email == doomedEmail), Is.True, "audit trail is retained");
     }

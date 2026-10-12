@@ -13,6 +13,12 @@
     }
   </div>
 
+  <div id="panel-pilots" role="tabpanel" aria-labelledby="tab-pilots" [hidden]="tab() !== 'pilots'">
+    @if (tab() === 'pilots') {
+      <Nimbus-pilots></Nimbus-pilots>
+    }
+  </div>
+
   <div id="panel-preferences" role="tabpanel" aria-labelledby="tab-preferences" [hidden]="tab() !== 'preferences'">
     @if (tab() === 'preferences') {
       <p class="note" data-testid="preferences-placeholder">Preferences are coming soon.</p>

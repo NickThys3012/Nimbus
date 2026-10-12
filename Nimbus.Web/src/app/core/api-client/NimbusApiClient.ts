@@ -11,6 +11,7 @@ import { OpenAPI } from './core/OpenAPI';
 import { AdminService } from './services/AdminService';
 import { AuthenticationService } from './services/AuthenticationService';
 import { BalloonsService } from './services/BalloonsService';
+import { PilotsService } from './services/PilotsService';
 import { TelemetryService } from './services/TelemetryService';
 @NgModule({
     imports: [HttpClientModule],
@@ -36,6 +37,7 @@ import { TelemetryService } from './services/TelemetryService';
         AdminService,
         AuthenticationService,
         BalloonsService,
+        PilotsService,
         TelemetryService,
     ]
 })

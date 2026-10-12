@@ -22,6 +22,8 @@ export type { ForgotPasswordRequestDto } from './models/ForgotPasswordRequestDto
 export type { LoginEventDto } from './models/LoginEventDto';
 export type { LoginRequestDto } from './models/LoginRequestDto';
 export type { LoginResponseDto } from './models/LoginResponseDto';
+export type { PilotDto } from './models/PilotDto';
+export type { PilotRequestDto } from './models/PilotRequestDto';
 export type { RegisterRequestDto } from './models/RegisterRequestDto';
 export type { ResendVerificationEmailCommandDto } from './models/ResendVerificationEmailCommandDto';
 export type { ResetPasswordRequestDto } from './models/ResetPasswordRequestDto';
@@ -32,4 +34,5 @@ export type { UserDto } from './models/UserDto';
 export { AdminService } from './services/AdminService';
 export { AuthenticationService } from './services/AuthenticationService';
 export { BalloonsService } from './services/BalloonsService';
+export { PilotsService } from './services/PilotsService';
 export { TelemetryService } from './services/TelemetryService';

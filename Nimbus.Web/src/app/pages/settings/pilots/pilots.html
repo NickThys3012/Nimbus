@@ -1,0 +1,78 @@
+@if (mode() === null) {
+  <section class="view" aria-label="My pilots">
+    <div class="head">
+      <div>
+        <h1>My pilots</h1>
+        <div class="sub" data-testid="subtitle">NAME AND WEIGHT (KG) · USED IN THE TOTAL WEIGHT AND LIFT CALCULATION · ONLY VISIBLE TO YOU</div>
+      </div>
+      @if (list().length > 0) {
+        <Nimbus-button id="add-pilot" data-testid="add-pilot" class="add" icon="ti-plus" size="sm" variant="ghost" [fullWidth]="false" (click)="add()">Add pilot</Nimbus-button>
+      }
+    </div>
+
+    @if (pilots.isLoading() && !pilots.hasValue()) { <p class="note">Loading…</p> }
+    @if (pilots.error()) { <p class="note error" role="alert">Your pilots could not be loaded.</p> }
+    @if (listError(); as msg) { <p class="note error" role="alert" data-testid="list-error">{{ msg }}</p> }
+
+    @if (pilots.hasValue()) {
+      @if (list().length > 0) {
+        <ul class="cards" aria-label="My pilots">
+          @for (p of list(); track p.id) {
+            <li class="card" [attr.data-testid]="'pilot-' + p.id">
+              <i class="ti ti-user who" aria-hidden="true"></i>
+              <span class="nm">{{ p.name }}</span>
+              <span class="meta">{{ num(p.weightKg) }} kg</span>
+              <button type="button" class="ico" [attr.data-testid]="'edit-' + p.id" [attr.aria-label]="'Edit ' + p.name" (click)="edit(p)"><i class="ti ti-pencil" aria-hidden="true"></i></button>
+              <button type="button" class="ico" [attr.data-testid]="'delete-' + p.id" [attr.aria-label]="'Delete ' + p.name" (click)="askDelete(p)"><i class="ti ti-trash" aria-hidden="true"></i></button>
+            </li>
+          }
+        </ul>
+      } @else {
+        <div class="empty" data-testid="pilots-empty">
+          <Nimbus-empty-state icon="ti-user">
+            <strong>No pilots yet</strong>
+            <span class="helper">Add the pilots you fly with. Their weight is used when preparing a flight.</span>
+          </Nimbus-empty-state>
+          <Nimbus-button id="add-pilot-empty" data-testid="add-pilot-empty" icon="ti-plus" [fullWidth]="false" (click)="add()">Add pilot</Nimbus-button>
+        </div>
+      }
+    }
+  </section>
+} @else {
+  <form class="view" [formGroup]="form" (ngSubmit)="save()" data-testid="pilot-form" novalidate>
+    <div class="head back">
+      <button type="button" class="ico" aria-label="Back to my pilots" data-testid="back" (click)="cancel()"><i class="ti ti-arrow-left" aria-hidden="true"></i></button>
+      <h1>{{ title() }}</h1>
+    </div>
+
+    @if (formError(); as msg) { <p class="note error" role="alert" data-testid="form-error">{{ msg }}</p> }
+
+    <div class="panel">
+      <div class="grid">
+        <div class="field" [class.bad]="invalid('name')">
+          <label for="f-name">NAME *</label>
+          <input id="f-name" formControlName="name" data-testid="name" maxlength="100" autocomplete="off" [attr.aria-invalid]="invalid('name')" />
+          @if (invalid('name')) { <div class="err">Name is required.</div> }
+        </div>
+        <div class="field" [class.bad]="invalid('weightKg')">
+          <label for="f-weight">WEIGHT (KG) *</label>
+          <input id="f-weight" type="number" step="0.1" inputmode="decimal" formControlName="weightKg" data-testid="weightKg" [attr.aria-invalid]="invalid('weightKg')" />
+          @if (invalid('weightKg')) { <div class="err" data-testid="weight-error">{{ weightHint }}</div> }
+        </div>
+      </div>
+    </div>
+
+    <div class="bar">
+      <Nimbus-button id="cancel-pilot" data-testid="cancel-pilot" variant="ghost" [fullWidth]="false" (click)="cancel()">Cancel</Nimbus-button>
+      <Nimbus-button id="save-pilot" data-testid="save-pilot" type="submit" [fullWidth]="false" [disabled]="saving()">Save pilot</Nimbus-button>
+    </div>
+  </form>
+}
+
+<Nimbus-modal [isOpen]="confirmOpen()" [alert]="true" [title]="confirmTitle()" [description]="confirmText()" (closed)="closeDialog()" data-testid="confirm-dialog">
+  <div modal-icon class="glyph err"><i class="ti ti-trash" aria-hidden="true"></i></div>
+  <div modal-actions>
+    <Nimbus-button id="dlg-cancel" data-testid="dlg-cancel" variant="ghost" [fullWidth]="false" (click)="closeDialog()">Cancel</Nimbus-button>
+    <Nimbus-button id="dlg-delete" data-testid="dlg-delete" variant="danger" [fullWidth]="false" [disabled]="deleting()" (click)="confirmDelete()">Delete</Nimbus-button>
+  </div>
+</Nimbus-modal>
