@@ -4,6 +4,7 @@
     (keydown.enter)="onBackdropEnter($event)"
     (keydown.space)="onBackdropSpace($event)"
     class="modal-backdrop"
+    [class.sheet]="sheet()"
     tabindex="-1"
   >
     <div
@@ -13,6 +14,8 @@
       [attr.role]="alert() ? 'alertdialog' : 'dialog'"
       aria-modal="true"
       class="modal"
+      [class.w-narrow]="width() === 'narrow'"
+      [class.w-confirm]="width() === 'confirm'"
       tabindex="-1"
     >
       <ng-content select="[modal-icon]" />

@@ -1,13 +1,14 @@
 import { ChangeDetectionStrategy, Component, signal } from '@angular/core';
 
 import Balloons from './balloons/balloons';
+import Pilots from './pilots/pilots';
 import { type TabItem, Tabs } from '../../components/tabs/tabs';
 
-type SettingsTab = 'profile' | 'balloons' | 'preferences';
+type SettingsTab = 'profile' | 'balloons' | 'pilots' | 'preferences';
 
 @Component({
   selector: 'Nimbus-settings',
-  imports: [Balloons, Tabs],
+  imports: [Balloons, Pilots, Tabs],
   templateUrl: './settings.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrl: './settings.css',
@@ -17,6 +18,7 @@ export default class Settings {
   protected readonly tabs: TabItem[] = [
     { id: 'profile', label: 'Profile' },
     { id: 'balloons', label: 'Balloons' },
+    { id: 'pilots', label: 'Pilots' },
     { id: 'preferences', label: 'Preferences' },
   ];
 

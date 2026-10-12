@@ -87,6 +87,7 @@ with **FluentValidation** for request validation.
 - `Common/Ownership/` — the owner-scoping foundation for user-owned entities
   (see [owner-scoping.md](owner-scoping.md)).
 - `Features/Balloons/` — a user-owned reference-data feature (see [balloons.md](balloons.md)).
+- `Features/Pilots/` — a user-owned reference-data feature (see [pilots.md](pilots.md)).
 
 ### Nimbus.Infrastructure
 Implements interfaces defined in `Nimbus.Application`/`Nimbus.Domain` using

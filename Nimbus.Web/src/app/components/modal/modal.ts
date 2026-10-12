@@ -19,6 +19,10 @@ export class Modal {
   description = input<string>('');
   /** Gets `role="alertdialog"` instead of `dialog`, for confirmations that need an answer. */
   alert = input(false);
+  /** On narrow screens the dialog slides up from the bottom as a sheet (used by form dialogs). */
+  sheet = input(false);
+  /** Opt-in fixed widths: `narrow` is 400px (form dialogs), `confirm` is 380px. Default is 520px. */
+  width = input<'default' | 'narrow' | 'confirm'>('default');
   closed = output<void>();
 
   protected readonly titleId = `modal-title-${nextId}`;

@@ -17,6 +17,9 @@
   padding: 20px;
 }
 
+.modal.w-narrow { width: min(400px, 100%); }
+.modal.w-confirm { width: min(380px, 100%); }
+
 .modal-actions {
   display: flex;
   justify-content: flex-end;
@@ -31,3 +34,11 @@
   gap: 10px;
 }
 
+
+@media (max-width: 600px) {
+  .modal-backdrop.sheet { align-items: end; padding: 0; }
+  .modal-backdrop.sheet .modal {
+    width: 100%; border-radius: 18px 18px 0 0; border-bottom: 0; padding: 20px 16px 24px;
+    padding-bottom: calc(24px + env(safe-area-inset-bottom));
+  }
+}

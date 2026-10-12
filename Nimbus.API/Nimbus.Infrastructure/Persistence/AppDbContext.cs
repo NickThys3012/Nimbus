@@ -15,6 +15,7 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
     public DbSet<SentEmail> SentEmails => Set<SentEmail>();
     public DbSet<LoginEvent> LoginEvents => Set<LoginEvent>();
     public DbSet<Balloon> Balloons => Set<Balloon>();
+    public DbSet<Pilot> Pilots => Set<Pilot>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -75,6 +76,13 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
             e.HasIndex(b => new { b.OwnerId, b.Registration })
                 .IsUnique()
                 .HasFilter("[IsDeleted] = 0");
+        });
+
+        builder.Entity<Pilot>(e =>
+        {
+            e.Property(p => p.Name).IsRequired().HasMaxLength(100);
+            e.Property(p => p.WeightKg).HasPrecision(5, 2);
+            e.HasIndex(p => p.OwnerId);
         });
 
         builder.ApplyConfigurationsFromAssembly(typeof(AppDbContext).Assembly);
