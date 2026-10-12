@@ -5,10 +5,12 @@
 import { Injectable } from '@angular/core';
 import type { Observable } from 'rxjs';
 import type { CurrentUserDto } from '../models/CurrentUserDto';
+import type { ForgotPasswordRequestDto } from '../models/ForgotPasswordRequestDto';
 import type { LoginRequestDto } from '../models/LoginRequestDto';
 import type { LoginResponseDto } from '../models/LoginResponseDto';
 import type { RegisterRequestDto } from '../models/RegisterRequestDto';
 import type { ResendVerificationEmailCommandDto } from '../models/ResendVerificationEmailCommandDto';
+import type { ResetPasswordRequestDto } from '../models/ResetPasswordRequestDto';
 import type { UserDto } from '../models/UserDto';
 import { BaseHttpRequest } from '../core/BaseHttpRequest';
 @Injectable({
@@ -60,6 +62,38 @@ export class AuthenticationService {
         return this.httpRequest.request({
             method: 'POST',
             url: '/api/Authentication/resend-verification-email',
+            body: requestBody,
+            mediaType: 'application/json',
+        });
+    }
+    /**
+     * @returns any OK
+     * @throws ApiError
+     */
+    public postApiAuthenticationForgotPassword({
+        requestBody,
+    }: {
+        requestBody: ForgotPasswordRequestDto,
+    }): Observable<any> {
+        return this.httpRequest.request({
+            method: 'POST',
+            url: '/api/Authentication/forgot-password',
+            body: requestBody,
+            mediaType: 'application/json',
+        });
+    }
+    /**
+     * @returns any OK
+     * @throws ApiError
+     */
+    public postApiAuthenticationResetPassword({
+        requestBody,
+    }: {
+        requestBody: ResetPasswordRequestDto,
+    }): Observable<any> {
+        return this.httpRequest.request({
+            method: 'POST',
+            url: '/api/Authentication/reset-password',
             body: requestBody,
             mediaType: 'application/json',
         });

@@ -1,0 +1,4 @@
+:host { display: block; padding: 20px; }
+.wrap { max-width: 780px; margin: 0 auto; display: flex; flex-direction: column; gap: 14px; }
+.note { font-size: 12px; color: var(--dim); }
+@media (max-width: 600px) { :host { padding: 16px; } }

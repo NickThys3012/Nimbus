@@ -2,6 +2,7 @@ using FluentValidation;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection;
 using Nimbus.Application.Common.Behaviours;
+using Nimbus.Application.Features.Balloons;
 using Nimbus.Application.Helpers;
 namespace Nimbus.Application;
 
@@ -16,6 +17,7 @@ public static class DependencyInjection
         services.AddValidatorsFromAssembly(typeof(DependencyInjection).Assembly);
 
         services.AddScoped<EmailHelpers>();
+        services.AddScoped<IBalloonService, BalloonService>();
         services.AddTransient(
             typeof(IPipelineBehavior<,>),
             typeof(ValidationBehaviour<,>));

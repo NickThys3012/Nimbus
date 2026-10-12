@@ -1,1 +1,21 @@
-<p>settings works!</p>
+<div class="wrap">
+  <Nimbus-tabs [tabs]="tabs" [active]="tab()" (activeChange)="setTab($event)" label="Settings sections"></Nimbus-tabs>
+
+  <div id="panel-profile" role="tabpanel" aria-labelledby="tab-profile" [hidden]="tab() !== 'profile'">
+    @if (tab() === 'profile') {
+      <p class="note" data-testid="profile-placeholder">Profile settings are coming soon.</p>
+    }
+  </div>
+
+  <div id="panel-balloons" role="tabpanel" aria-labelledby="tab-balloons" [hidden]="tab() !== 'balloons'">
+    @if (tab() === 'balloons') {
+      <Nimbus-balloons></Nimbus-balloons>
+    }
+  </div>
+
+  <div id="panel-preferences" role="tabpanel" aria-labelledby="tab-preferences" [hidden]="tab() !== 'preferences'">
+    @if (tab() === 'preferences') {
+      <p class="note" data-testid="preferences-placeholder">Preferences are coming soon.</p>
+    }
+  </div>
+</div>

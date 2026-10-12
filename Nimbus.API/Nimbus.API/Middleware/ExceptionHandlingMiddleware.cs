@@ -60,6 +60,8 @@ public class ExceptionHandlingMiddleware
                 ex.Message, null),
             DuplicateException => (HttpStatusCode.Conflict,
                 ex.Message, null),
+            InUseException => (HttpStatusCode.Conflict,
+                ex.Message, null),
             _ => (HttpStatusCode.InternalServerError,
                 "An unexpected error occurred.", null)
         };

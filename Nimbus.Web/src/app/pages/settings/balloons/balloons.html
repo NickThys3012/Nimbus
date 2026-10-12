@@ -1,0 +1,167 @@
+@if (mode() === null) {
+  <section class="view" aria-label="My balloons">
+    <div class="head">
+      <div>
+        <h1>My balloons</h1>
+        @if (list().length > 0) {
+          <div class="sub" data-testid="subtitle">{{ list().length }} {{ list().length === 1 ? 'BALLOON' : 'BALLOONS' }} · ONLY VISIBLE TO YOU</div>
+        }
+      </div>
+      @if (list().length > 0) {
+        <Nimbus-button id="add-balloon" data-testid="add-balloon" class="add" icon="ti-plus" size="sm" variant="ghost" [fullWidth]="false" (click)="add()">Add balloon</Nimbus-button>
+      }
+    </div>
+
+    @if (balloons.isLoading()) { <p class="note">Loading…</p> }
+    @if (balloons.error()) { <p class="note error" role="alert">Your balloons could not be loaded.</p> }
+    @if (listError(); as msg) { <p class="note error" role="alert" data-testid="list-error">{{ msg }}</p> }
+
+    @if (balloons.hasValue()) {
+      @if (list().length > 0) {
+        <div class="table" role="table" aria-label="My balloons">
+          <div class="tr th" role="row">
+            <span class="c-reg" role="columnheader">REG.</span>
+            <span class="c-type" role="columnheader">TYPE</span>
+            <span class="c-vol" role="columnheader">VOLUME</span>
+            <span class="c-temp" role="columnheader">MAX TEMP</span>
+            <span class="c-empty" role="columnheader">EMPTY</span>
+            <span class="c-act" role="columnheader"></span>
+          </div>
+          @for (b of list(); track b.id) {
+            <div class="tr" role="row" [attr.data-testid]="'balloon-' + b.id">
+              <span class="c-reg" role="cell">{{ b.registration }}</span>
+              <span class="c-type" role="cell">{{ b.type }}</span>
+              <span class="c-vol" role="cell">{{ num(b.envelopeVolumeM3) }} m³</span>
+              <span class="c-temp" role="cell">{{ num(b.maxEnvelopeTemperatureC) }} °C</span>
+              <span class="c-empty" role="cell"><span class="lbl">EMPTY </span>{{ num(b.emptyWeightKg) }} kg</span>
+              <span class="c-act" role="cell">
+                <button type="button" class="ico" [attr.data-testid]="'edit-' + b.id" [attr.aria-label]="'Edit ' + b.registration" (click)="edit(b)"><i class="ti ti-pencil" aria-hidden="true"></i></button>
+                <button type="button" class="ico" [attr.data-testid]="'delete-' + b.id" [attr.aria-label]="'Delete ' + b.registration" [disabled]="checkingId() === b.id" (click)="askDelete(b, $event)"><i class="ti ti-trash" aria-hidden="true"></i></button>
+              </span>
+            </div>
+          }
+        </div>
+        <div class="foot">EMPTY WEIGHT = ENVELOPE + BASKET + BURNER + CYLINDERS · CALCULATED</div>
+      } @else {
+        <div class="empty" data-testid="balloons-empty">
+          <Nimbus-empty-state icon="ti-plane">
+            <strong>No balloons yet</strong>
+            <span class="helper">Add the balloons you fly. You can then pick one when preparing a flight instead of retyping its details.</span>
+          </Nimbus-empty-state>
+          <Nimbus-button id="add-balloon-empty" data-testid="add-balloon-empty" icon="ti-plus" [fullWidth]="false" (click)="add()">Add balloon</Nimbus-button>
+        </div>
+      }
+    }
+  </section>
+} @else {
+  <form class="view" [formGroup]="form" (ngSubmit)="save()" data-testid="balloon-form" novalidate>
+    <div class="head back">
+      <button type="button" class="ico" aria-label="Back to my balloons" data-testid="back" (click)="cancel()"><i class="ti ti-arrow-left" aria-hidden="true"></i></button>
+      <h1>{{ title() }}</h1>
+    </div>
+
+    @if (formError(); as msg) { <p class="note error" role="alert" data-testid="form-error">{{ msg }}</p> }
+
+    <div class="panel ident">
+      <div class="cap">IDENTIFICATION</div>
+      <div class="grid">
+        <div class="field" [class.bad]="duplicate() || invalid('registration')">
+          <label for="f-registration">REGISTRATION *</label>
+          <input id="f-registration" formControlName="registration" data-testid="registration" maxlength="20" autocomplete="off" [attr.aria-invalid]="duplicate() || invalid('registration')" />
+          @if (duplicate()) {
+            <div class="err" role="alert" data-testid="duplicate-error"><i class="ti ti-alert-triangle" aria-hidden="true"></i>{{ duplicateMessage }}</div>
+          } @else if (invalid('registration')) {
+            <div class="err">Registration is required.</div>
+          }
+        </div>
+        <div class="field">
+          <label for="f-type">TYPE</label>
+          <input id="f-type" formControlName="type" data-testid="type" maxlength="100" autocomplete="off" />
+        </div>
+        <div class="field" [class.bad]="invalid('envelopeVolumeM3')">
+          <label for="f-vol"><span class="long">ENVELOPE </span>VOLUME (M³)</label>
+          <input id="f-vol" type="number" inputmode="numeric" formControlName="envelopeVolumeM3" data-testid="envelopeVolumeM3" />
+          @if (invalid('envelopeVolumeM3')) { <div class="err">Enter a volume between 1 and 20000.</div> }
+        </div>
+        <div class="field" [class.bad]="invalid('maxEnvelopeTemperatureC')">
+          <label for="f-temp">MAX <span class="long">ENVELOPE </span>TEMP (°C)</label>
+          <input id="f-temp" type="number" inputmode="numeric" formControlName="maxEnvelopeTemperatureC" data-testid="maxEnvelopeTemperatureC" />
+          @if (invalid('maxEnvelopeTemperatureC')) { <div class="err">Enter a temperature between 1 and 250.</div> }
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="cap">OFP REFERENCE WEIGHTS (KG)</div>
+      <div class="grid">
+        <div class="field" [class.bad]="invalid('envelopeWeightKg')">
+          <label for="f-w-env">ENVELOPE<span class="short"> (KG)</span></label>
+          <input id="f-w-env" type="number" step="0.1" inputmode="decimal" formControlName="envelopeWeightKg" data-testid="envelopeWeightKg" />
+          @if (invalid('envelopeWeightKg')) { <div class="err">Enter 0 to 5000.</div> }
+        </div>
+        <div class="field" [class.bad]="invalid('basketWeightKg')">
+          <label for="f-w-bas">BASKET<span class="short"> (KG)</span></label>
+          <input id="f-w-bas" type="number" step="0.1" inputmode="decimal" formControlName="basketWeightKg" data-testid="basketWeightKg" />
+          @if (invalid('basketWeightKg')) { <div class="err">Enter 0 to 5000.</div> }
+        </div>
+        <div class="field" [class.bad]="invalid('burnerWeightKg')">
+          <label for="f-w-bur">BURNER<span class="short"> (KG)</span></label>
+          <input id="f-w-bur" type="number" step="0.1" inputmode="decimal" formControlName="burnerWeightKg" data-testid="burnerWeightKg" />
+          @if (invalid('burnerWeightKg')) { <div class="err">Enter 0 to 5000.</div> }
+        </div>
+        <div class="field" [class.bad]="invalid('cylindersWeightKg')">
+          <label for="f-w-cyl">CYLINDERS<span class="short"> (KG)</span></label>
+          <input id="f-w-cyl" type="number" step="0.1" inputmode="decimal" formControlName="cylindersWeightKg" data-testid="cylindersWeightKg" />
+          @if (invalid('cylindersWeightKg')) { <div class="err">Enter 0 to 5000.</div> }
+        </div>
+      </div>
+      <div class="calc" data-testid="empty-weight-box">
+        <i class="ti ti-calculator" aria-hidden="true"></i>
+        <div class="calc-text">
+          <div class="calc-title"><span class="long">EMPTY WEIGHT · CALCULATED, READ-ONLY</span><span class="short">EMPTY WEIGHT · CALCULATED</span></div>
+          <div class="calc-formula" data-testid="formula">{{ formula() }}</div>
+        </div>
+        <output class="calc-total" data-testid="empty-weight" aria-label="Empty weight">{{ emptyWeight() }} kg</output>
+      </div>
+    </div>
+
+    <div class="bar">
+      <Nimbus-button id="cancel-balloon" data-testid="cancel-balloon" variant="ghost" [fullWidth]="false" (click)="cancel()">Cancel</Nimbus-button>
+      <Nimbus-button id="save-balloon" data-testid="save-balloon" type="submit" [fullWidth]="false" [disabled]="saving()">Save balloon</Nimbus-button>
+    </div>
+  </form>
+}
+
+@if (dialog(); as d) {
+  <div class="backdrop" (click)="onBackdrop($event)" data-testid="dialog-backdrop">
+    @if (d.kind === 'confirm') {
+      <div class="dlg" role="alertdialog" aria-modal="true" aria-labelledby="dlg-title" aria-describedby="dlg-desc" data-testid="confirm-dialog">
+        <div class="glyph err"><i class="ti ti-trash" aria-hidden="true"></i></div>
+        <h2 id="dlg-title">Delete {{ d.balloon.registration }}?</h2>
+        <p id="dlg-desc">{{ d.balloon.type || 'This balloon' }} will be removed from your balloons. This can't be undone. No flights use this balloon.</p>
+        <div class="dlg-actions">
+          <Nimbus-button id="dlg-cancel" data-testid="dlg-cancel" variant="ghost" (click)="closeDialog()">Cancel</Nimbus-button>
+          <Nimbus-button id="dlg-delete" data-testid="dlg-delete" variant="danger" [disabled]="deleting()" (click)="confirmDelete()">Delete</Nimbus-button>
+        </div>
+      </div>
+    } @else {
+      <div class="dlg" role="alertdialog" aria-modal="true" aria-labelledby="dlg-title" aria-describedby="dlg-desc" data-testid="blocked-dialog">
+        <div class="glyph warn"><i class="ti ti-alert-triangle" aria-hidden="true"></i></div>
+        <h2 id="dlg-title">{{ d.balloon.registration }} can't be deleted</h2>
+        <p id="dlg-desc">This balloon is used by {{ num(d.usage.flightCount) }} {{ num(d.usage.flightCount) === 1 ? 'flight' : 'flights' }}. Deleting it would break {{ num(d.usage.flightCount) === 1 ? 'its' : 'their' }} logbook {{ num(d.usage.flightCount) === 1 ? 'entry' : 'entries' }}.</p>
+        <div class="flights" data-testid="usage-flights">
+          @for (f of shownFlights(d.usage); track $index) {
+            <div class="fl"><span>{{ f.label }}</span><span class="dt">{{ flightDate(f.date) }}</span></div>
+          }
+          @if (moreFlights(d.usage) > 0) {
+            <div class="fl more">+ {{ moreFlights(d.usage) }} MORE</div>
+          }
+        </div>
+        <p class="hint">Edit the balloon instead if its details changed.</p>
+        <div data-autofocus>
+          <Nimbus-button id="dlg-ok" data-testid="dlg-ok" (click)="closeDialog()">Got it</Nimbus-button>
+        </div>
+      </div>
+    }
+  </div>
+}
