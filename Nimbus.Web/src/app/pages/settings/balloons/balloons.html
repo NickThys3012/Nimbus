@@ -12,7 +12,7 @@
       }
     </div>
 
-    @if (balloons.isLoading()) { <p class="note">Loading…</p> }
+    @if (balloons.isLoading() && !balloons.hasValue()) { <p class="note">Loading…</p> }
     @if (balloons.error()) { <p class="note error" role="alert">Your balloons could not be loaded.</p> }
     @if (listError(); as msg) { <p class="note error" role="alert" data-testid="list-error">{{ msg }}</p> }
 
@@ -36,7 +36,7 @@
               <span class="c-empty" role="cell"><span class="lbl">EMPTY </span>{{ num(b.emptyWeightKg) }} kg</span>
               <span class="c-act" role="cell">
                 <button type="button" class="ico" [attr.data-testid]="'edit-' + b.id" [attr.aria-label]="'Edit ' + b.registration" (click)="edit(b)"><i class="ti ti-pencil" aria-hidden="true"></i></button>
-                <button type="button" class="ico" [attr.data-testid]="'delete-' + b.id" [attr.aria-label]="'Delete ' + b.registration" [disabled]="checkingId() === b.id" (click)="askDelete(b, $event)"><i class="ti ti-trash" aria-hidden="true"></i></button>
+                <button type="button" class="ico" [attr.data-testid]="'delete-' + b.id" [attr.aria-label]="'Delete ' + b.registration" [disabled]="checkingId() === b.id" (click)="askDelete(b)"><i class="ti ti-trash" aria-hidden="true"></i></button>
               </span>
             </div>
           }
@@ -132,36 +132,28 @@
   </form>
 }
 
-@if (dialog(); as d) {
-  <div class="backdrop" (click)="onBackdrop($event)" data-testid="dialog-backdrop">
-    @if (d.kind === 'confirm') {
-      <div class="dlg" role="alertdialog" aria-modal="true" aria-labelledby="dlg-title" aria-describedby="dlg-desc" data-testid="confirm-dialog">
-        <div class="glyph err"><i class="ti ti-trash" aria-hidden="true"></i></div>
-        <h2 id="dlg-title">Delete {{ d.balloon.registration }}?</h2>
-        <p id="dlg-desc">{{ d.balloon.type || 'This balloon' }} will be removed from your balloons. This can't be undone. No flights use this balloon.</p>
-        <div class="dlg-actions">
-          <Nimbus-button id="dlg-cancel" data-testid="dlg-cancel" variant="ghost" (click)="closeDialog()">Cancel</Nimbus-button>
-          <Nimbus-button id="dlg-delete" data-testid="dlg-delete" variant="danger" [disabled]="deleting()" (click)="confirmDelete()">Delete</Nimbus-button>
-        </div>
-      </div>
-    } @else {
-      <div class="dlg" role="alertdialog" aria-modal="true" aria-labelledby="dlg-title" aria-describedby="dlg-desc" data-testid="blocked-dialog">
-        <div class="glyph warn"><i class="ti ti-alert-triangle" aria-hidden="true"></i></div>
-        <h2 id="dlg-title">{{ d.balloon.registration }} can't be deleted</h2>
-        <p id="dlg-desc">This balloon is used by {{ num(d.usage.flightCount) }} {{ num(d.usage.flightCount) === 1 ? 'flight' : 'flights' }}. Deleting it would break {{ num(d.usage.flightCount) === 1 ? 'its' : 'their' }} logbook {{ num(d.usage.flightCount) === 1 ? 'entry' : 'entries' }}.</p>
-        <div class="flights" data-testid="usage-flights">
-          @for (f of shownFlights(d.usage); track $index) {
-            <div class="fl"><span>{{ f.label }}</span><span class="dt">{{ flightDate(f.date) }}</span></div>
-          }
-          @if (moreFlights(d.usage) > 0) {
-            <div class="fl more">+ {{ moreFlights(d.usage) }} MORE</div>
-          }
-        </div>
-        <p class="hint">Edit the balloon instead if its details changed.</p>
-        <div data-autofocus>
-          <Nimbus-button id="dlg-ok" data-testid="dlg-ok" (click)="closeDialog()">Got it</Nimbus-button>
-        </div>
-      </div>
-    }
+<Nimbus-modal [isOpen]="confirmOpen()" [alert]="true" [title]="confirmTitle()" [description]="confirmText()" (closed)="closeDialog()" data-testid="confirm-dialog">
+  <div modal-icon class="glyph err"><i class="ti ti-trash" aria-hidden="true"></i></div>
+  <div modal-actions>
+    <Nimbus-button id="dlg-cancel" data-testid="dlg-cancel" variant="ghost" [fullWidth]="false" (click)="closeDialog()">Cancel</Nimbus-button>
+    <Nimbus-button id="dlg-delete" data-testid="dlg-delete" variant="danger" [fullWidth]="false" [disabled]="deleting()" (click)="confirmDelete()">Delete</Nimbus-button>
   </div>
-}
+</Nimbus-modal>
+
+<Nimbus-modal [isOpen]="blockedOpen()" [alert]="true" [title]="blockedTitle()" [description]="blockedText()" (closed)="closeDialog()" data-testid="blocked-dialog">
+  <div modal-icon class="glyph warn"><i class="ti ti-alert-triangle" aria-hidden="true"></i></div>
+  <div modal-body>
+    <div class="flights" data-testid="usage-flights">
+      @for (f of blockedFlights(); track $index) {
+        <div class="fl"><span>{{ f.label }}</span><span class="dt">{{ flightDate(f.date) }}</span></div>
+      }
+      @if (blockedMore() > 0) {
+        <div class="fl more">+ {{ blockedMore() }} MORE</div>
+      }
+    </div>
+    <p class="hint">Edit the balloon instead if its details changed.</p>
+  </div>
+  <div modal-actions>
+    <Nimbus-button id="dlg-ok" data-testid="dlg-ok" data-autofocus [fullWidth]="false" (click)="closeDialog()">Got it</Nimbus-button>
+  </div>
+</Nimbus-modal>

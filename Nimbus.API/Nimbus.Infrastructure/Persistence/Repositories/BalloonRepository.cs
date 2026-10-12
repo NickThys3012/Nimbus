@@ -28,6 +28,11 @@ public class BalloonRepository : IBalloonRepository
         return await _db.Balloons.AsNoTracking().OrderBy(b => b.Registration).ToListAsync(ct);
     }
 
+    public async Task<IReadOnlyList<Balloon>> ListByOwnerAsync(Guid ownerId, CancellationToken ct = default)
+    {
+        return await _db.Balloons.AsNoTracking().Where(b => b.OwnerId == ownerId).OrderBy(b => b.Registration).ToListAsync(ct);
+    }
+
     public async Task AddAsync(Balloon entity, CancellationToken ct = default)
     {
         _db.Balloons.Add(entity);

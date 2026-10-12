@@ -166,6 +166,22 @@ public class BalloonsTests
     }
 
     [Test]
+    public async Task Weights_MoreThanTwoDecimals_Is422_AndTwoDecimalsRoundTrip()
+    {
+        var (c, _) = await SignedInAsync();
+        Assert.That((await c.PostAsJsonAsync("/api/balloons", Req("OO-DEC") with { BasketWeightKg = 1.234m })).StatusCode,
+            Is.EqualTo(HttpStatusCode.UnprocessableEntity));
+
+        var created = await CreateAsync(c, Req("OO-DEC") with { BasketWeightKg = 1.25m });
+        Assert.That(created.BasketWeightKg, Is.EqualTo(1.25m));
+        var got = await c.GetFromJsonAsync<BalloonDto>($"/api/balloons/{created.Id}");
+        Assert.That(got, Is.EqualTo(created), "what POST returned is exactly what is stored");
+
+        Assert.That((await c.PutAsJsonAsync($"/api/balloons/{created.Id}", Req("OO-DEC") with { BurnerWeightKg = 2.999m })).StatusCode,
+            Is.EqualTo(HttpStatusCode.UnprocessableEntity));
+    }
+
+    [Test]
     public async Task InvalidRequest_Is422()
     {
         var (c, _) = await SignedInAsync();

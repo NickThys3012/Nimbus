@@ -37,8 +37,14 @@ public abstract class OwnedEntityService<TEntity> : IOwnedEntityService<TEntity>
 
     public async Task<IReadOnlyList<TEntity>> ListAsync(Caller caller, CancellationToken ct = default)
     {
-        var all = await _repository.ListAsync(ct);
-        return caller.IsAdmin ? all : all.Where(e => e.OwnerId == caller.UserId).ToList();
+        if (caller.IsAdmin)
+        {
+            return await _repository.ListAsync(ct);
+        }
+
+        // The query filters by owner in the database; the check here stays the authority.
+        var mine = await _repository.ListByOwnerAsync(caller.UserId, ct);
+        return mine.Where(e => e.OwnerId == caller.UserId).ToList();
     }
 
     public virtual async Task<TEntity> CreateAsync(Caller caller, TEntity entity, CancellationToken ct = default)

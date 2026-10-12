@@ -75,6 +75,24 @@ public class BalloonTests
         Assert.That(result.IsValid, Is.EqualTo(valid));
     }
 
+    [TestCase("1.234", false)]
+    [TestCase("0.001", false)]
+    [TestCase("1.25", true)]
+    [TestCase("1.2", true)]
+    [TestCase("100", true)]
+    public void Validator_Weights_AllowAtMostTwoDecimals(string weight, bool valid)
+    {
+        var w = decimal.Parse(weight, System.Globalization.CultureInfo.InvariantCulture);
+        foreach (var dto in new[]
+                 {
+                     new BalloonRequestDto("OO-A", "T", 1, 1, w, 0, 0, 0), new BalloonRequestDto("OO-A", "T", 1, 1, 0, w, 0, 0),
+                     new BalloonRequestDto("OO-A", "T", 1, 1, 0, 0, w, 0), new BalloonRequestDto("OO-A", "T", 1, 1, 0, 0, 0, w)
+                 })
+        {
+            Assert.That(new BalloonRequestValidator().Validate(dto).IsValid, Is.EqualTo(valid));
+        }
+    }
+
     [Test]
     public void Validator_RegistrationTooLong_Fails()
     {
@@ -138,6 +156,7 @@ public class BalloonTests
     private sealed class Adapter(IOwnedRepository<Balloon> inner) : IBalloonRepository
     {
         public Task<Balloon?> GetByIdAsync(Guid id, CancellationToken ct = default) => inner.GetByIdAsync(id, ct);
+        public Task<IReadOnlyList<Balloon>> ListByOwnerAsync(Guid ownerId, CancellationToken ct = default) => inner.ListByOwnerAsync(ownerId, ct);
         public Task<IReadOnlyList<Balloon>> ListAsync(CancellationToken ct = default) => inner.ListAsync(ct);
         public Task AddAsync(Balloon e, CancellationToken ct = default) => inner.AddAsync(e, ct);
         public Task UpdateAsync(Balloon e, CancellationToken ct = default) => inner.UpdateAsync(e, ct);
@@ -153,6 +172,7 @@ public class BalloonTests
         private readonly List<Balloon> _items = [];
         public Task<Balloon?> GetByIdAsync(Guid id, CancellationToken ct = default) => Task.FromResult(_items.FirstOrDefault(b => b.Id == id));
         public Task<IReadOnlyList<Balloon>> ListAsync(CancellationToken ct = default) => Task.FromResult<IReadOnlyList<Balloon>>(_items.ToList());
+        public Task<IReadOnlyList<Balloon>> ListByOwnerAsync(Guid ownerId, CancellationToken ct = default) => Task.FromResult<IReadOnlyList<Balloon>>(_items.Where(b => b.OwnerId == ownerId).ToList());
         public Task AddAsync(Balloon e, CancellationToken ct = default) { _items.Add(e); return Task.CompletedTask; }
         public Task UpdateAsync(Balloon e, CancellationToken ct = default) => Task.CompletedTask;
         public Task RemoveAsync(Balloon e, CancellationToken ct = default) { _items.Remove(e); return Task.CompletedTask; }

@@ -37,7 +37,15 @@ describe('Balloons', () => {
     const fixture = TestBed.createComponent(Balloons);
     await fixture.whenStable();
     const el = fixture.nativeElement as HTMLElement;
-    const q = <T extends HTMLElement>(id: string) => el.querySelector(`[data-testid="${id}"]`) as T;
+    const q = <T extends HTMLElement>(id: string) => {
+      // The two dialogs are shared modals: only "present" while open (role=alertdialog rendered).
+      if (id === 'confirm-dialog' || id === 'blocked-dialog') {
+        const dlg = el.querySelector('[role="alertdialog"]') as T | null;
+        const wanted = id === 'confirm-dialog' ? /^Delete /.test(dlg?.textContent?.trim() ?? '') : /can't be deleted/.test(dlg?.textContent ?? '');
+        return (wanted ? dlg : null) as T;
+      }
+      return el.querySelector(`[data-testid="${id}"]`) as T;
+    };
     const click = async (id: string) => {
       const target = q(id);
       (target.querySelector('button') ?? target).click();
@@ -149,6 +157,7 @@ describe('Balloons', () => {
     expect(api['getApiBalloonsUsage']).toHaveBeenCalledWith({ id: 'b1' });
     const dialog = q('confirm-dialog');
     expect(dialog.getAttribute('aria-modal')).toBe('true');
+    expect(dialog.contains(document.activeElement)).toBe(true);
     expect(dialog.textContent).toContain('Delete OO-BQZ?');
     expect(dialog.textContent).toContain("Cameron Z-105 will be removed from your balloons. This can't be undone. No flights use this balloon.");
     expect(api['deleteApiBalloons']).not.toHaveBeenCalled();
