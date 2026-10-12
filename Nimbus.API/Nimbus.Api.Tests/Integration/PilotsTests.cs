@@ -118,7 +118,7 @@ public class PilotsTests
 
     [TestCase("N. Thys", 0)]
     [TestCase("N. Thys", -1)]
-    [TestCase("N. Thys", 19.9)]
+    [TestCase("N. Thys", 29.9)]
     [TestCase("N. Thys", 250.5)]
     [TestCase("N. Thys", 82.123)]
     [TestCase("", 82)]

@@ -26,10 +26,10 @@ public class PilotTests
     }
 
     [TestCase("N. Thys", "82", true)]
-    [TestCase("N. Thys", "20", true)]
+    [TestCase("N. Thys", "30", true)]
     [TestCase("N. Thys", "250", true)]
     [TestCase("N. Thys", "82.25", true)]
-    [TestCase("N. Thys", "19.99", false)]
+    [TestCase("N. Thys", "29.99", false)]
     [TestCase("N. Thys", "250.01", false)]
     [TestCase("N. Thys", "0", false)]
     [TestCase("N. Thys", "-5", false)]

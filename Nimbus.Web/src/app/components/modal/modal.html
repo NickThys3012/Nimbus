@@ -4,6 +4,7 @@
     (keydown.enter)="onBackdropEnter($event)"
     (keydown.space)="onBackdropSpace($event)"
     class="modal-backdrop"
+    [class.sheet]="sheet()"
     tabindex="-1"
   >
     <div

@@ -5,7 +5,7 @@ namespace Nimbus.Application.Features.Pilots;
 /// <summary>Field rules shared by create and update.</summary>
 public sealed class PilotRequestValidator : AbstractValidator<PilotRequestDto>
 {
-    public const decimal MinWeightKg = 20m;
+    public const decimal MinWeightKg = 30m;
     public const decimal MaxWeightKg = 250m;
 
     public PilotRequestValidator()

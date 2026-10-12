@@ -13,7 +13,7 @@ weight-and-balance in flight preparation uses the right figure for whoever is fl
 
 ## Fields and validation (server side, FluentValidation)
 - Name: required, not blank, max 100; stored trimmed. Not unique (two pilots may share a name).
-- Weight (kg): required, **20 to 250 inclusive**, at most 2 decimals (column `decimal(5,2)`). The Angular form mirrors the range.
+- Weight (kg): required, **30 to 250 inclusive**, at most 2 decimals (column `decimal(5,2)`). The Angular form mirrors the range.
 
 ## Order
 The list is sorted by name (case-insensitive) with the id as tie-break, so the order is stable between calls.
@@ -27,3 +27,8 @@ block deleting a used pilot the way balloons do (see [balloons.md](balloons.md))
 ## Account deletion
 When an admin deletes a user account, all of that user's pilots (including soft-deleted ones) are hard-deleted
 (`UserAdministrationService.DeleteAsync`, covered in `AdminUsersTests`).
+
+## UI (Settings > Pilots)
+Table-like list (avatar with initials, name, monospace weight, edit/delete) with an "Add pilot" header button and an empty state.
+Add/Edit is a modal dialog (a bottom sheet on screens up to 600px wide, where the header button is just a plus and each row has a three-dots menu for edit/delete).
+Server-side validation messages show under the weight field. Deleting asks for confirmation first.

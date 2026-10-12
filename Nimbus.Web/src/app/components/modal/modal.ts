@@ -19,6 +19,8 @@ export class Modal {
   description = input<string>('');
   /** Gets `role="alertdialog"` instead of `dialog`, for confirmations that need an answer. */
   alert = input(false);
+  /** On narrow screens the dialog slides up from the bottom as a sheet (used by form dialogs). */
+  sheet = input(false);
   closed = output<void>();
 
   protected readonly titleId = `modal-title-${nextId}`;

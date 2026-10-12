@@ -8,7 +8,7 @@ import { type PilotDto } from '../../../core/api-client';
 import { PilotsStore } from '../../../core/pilots/pilots.store';
 
 /** Same plausible range the API enforces (kg). */
-const MIN_WEIGHT = 20;
+const MIN_WEIGHT = 30;
 const MAX_WEIGHT = 250;
 
 type FormMode = null | 'new' | string; // null = list, 'new' = adding, otherwise the id being edited
@@ -19,6 +19,7 @@ type FormMode = null | 'new' | string; // null = list, 'new' = adding, otherwise
   templateUrl: './pilots.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrl: './pilots.css',
+  host: { '(document:click)': 'onDocumentClick($event)', '(document:keydown.escape)': 'menuId.set(null)' },
 })
 export default class Pilots {
   private readonly store = inject(PilotsStore);
@@ -42,17 +43,41 @@ export default class Pilots {
 
   protected readonly weightHint = `Enter a weight between ${MIN_WEIGHT} and ${MAX_WEIGHT} kg.`;
 
-  protected readonly title = computed(() => {
-    const id = this.mode();
-    if (id === null || id === 'new') return 'Add pilot';
-    return `Edit ${this.list().find((p) => p.id === id)?.name ?? 'pilot'}`;
+  protected readonly formOpen = computed(() => this.mode() !== null);
+  protected readonly isNew = computed(() => this.mode() === 'new');
+  protected readonly title = computed(() => (this.isNew() ? 'Add pilot' : 'Edit pilot'));
+  protected readonly subtitle = computed(() => {
+    const n = this.list().length;
+    return `${n} ${n === 1 ? 'PILOT' : 'PILOTS'} · A–Z · USED IN WEIGHT & BALANCE`;
   });
+
+  /** Id of the pilot whose three-dots menu (mobile) is open. */
+  protected readonly menuId = signal<string | null>(null);
 
   protected readonly confirmOpen = computed(() => this.toDelete() !== null);
   protected readonly confirmTitle = computed(() => `Delete ${this.toDelete()?.name ?? ''}?`);
   protected readonly confirmText = computed(
-    () => `${this.toDelete()?.name ?? 'This pilot'} will be removed from your pilots. This can't be undone.`,
+    () =>
+      `${this.toDelete()?.name ?? 'This pilot'} will be removed from your pilot list and from the flight-preparation picker. This can't be undone.`,
   );
+
+  /** First letters of the first two words of the name, e.g. "Lotte Peeters" gives "LP". */
+  protected initials(name: string): string {
+    return name
+      .split(/\s+/)
+      .filter(Boolean)
+      .map((w) => Array.from(w)[0].toUpperCase())
+      .join('')
+      .slice(0, 2);
+  }
+
+  protected toggleMenu(id: string): void {
+    this.menuId.update((cur) => (cur === id ? null : id));
+  }
+
+  protected onDocumentClick(event: Event): void {
+    if (this.menuId() !== null && !(event.target as HTMLElement).closest('.menu-wrap')) this.menuId.set(null);
+  }
 
   protected num(value: number | string): number {
     return Number(value);
@@ -70,16 +95,23 @@ export default class Pilots {
     this.form.reset(value);
     this.store.resetSave();
     this.submitted.set(false);
+    this.menuId.set(null);
     this.mode.set(mode);
   }
 
   protected cancel(): void {
+    if (this.saving()) return;
     this.mode.set(null);
   }
 
   protected invalid(name: keyof typeof this.form.controls): boolean {
     const c = this.form.controls[name];
     return c.invalid && (c.touched || this.submitted());
+  }
+
+  protected onEnter(event: Event): void {
+    event.preventDefault();
+    void this.save();
   }
 
   protected async save(): Promise<void> {
@@ -93,6 +125,7 @@ export default class Pilots {
   }
 
   protected askDelete(p: PilotDto): void {
+    this.menuId.set(null);
     this.toDelete.set(p);
   }
 

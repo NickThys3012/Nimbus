@@ -1,73 +1,90 @@
-@if (mode() === null) {
-  <section class="view" aria-label="My pilots">
-    <div class="head">
-      <div>
-        <h1>My pilots</h1>
-        <div class="sub" data-testid="subtitle">NAME AND WEIGHT (KG) · USED IN THE TOTAL WEIGHT AND LIFT CALCULATION · ONLY VISIBLE TO YOU</div>
-      </div>
+<section class="view" aria-label="My pilots">
+  <div class="head">
+    <div>
+      <h1>My pilots</h1>
       @if (list().length > 0) {
-        <Nimbus-button id="add-pilot" data-testid="add-pilot" class="add" icon="ti-plus" size="sm" variant="ghost" [fullWidth]="false" (click)="add()">Add pilot</Nimbus-button>
+        <div class="sub" data-testid="subtitle">{{ subtitle() }}</div>
       }
     </div>
-
-    @if (pilots.isLoading() && !pilots.hasValue()) { <p class="note">Loading…</p> }
-    @if (pilots.error()) { <p class="note error" role="alert">Your pilots could not be loaded.</p> }
-    @if (listError(); as msg) { <p class="note error" role="alert" data-testid="list-error">{{ msg }}</p> }
-
-    @if (pilots.hasValue()) {
-      @if (list().length > 0) {
-        <ul class="cards" aria-label="My pilots">
-          @for (p of list(); track p.id) {
-            <li class="card" [attr.data-testid]="'pilot-' + p.id">
-              <i class="ti ti-user who" aria-hidden="true"></i>
-              <span class="nm">{{ p.name }}</span>
-              <span class="meta">{{ num(p.weightKg) }} kg</span>
-              <button type="button" class="ico" [attr.data-testid]="'edit-' + p.id" [attr.aria-label]="'Edit ' + p.name" (click)="edit(p)"><i class="ti ti-pencil" aria-hidden="true"></i></button>
-              <button type="button" class="ico" [attr.data-testid]="'delete-' + p.id" [attr.aria-label]="'Delete ' + p.name" (click)="askDelete(p)"><i class="ti ti-trash" aria-hidden="true"></i></button>
-            </li>
-          }
-        </ul>
-      } @else {
-        <div class="empty" data-testid="pilots-empty">
-          <Nimbus-empty-state icon="ti-user">
-            <strong>No pilots yet</strong>
-            <span class="helper">Add the pilots you fly with. Their weight is used when preparing a flight.</span>
-          </Nimbus-empty-state>
-          <Nimbus-button id="add-pilot-empty" data-testid="add-pilot-empty" icon="ti-plus" [fullWidth]="false" (click)="add()">Add pilot</Nimbus-button>
-        </div>
-      }
+    @if (list().length > 0) {
+      <Nimbus-button id="add-pilot" data-testid="add-pilot" class="add" icon="ti-plus" size="sm" variant="ghost" [fullWidth]="false" (click)="add()">Add pilot</Nimbus-button>
+      <button type="button" class="ico plus" data-testid="add-pilot-mobile" aria-label="Add pilot" (click)="add()"><i class="ti ti-plus" aria-hidden="true"></i></button>
     }
-  </section>
-} @else {
-  <form class="view" [formGroup]="form" (ngSubmit)="save()" data-testid="pilot-form" novalidate>
-    <div class="head back">
-      <button type="button" class="ico" aria-label="Back to my pilots" data-testid="back" (click)="cancel()"><i class="ti ti-arrow-left" aria-hidden="true"></i></button>
-      <h1>{{ title() }}</h1>
-    </div>
+  </div>
 
-    @if (formError(); as msg) { <p class="note error" role="alert" data-testid="form-error">{{ msg }}</p> }
+  @if (pilots.isLoading() && !pilots.hasValue()) { <p class="note">Loading…</p> }
+  @if (pilots.error()) { <p class="note error" role="alert">Your pilots could not be loaded.</p> }
+  @if (listError(); as msg) { <p class="note error" role="alert" data-testid="list-error">{{ msg }}</p> }
 
-    <div class="panel">
-      <div class="grid">
-        <div class="field" [class.bad]="invalid('name')">
-          <label for="f-name">NAME *</label>
-          <input id="f-name" formControlName="name" data-testid="name" maxlength="100" autocomplete="off" [attr.aria-invalid]="invalid('name')" />
-          @if (invalid('name')) { <div class="err">Name is required.</div> }
+  @if (pilots.hasValue()) {
+    @if (list().length > 0) {
+      <div class="table" role="table" aria-label="My pilots">
+        <div class="tr th" role="row">
+          <span role="presentation"></span>
+          <span role="columnheader">NAME</span>
+          <span class="c-w" role="columnheader">WEIGHT</span>
+          <span role="presentation"></span>
         </div>
-        <div class="field" [class.bad]="invalid('weightKg')">
-          <label for="f-weight">WEIGHT (KG) *</label>
-          <input id="f-weight" type="number" step="0.1" inputmode="decimal" formControlName="weightKg" data-testid="weightKg" [attr.aria-invalid]="invalid('weightKg')" />
-          @if (invalid('weightKg')) { <div class="err" data-testid="weight-error">{{ weightHint }}</div> }
-        </div>
+        @for (p of list(); track p.id) {
+          <div class="tr" role="row" [attr.data-testid]="'pilot-' + p.id">
+            <span class="avatar" role="presentation" aria-hidden="true">{{ initials(p.name) }}</span>
+            <span class="nm" role="cell">{{ p.name }}</span>
+            <span class="c-w" role="cell">{{ num(p.weightKg) }} kg</span>
+            <span class="c-act" role="cell">
+              <span class="acts">
+                <button type="button" class="ico" [attr.data-testid]="'edit-' + p.id" [attr.aria-label]="'Edit ' + p.name" (click)="edit(p)"><i class="ti ti-pencil" aria-hidden="true"></i></button>
+                <button type="button" class="ico" [attr.data-testid]="'delete-' + p.id" [attr.aria-label]="'Delete ' + p.name" (click)="askDelete(p)"><i class="ti ti-trash" aria-hidden="true"></i></button>
+              </span>
+              <span class="menu-wrap">
+                <button type="button" class="ico" [attr.data-testid]="'menu-' + p.id" [attr.aria-label]="'Actions for ' + p.name" aria-haspopup="menu" [attr.aria-expanded]="menuId() === p.id" (click)="toggleMenu(p.id)"><i class="ti ti-dots-vertical" aria-hidden="true"></i></button>
+                @if (menuId() === p.id) {
+                  <div class="menu" role="menu">
+                    <button type="button" role="menuitem" [attr.data-testid]="'menu-edit-' + p.id" (click)="edit(p)"><i class="ti ti-pencil" aria-hidden="true"></i>Edit</button>
+                    <button type="button" role="menuitem" class="danger" [attr.data-testid]="'menu-delete-' + p.id" (click)="askDelete(p)"><i class="ti ti-trash" aria-hidden="true"></i>Delete</button>
+                  </div>
+                }
+              </span>
+            </span>
+          </div>
+        }
       </div>
-    </div>
+    } @else {
+      <div class="empty" data-testid="pilots-empty">
+        <Nimbus-empty-state icon="ti-id-badge-2">
+          <strong>No pilots yet</strong>
+          <span class="helper">Add the pilots you fly with and their weights. Weight and balance uses the figure of whoever is flying.</span>
+        </Nimbus-empty-state>
+        <Nimbus-button id="add-pilot-empty" data-testid="add-pilot-empty" icon="ti-plus" [fullWidth]="false" (click)="add()">Add pilot</Nimbus-button>
+      </div>
+    }
+  }
+</section>
 
-    <div class="bar">
-      <Nimbus-button id="cancel-pilot" data-testid="cancel-pilot" variant="ghost" [fullWidth]="false" (click)="cancel()">Cancel</Nimbus-button>
-      <Nimbus-button id="save-pilot" data-testid="save-pilot" type="submit" [fullWidth]="false" [disabled]="saving()">Save pilot</Nimbus-button>
-    </div>
-  </form>
-}
+<Nimbus-modal [isOpen]="formOpen()" [sheet]="true" [title]="title()" (closed)="cancel()" data-testid="pilot-dialog">
+  <div modal-body>
+    <form class="form" [formGroup]="form" (ngSubmit)="save()" (keydown.enter)="onEnter($event)" data-testid="pilot-form" novalidate>
+      <div class="field" [class.bad]="invalid('name')">
+        <label for="f-name">NAME *</label>
+        <input id="f-name" formControlName="name" data-testid="name" maxlength="100" autocomplete="off" placeholder="Full name" [attr.aria-invalid]="invalid('name')" />
+        @if (invalid('name')) { <div class="err">Name is required.</div> }
+      </div>
+      <div class="field" [class.bad]="invalid('weightKg') || !!formError()">
+        <label for="f-weight">WEIGHT (KG) *</label>
+        <input id="f-weight" type="number" step="0.1" inputmode="decimal" formControlName="weightKg" data-testid="weightKg" placeholder="e.g. 80" [attr.aria-invalid]="invalid('weightKg') || !!formError()" />
+        @if (invalid('weightKg')) {
+          <div class="err" role="alert" data-testid="weight-error"><i class="ti ti-alert-triangle" aria-hidden="true"></i>{{ weightHint }}</div>
+        } @else if (formError(); as msg) {
+          <div class="err" role="alert" data-testid="form-error"><i class="ti ti-alert-triangle" aria-hidden="true"></i>{{ msg }}</div>
+        }
+      </div>
+      @if (!isNew()) { <div class="applies" data-testid="edit-hint">CHANGES APPLY TO NEW FLIGHT PREPARATIONS</div> }
+    </form>
+  </div>
+  <div modal-actions>
+    <Nimbus-button id="cancel-pilot" data-testid="cancel-pilot" variant="ghost" [fullWidth]="false" (click)="cancel()">Cancel</Nimbus-button>
+    <Nimbus-button id="save-pilot" data-testid="save-pilot" [fullWidth]="false" [disabled]="saving()" (click)="save()">{{ isNew() ? 'Save pilot' : 'Save changes' }}</Nimbus-button>
+  </div>
+</Nimbus-modal>
 
 <Nimbus-modal [isOpen]="confirmOpen()" [alert]="true" [title]="confirmTitle()" [description]="confirmText()" (closed)="closeDialog()" data-testid="confirm-dialog">
   <div modal-icon class="glyph err"><i class="ti ti-trash" aria-hidden="true"></i></div>
