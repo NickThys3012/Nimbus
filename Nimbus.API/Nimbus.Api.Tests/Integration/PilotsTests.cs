@@ -134,6 +134,17 @@ public class PilotsTests
         Assert.That(await c.GetFromJsonAsync<PilotDto>($"/api/pilots/{ok.Id}"), Is.EqualTo(ok), "unchanged after a rejected update");
     }
 
+    [TestCase("N. Thys", 10, "Pilot.WeightKg")]
+    [TestCase("", 82, "Pilot.Name")]
+    public async Task InvalidRequest_422Body_KeysErrorsByProperty(string name, double weight, string key)
+    {
+        var (c, _) = await SignedInAsync();
+        var response = await c.PostAsJsonAsync("/api/pilots", Req(name, (decimal)weight));
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.UnprocessableEntity));
+        var errors = (await response.Content.ReadFromJsonAsync<System.Text.Json.JsonElement>()).GetProperty("errors");
+        Assert.That(errors.EnumerateObject().Select(p => p.Name).ToArray(), Is.EqualTo(new[] { key }));
+    }
+
     [Test]
     public async Task Delete_IsSoftDelete_RowRetained()
     {

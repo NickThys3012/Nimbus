@@ -133,18 +133,55 @@ describe('Pilots', () => {
     expect(api['putApiPilots']).toHaveBeenCalledWith({ id: 'p1', requestBody: { name: 'N. Thys', weightKg: 85 } });
   });
 
-  it('shows 422 messages from the server', async () => {
-    const { q, click, type } = await setup();
+  const fail422 = (api: Record<string, Mock>, errors: Record<string, string[]>) =>
     api['postApiPilots'].mockReturnValue(
-      throwError(() => new ApiError({ method: 'POST', url: '/x' }, { url: '/x', ok: false, status: 422, statusText: '', body: { errors: { WeightKg: ['Nope.'] } } }, 'err')),
+      throwError(() => new ApiError({ method: 'POST', url: '/x' }, { url: '/x', ok: false, status: 422, statusText: '', body: { errors } }, 'err')),
     );
-    await click('add-pilot');
-    await type('name', 'X');
-    await type('weightKg', '70');
-    await click('save-pilot');
-    expect(q('form-error').textContent).toContain('Nope.');
-    expect(q('form-error').querySelector('.ti-alert-triangle')).toBeTruthy();
+
+  async function submitBad(errors: Record<string, string[]>) {
+    const s = await setup();
+    fail422(api, errors);
+    await s.click('add-pilot');
+    await s.type('name', 'X');
+    await s.type('weightKg', '70');
+    await s.click('save-pilot');
+    return s;
+  }
+
+  it('shows a weight error under the weight field', async () => {
+    const { q, el } = await submitBad({ 'Pilot.WeightKg': ['Nope.'] });
+    expect(q('weight-server-error').textContent).toContain('Nope.');
+    expect(q('weight-server-error').querySelector('.ti-alert-triangle')).toBeTruthy();
+    expect(q('name-server-error')).toBeNull();
+    expect(q('form-error')).toBeNull();
+    expect(el.querySelector('#f-weight')?.closest('.field')?.contains(q('weight-server-error'))).toBe(true);
     expect(q('pilot-form')).toBeTruthy(); // dialog stays open
+  });
+
+  it('shows a name error under the name field', async () => {
+    const { q, el } = await submitBad({ 'Pilot.Name': ['Name is too long.'] });
+    expect(q('name-server-error').textContent).toContain('Name is too long.');
+    expect(el.querySelector('#f-name')?.closest('.field')?.contains(q('name-server-error'))).toBe(true);
+    expect(q('weight-server-error')).toBeNull();
+    expect(q('form-error')).toBeNull();
+  });
+
+  it('shows errors it cannot map in a general alert at the top of the dialog', async () => {
+    const { q } = await submitBad({ 'Pilot.Name': ['Bad name.'], Other: ['Something else.'] });
+    expect(q('name-server-error').textContent).toContain('Bad name.');
+    expect(q('form-error').textContent).toContain('Something else.');
+    expect(q('form-error').textContent).not.toContain('Bad name.');
+    const form = q('pilot-form');
+    expect(q('form-error').compareDocumentPosition(form) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  it('uses the narrow and confirm dialog widths only for these dialogs', async () => {
+    const { el, click } = await setup();
+    await click('add-pilot');
+    expect(el.querySelector('.modal.w-narrow')).toBeTruthy();
+    await click('cancel-pilot');
+    await click('delete-p1');
+    expect(el.querySelector('.modal.w-confirm')).toBeTruthy();
   });
 
   it('confirms before deleting, and cancel leaves the pilot alone', async () => {

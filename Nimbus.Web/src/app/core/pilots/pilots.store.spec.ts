@@ -44,13 +44,20 @@ describe('PilotsStore', () => {
 
   it('reports 422 messages and generic failures', async () => {
     await setup();
-    api['postApiPilots'].mockReturnValue(throwError(() => apiError(422, { title: 'v', errors: { WeightKg: ['Too heavy.'] } })));
+    api['postApiPilots'].mockReturnValue(throwError(() => apiError(422, { title: 'v', errors: { 'Pilot.WeightKg': ['Too heavy.'] } })));
     expect(await store.save(null, body)).toBe(false);
-    expect(store.saveError()).toBe('Too heavy.');
+    expect(store.fieldErrors()).toEqual({ weightKg: 'Too heavy.' });
+    expect(store.saveError()).toBeNull();
+
+    api['postApiPilots'].mockReturnValue(throwError(() => apiError(422, { errors: { 'Pilot.Name': ['Bad.'], Weird: ['Odd.'] } })));
+    expect(await store.save(null, body)).toBe(false);
+    expect(store.fieldErrors()).toEqual({ name: 'Bad.' });
+    expect(store.saveError()).toBe('Odd.');
 
     api['postApiPilots'].mockReturnValue(throwError(() => new Error('boom')));
     expect(await store.save(null, body)).toBe(false);
     expect(store.saveError()).toBe('Something went wrong. Please try again.');
+    expect(store.fieldErrors()).toEqual({});
   });
 
   it('removes a pilot and surfaces a failure as the list error', async () => {

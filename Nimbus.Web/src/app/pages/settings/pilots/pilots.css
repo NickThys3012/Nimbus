@@ -32,21 +32,29 @@ h1 { font-size: 16px; font-weight: 600; margin: 0; color: var(--tx); }
 .ico:hover:not(:disabled) { color: var(--tx); }
 .ico:focus-visible { outline: 2px solid var(--ac); }
 .menu {
-  position: absolute; right: 0; top: 100%; z-index: 20; min-width: 130px; background: var(--pan);
-  border: 1px solid var(--ln2); border-radius: 10px; padding: 4px; box-shadow: 0 8px 24px var(--shadow-sm);
-  display: flex; flex-direction: column;
+  position: absolute; right: 0; top: 100%; z-index: 30; min-width: 150px; background: var(--pan);
+  border: 1px solid var(--ln2); border-radius: 11px; padding: 6px; margin-top: 4px;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, .32); display: flex; flex-direction: column;
 }
+:host-context(html.lt) .menu { box-shadow: 0 10px 28px rgba(0, 0, 0, .10); }
 .menu button {
-  background: none; border: 0; color: var(--tx); font-size: 13px; padding: 9px 10px; border-radius: 6px;
-  display: flex; align-items: center; gap: 8px; cursor: pointer; text-align: left;
+  background: none; border: 0; color: var(--tx); font-family: var(--sans); font-size: 13px; padding: 8px;
+  border-radius: 7px; display: flex; align-items: center; gap: 9px; cursor: pointer; text-align: left; width: 100%;
 }
+.menu button i { font-size: 16px; color: var(--dim); }
 .menu button:hover { background: var(--chip); }
-.menu button.danger { color: var(--r); }
+.menu button.danger, .menu button.danger i { color: var(--r); }
+.menu button.danger:hover { background: var(--rb); }
 .empty {
   background: var(--pan); border: 1px solid var(--ln); border-radius: 14px; padding: 48px 26px;
-  display: flex; flex-direction: column; align-items: center; gap: 14px; text-align: center;
+  display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center;
 }
-.empty strong { display: block; font-size: 16px; color: var(--tx); margin-bottom: 6px; }
+.empty strong { display: block; font-size: 16px; font-weight: 600; color: var(--tx); margin-bottom: 0; }
+.empty ::ng-deep .empty-state { padding: 0; display: flex; flex-direction: column; align-items: center; gap: 10px; }
+.empty ::ng-deep .empty-state i {
+  width: 44px; height: 44px; margin: 0; display: grid; place-items: center; font-size: 22px;
+  border-radius: 12px; background: var(--chip); color: var(--fnt);
+}
 .helper { display: block; font-size: 12px; color: var(--dim); max-width: 320px; margin: 0 auto; }
 
 .form { display: flex; flex-direction: column; gap: 14px; margin-top: 14px; }
@@ -57,6 +65,10 @@ h1 { font-size: 16px; font-weight: 600; margin: 0; color: var(--tx); }
 }
 .field input:focus { outline: none; border-color: var(--ac); }
 .field.bad input { border-color: var(--r); }
+.general-err {
+  font: 12px var(--mono); color: var(--r); background: var(--rb); border-radius: 8px; padding: 9px 11px;
+  margin-top: 14px; display: flex; gap: 6px; align-items: center;
+}
 .err { font: 11px var(--mono); color: var(--r); margin-top: 4px; display: flex; gap: 5px; align-items: center; }
 .applies { font: 11px var(--mono); color: var(--fnt); }
 

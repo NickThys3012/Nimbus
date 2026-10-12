@@ -29,6 +29,7 @@ export default class Pilots {
   protected readonly list = this.store.list;
   protected readonly saving = this.store.saving;
   protected readonly formError = this.store.saveError;
+  protected readonly fieldErrors = this.store.fieldErrors;
   protected readonly listError = this.store.listError;
   protected readonly deleting = this.store.deleting;
 

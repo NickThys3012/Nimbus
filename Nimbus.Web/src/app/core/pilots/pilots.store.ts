@@ -19,7 +19,11 @@ export class PilotsStore {
   private readonly _saving = signal(false);
   readonly saving = this._saving.asReadonly();
   private readonly _saveError = signal<string | null>(null);
+  /** General (not field-specific) save failure. */
   readonly saveError = this._saveError.asReadonly();
+  private readonly _fieldErrors = signal<PilotFieldErrors>({});
+  /** Server-side validation messages per form field (`name`, `weightKg`). */
+  readonly fieldErrors = this._fieldErrors.asReadonly();
   private readonly _deleting = signal(false);
   readonly deleting = this._deleting.asReadonly();
   private readonly _listError = signal<string | null>(null);
@@ -27,6 +31,7 @@ export class PilotsStore {
 
   resetSave(): void {
     this._saveError.set(null);
+    this._fieldErrors.set({});
   }
 
   /** Creates (`id` null) or updates a pilot. Resolves true on success; failures land in `saveError`. */
@@ -39,7 +44,9 @@ export class PilotsStore {
       this.pilots.reload();
       return true;
     } catch (err) {
-      this._saveError.set(describe(err));
+      const { fields, general } = mapSaveError(err);
+      this._fieldErrors.set(fields);
+      this._saveError.set(general);
       return false;
     } finally {
       this._saving.set(false);
@@ -64,11 +71,39 @@ export class PilotsStore {
   }
 }
 
-function describe(err: unknown): string {
+export interface PilotFieldErrors {
+  name?: string;
+  weightKg?: string;
+}
+
+const GENERIC = 'Something went wrong. Please try again.';
+
+/** Splits a 422 `errors` dictionary (keyed by the request property, e.g. "Name", "WeightKg") per form field. */
+function mapSaveError(err: unknown): { fields: PilotFieldErrors; general: string | null } {
   if (err instanceof ApiError) {
     const body = err.body as { title?: string; errors?: Record<string, string[]> } | undefined;
-    if (err.status === 422 && body?.errors) return Object.values(body.errors).flat().join(' ');
+    if (err.status === 422 && body?.errors) {
+      const fields: PilotFieldErrors = {};
+      const general: string[] = [];
+      for (const [key, messages] of Object.entries(body.errors)) {
+        const text = messages.join(' ');
+        // The API keys errors by command path, e.g. "Pilot.WeightKg": match on the last segment.
+        const prop = key.split('.').pop()!.toLowerCase();
+        const field = prop === 'name' ? 'name' : prop === 'weightkg' ? 'weightKg' : null;
+        if (field) fields[field] = fields[field] ? `${fields[field]} ${text}` : text;
+        else general.push(text);
+      }
+      return { fields, general: general.length > 0 ? general.join(' ') : null };
+    }
+    if (typeof body?.title === 'string') return { fields: {}, general: body.title };
+  }
+  return { fields: {}, general: GENERIC };
+}
+
+function describe(err: unknown): string {
+  if (err instanceof ApiError) {
+    const body = err.body as { title?: string } | undefined;
     if (typeof body?.title === 'string') return body.title;
   }
-  return 'Something went wrong. Please try again.';
+  return GENERIC;
 }
