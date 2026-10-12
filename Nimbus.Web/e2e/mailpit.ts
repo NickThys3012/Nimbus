@@ -22,8 +22,11 @@ interface MailpitFullMessage {
 }
 
 /**
- * Polls Mailpit for the most recent message sent to `toAddress` until one
- * shows up (or `timeoutMs` elapses), then extracts the
+ * Polls Mailpit until one of the messages sent to `toAddress` contains the
+ * confirmation link (or `timeoutMs` elapses). Every message to the address is
+ * inspected, newest first: registration also sends an "account pending" notice
+ * (issue #130) that has no link and can be the newest message, so looking only
+ * at the latest one would never find it. Extracts the
  * `/api/Authentication/confirm-email?userId=...&token=...` link from its
  * body (see Nimbus.Application/Helpers/EmailHelpers.cs — that's the exact
  * format this regex is matching).
@@ -35,8 +38,7 @@ export async function waitForConfirmationLink(
   const deadline = Date.now() + timeoutMs;
 
   while (Date.now() < deadline) {
-    const message = await findLatestMessageTo(toAddress);
-    if (message) {
+    for (const message of await findMessagesTo(toAddress)) {
       const link = extractConfirmationLink(await fetchFullMessage(message.ID));
       if (link) {
         return link;
@@ -48,7 +50,7 @@ export async function waitForConfirmationLink(
   throw new Error(`No confirmation email arrived for ${toAddress} within ${timeoutMs}ms`);
 }
 
-async function findLatestMessageTo(toAddress: string): Promise<MailpitMessageSummary | null> {
+async function findMessagesTo(toAddress: string): Promise<MailpitMessageSummary[]> {
   const response = await fetch(
     `${MAILPIT_BASE_URL}/api/v1/messages?query=${encodeURIComponent(`to:${toAddress}`)}`,
   );
@@ -56,7 +58,7 @@ async function findLatestMessageTo(toAddress: string): Promise<MailpitMessageSum
     throw new Error(`Mailpit search failed: ${response.status} ${response.statusText}`);
   }
   const body = (await response.json()) as MailpitMessagesResponse;
-  return body.messages[0] ?? null;
+  return body.messages ?? [];
 }
 
 async function fetchFullMessage(id: string): Promise<MailpitFullMessage> {
