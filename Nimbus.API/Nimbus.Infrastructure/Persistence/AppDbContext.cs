@@ -19,6 +19,7 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
     public DbSet<LaunchLocation> LaunchLocations => Set<LaunchLocation>();
     public DbSet<GoNoGoThreshold> GoNoGoThresholds => Set<GoNoGoThreshold>();
     public DbSet<UserProfile> UserProfiles => Set<UserProfile>();
+    public DbSet<OfpSettings> OfpSettings => Set<OfpSettings>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -117,6 +118,11 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
             e.Property(p => p.PicWeightKg).HasPrecision(5, 2);
             // One profile per user.
             e.HasIndex(p => p.OwnerId).IsUnique();
+        builder.Entity<OfpSettings>(e =>
+        {
+            e.Property(s => s.EquipmentWeightPerPassengerKg).HasPrecision(5, 2);
+            // One row per user.
+            e.HasIndex(s => s.OwnerId).IsUnique();
         });
 
         builder.ApplyConfigurationsFromAssembly(typeof(AppDbContext).Assembly);

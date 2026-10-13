@@ -351,6 +351,30 @@ namespace Nimbus.Infrastructure.Persistence.EntityFramework.Migrations
                     b.ToTable("LoginEvents");
                 });
 
+            modelBuilder.Entity("Nimbus.Domain.Entities.OfpSettings", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<decimal>("EquipmentWeightPerPassengerKg")
+                        .HasPrecision(5, 2)
+                        .HasColumnType("decimal(5,2)");
+
+                    b.Property<Guid>("OwnerId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("UpdatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OwnerId")
+                        .IsUnique();
+
+                    b.ToTable("OfpSettings");
+                });
+
             modelBuilder.Entity("Nimbus.Domain.Entities.Pilot", b =>
                 {
                     b.Property<Guid>("Id")

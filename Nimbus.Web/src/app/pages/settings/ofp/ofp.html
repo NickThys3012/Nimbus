@@ -1,0 +1,75 @@
+<section class="view" aria-label="OFP settings">
+  <div class="head">
+    <div>
+      <h1>OFP settings</h1>
+      <div class="sub">OPERATIONAL FLIGHT PLAN · PER-USER</div>
+    </div>
+    @if (settings.hasValue()) {
+      @if (changed()) {
+        <span class="badge custom" data-testid="mode-badge">UNSAVED · {{ savedKg() }} → {{ typedKgText() }} KG</span>
+      } @else {
+        <span class="badge" [class.custom]="isCustom()" data-testid="mode-badge">{{ isCustom() ? 'CUSTOM' : 'DEFAULT' }}</span>
+      }
+    }
+  </div>
+
+  @if (settings.isLoading() && !settings.hasValue()) { <p class="note">Loading…</p> }
+  @if (settings.error()) { <p class="note error" role="alert" data-testid="load-error">Your OFP settings could not be loaded.</p> }
+
+  @if (settings.hasValue()) {
+    @if (formError(); as msg) {
+      <div class="banner error" role="alert" data-testid="form-error"><i class="ti ti-alert-triangle" aria-hidden="true"></i>{{ msg }}</div>
+    }
+
+    <form class="card" [formGroup]="form" (ngSubmit)="save()" (input)="onEdit()" novalidate data-testid="ofp-form">
+      <div class="cell">
+        <label class="mlabel" for="f-weight">EQUIPMENT WEIGHT PER PASSENGER (KG)</label>
+        <div class="inp" [class.bad]="!!touchedError()">
+          <input type="number" step="any" inputmode="decimal" id="f-weight" data-testid="weight" formControlName="weight" [attr.aria-invalid]="!!touchedError()" />
+          <span class="unit">kg</span>
+        </div>
+        @if (touchedError(); as msg) {
+          <div class="err" role="alert" data-testid="weight-error"><i class="ti ti-alert-triangle" aria-hidden="true"></i>{{ msg }}</div>
+        } @else {
+          <div class="help">Counted per passenger in the OFP total weight. Not used in the basic weight check.</div>
+        }
+      </div>
+      <div class="example" data-testid="example">
+        <div class="etitle">EXAMPLE · {{ passengers }} PASSENGERS</div>
+        @if (exampleKg() !== null) {
+          <div class="eline">
+            <span class="dim">{{ passengers }} × {{ typedKgText() }} kg</span>
+            <span [class.ac]="changed()" data-testid="example-total">{{ exampleKg() }} kg</span>
+          </div>
+          <div class="etitle">{{ changed() ? 'WAS ' + exampleWasKg() + ' KG' : 'ADDED TO OFP TOTAL ONLY' }}</div>
+        } @else {
+          <div class="eline fnt" data-testid="example-invalid">— · INVALID VALUE</div>
+        }
+      </div>
+    </form>
+
+    @if (changed()) {
+      <div class="banner info" data-testid="flown-notice">
+        <i class="ti ti-info-circle" aria-hidden="true"></i>
+        Applies to flights you prepare from now on. Already-flown flights keep the OFP figures recorded at the time.
+      </div>
+    }
+
+    <div class="actions">
+      <Nimbus-button id="reset-ofp" data-testid="reset-ofp" variant="ghost" icon="ti-restore" [fullWidth]="false" [disabled]="resetting()" (click)="askReset()">Reset to default</Nimbus-button>
+      <Nimbus-button id="save-ofp" data-testid="save-ofp" [fullWidth]="false" [disabled]="saving() || !valid()" (click)="save()">Save settings</Nimbus-button>
+    </div>
+
+    @if (savedNotice()) {
+      <div class="toast" role="status" data-testid="saved-notice"><i class="ti ti-circle-check" aria-hidden="true"></i>OFP settings saved</div>
+    }
+  }
+</section>
+
+<Nimbus-modal [isOpen]="resetOpen()" [alert]="true" width="confirm" title="Reset to default?" [description]="'Your equipment weight will go back to the default of ' + defaultKg + ' kg per passenger. Already-flown flights keep their recorded OFP figures.'" (closed)="closeReset()" data-testid="reset-dialog">
+  <div modal-icon class="glyph"><i class="ti ti-restore" aria-hidden="true"></i></div>
+  <div modal-actions>
+    <Nimbus-button id="reset-cancel" data-testid="reset-cancel" variant="ghost" [fullWidth]="false" (click)="closeReset()">Cancel</Nimbus-button>
+    <Nimbus-button id="reset-confirm" data-testid="reset-confirm" [fullWidth]="false" [disabled]="resetting()" (click)="confirmReset()">Reset</Nimbus-button>
+  </div>
+</Nimbus-modal>
