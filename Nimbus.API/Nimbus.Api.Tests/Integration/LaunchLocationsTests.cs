@@ -172,4 +172,17 @@ public class LaunchLocationsTests
         Assert.That(row.IsDeleted, Is.True);
         Assert.That(row.OwnerId, Is.EqualTo(user.Id));
     }
+
+    [Test]
+    public async Task Elevation_IsOptional_AndCanBeClearedOnUpdate()
+    {
+        var (c, _) = await SignedInAsync();
+        var created = await CreateAsync(c, Req() with { ElevationM = null });
+        Assert.That(created.ElevationM, Is.Null);
+
+        var put = await c.PutAsJsonAsync($"/api/launch-locations/{created.Id}", Req() with { ElevationM = 21m });
+        Assert.That((await put.Content.ReadFromJsonAsync<LaunchLocationDto>())!.ElevationM, Is.EqualTo(21m));
+        await c.PutAsJsonAsync($"/api/launch-locations/{created.Id}", Req() with { ElevationM = null });
+        Assert.That((await c.GetFromJsonAsync<LaunchLocationDto>($"/api/launch-locations/{created.Id}"))!.ElevationM, Is.Null);
+    }
 }

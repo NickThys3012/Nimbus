@@ -1,9 +1,12 @@
 :host { display: block; }
-.map { height: 180px; border-radius: 8px; border: 1px solid var(--ln); overflow: hidden; background: var(--inp); }
+.map { height: 360px; border-radius: 10px; border: 1px solid var(--ln2); overflow: hidden; background: var(--chip); }
 .placeholder {
-  height: 180px; border-radius: 8px; border: 1px dashed var(--ln); background: var(--inp); color: var(--fnt);
+  height: 360px; border-radius: 10px; border: 1px dashed var(--ln2); background: var(--chip); color: var(--dim);
   font: 11px var(--mono); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px;
-  text-align: center; padding: 0 16px;
+  text-align: center; padding: 20px; box-sizing: border-box;
 }
-.placeholder i { font-size: 20px; }
-:host ::ng-deep .nimbus-pin { background: none; border: 0; color: var(--ac); font-size: 28px; line-height: 28px; text-align: center; }
+.placeholder i { font-size: 30px; color: var(--a); }
+:host ::ng-deep .nimbus-pin { background: none; border: 0; color: var(--ac); font-size: 34px; line-height: 34px; text-align: center; }
+@media (max-width: 600px) {
+  .map, .placeholder { height: 150px; }
+}

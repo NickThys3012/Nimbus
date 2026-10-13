@@ -25,8 +25,10 @@ public sealed class LaunchLocationRequestValidator : AbstractValidator<LaunchLoc
         RuleFor(r => r.Latitude).Must(v => decimal.Round(v, 6) == v).WithMessage("'Latitude' must have at most 6 decimal places.");
         RuleFor(r => r.Longitude).InclusiveBetween(-180m, 180m);
         RuleFor(r => r.Longitude).Must(v => decimal.Round(v, 6) == v).WithMessage("'Longitude' must have at most 6 decimal places.");
+        // Elevation is optional; the range and precision only apply when one is given.
         RuleFor(r => r.ElevationM).InclusiveBetween(MinElevationM, MaxElevationM);
-        RuleFor(r => r.ElevationM).Must(v => decimal.Round(v, 2) == v).WithMessage("'Elevation M' must have at most 2 decimal places.");
+        RuleFor(r => r.ElevationM).Must(v => v is null || decimal.Round(v.Value, 2) == v.Value)
+            .WithMessage("'Elevation M' must have at most 2 decimal places.");
 
         RuleFor(r => r.AirspaceNotes).MaximumLength(MaxNotesLength);
     }

@@ -8,7 +8,7 @@ namespace Nimbus.Application.Tests;
 
 public class LaunchLocationTests
 {
-    private static LaunchLocationRequestDto Req(string name = "Dendermonde", string? icao = "EBDM", decimal lat = 51.02m, decimal lon = 4.1m, decimal elev = 8m, string? notes = null)
+    private static LaunchLocationRequestDto Req(string name = "Dendermonde", string? icao = "EBDM", decimal lat = 51.02m, decimal lon = 4.1m, decimal? elev = 8m, string? notes = null)
         => new(name, icao, lat, lon, elev, notes);
 
     [Test]
@@ -66,6 +66,10 @@ public class LaunchLocationTests
     [TestCase("8.123", false)]
     public void Validator_Elevation(string elev, bool valid)
         => Assert.That(new LaunchLocationRequestValidator().Validate(Req(elev: decimal.Parse(elev, System.Globalization.CultureInfo.InvariantCulture))).IsValid, Is.EqualTo(valid));
+
+    [Test]
+    public void Validator_ElevationIsOptional()
+        => Assert.That(new LaunchLocationRequestValidator().Validate(Req(elev: null)).IsValid, Is.True);
 
     [TestCase("", false)]
     [TestCase("   ", false)]

@@ -3,6 +3,7 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { startWith } from 'rxjs';
 
+import { Banner } from '../../../components/banner/banner';
 import { Button } from '../../../components/button/button';
 import { EmptyState } from '../../../components/empty-state/empty-state';
 import { LocationMap } from '../../../components/location-map/location-map';
@@ -25,7 +26,7 @@ function toNumber(v: unknown): number | null {
 
 @Component({
   selector: 'Nimbus-launch-locations',
-  imports: [ReactiveFormsModule, Button, EmptyState, LocationMap, Modal],
+  imports: [ReactiveFormsModule, Banner, Button, EmptyState, LocationMap, Modal],
   templateUrl: './launch-locations.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrl: './launch-locations.css',
@@ -52,29 +53,27 @@ export default class LaunchLocations {
     icaoCode: ['', [Validators.pattern(/^\s*[A-Za-z0-9]{4}\s*$|^\s*$/)]],
     latitude: ['', [Validators.required, Validators.min(-90), Validators.max(90)]],
     longitude: ['', [Validators.required, Validators.min(-180), Validators.max(180)]],
-    elevationM: ['', [Validators.required, Validators.min(MIN_ELEVATION), Validators.max(MAX_ELEVATION)]],
+    elevationM: ['', [Validators.min(MIN_ELEVATION), Validators.max(MAX_ELEVATION)]],
     airspaceNotes: ['', [Validators.maxLength(2000)]],
   });
 
   private readonly formValue = toSignal(this.form.valueChanges.pipe(startWith(this.form.getRawValue())), {
     initialValue: this.form.getRawValue(),
   });
-  /** Live coordinates for the preview map; invalid or empty entries show no map. */
-  protected readonly previewLat = computed(() => {
-    const n = toNumber(this.formValue().latitude);
-    return n !== null && this.form.controls.latitude.valid ? n : null;
-  });
-  protected readonly previewLon = computed(() => {
-    const n = toNumber(this.formValue().longitude);
-    return n !== null && this.form.controls.longitude.valid ? n : null;
-  });
+  /** Live coordinates for the preview map; the map itself decides whether they are a valid pin. */
+  protected readonly previewLat = computed(() => toNumber(this.formValue().latitude));
+  protected readonly previewLon = computed(() => toNumber(this.formValue().longitude));
+
+  private readonly formStatus = toSignal(this.form.statusChanges.pipe(startWith(this.form.status)), { initialValue: this.form.status });
+  /** Shown under the preview once a save was attempted with errors. */
+  protected readonly showWarning = computed(() => this.submitted() && this.formStatus() !== 'VALID');
 
   protected readonly formOpen = computed(() => this.mode() !== null);
   protected readonly isNew = computed(() => this.mode() === 'new');
   protected readonly title = computed(() => (this.isNew() ? 'Add launch location' : 'Edit launch location'));
   protected readonly subtitle = computed(() => {
     const n = this.list().length;
-    return `${n} ${n === 1 ? 'LOCATION' : 'LOCATIONS'} · A–Z · DRIVES WEATHER & SUNRISE`;
+    return `${n} ${n === 1 ? 'LOCATION' : 'LOCATIONS'} · DRIVE METAR/TAF, FORECAST & SUNRISE`;
   });
 
   /** Id of the location whose three-dots menu (mobile) is open. */
@@ -88,6 +87,11 @@ export default class LaunchLocations {
 
   protected num(value: number | string): number {
     return Number(value);
+  }
+
+  /** Elevation is optional: null shows as an em dash. */
+  protected elevation(l: LaunchLocationDto): string {
+    return l.elevationM === null ? '—' : `${Number(l.elevationM)} m`;
   }
 
   protected toggleMenu(id: string): void {
@@ -108,7 +112,7 @@ export default class LaunchLocations {
       icaoCode: l.icaoCode ?? '',
       latitude: String(Number(l.latitude)),
       longitude: String(Number(l.longitude)),
-      elevationM: String(Number(l.elevationM)),
+      elevationM: l.elevationM === null ? '' : String(Number(l.elevationM)),
       airspaceNotes: l.airspaceNotes ?? '',
     });
   }
@@ -145,12 +149,13 @@ export default class LaunchLocations {
     const v = this.form.getRawValue();
     const icao = v.icaoCode.trim().toUpperCase();
     const notes = v.airspaceNotes.trim();
+    const elevation = v.elevationM === null || String(v.elevationM).trim() === '' ? null : Number(v.elevationM);
     const body = {
       name: v.name.trim(),
       icaoCode: icao === '' ? null : icao,
       latitude: Number(v.latitude),
       longitude: Number(v.longitude),
-      elevationM: Number(v.elevationM),
+      elevationM: elevation,
       airspaceNotes: notes === '' ? null : notes,
     };
     if (await this.store.save(mode === 'new' ? null : mode, body)) {

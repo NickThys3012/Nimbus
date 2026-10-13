@@ -19,8 +19,8 @@ public class LaunchLocation : OwnedEntity
     /// <summary>Decimal degrees, -180 to 180.</summary>
     public decimal Longitude { get; set; }
 
-    /// <summary>Metres above mean sea level.</summary>
-    public decimal ElevationM { get; set; }
+    /// <summary>Metres above mean sea level; null when unknown.</summary>
+    public decimal? ElevationM { get; set; }
 
     public string? AirspaceNotes { get; set; }
 }

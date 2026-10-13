@@ -20,7 +20,7 @@ export default class Settings {
     { id: 'profile', label: 'Profile' },
     { id: 'balloons', label: 'Balloons' },
     { id: 'pilots', label: 'Pilots' },
-    { id: 'launch-locations', label: 'Launch locations' },
+    { id: 'launch-locations', label: 'Locations' },
     { id: 'preferences', label: 'Preferences' },
   ];
 

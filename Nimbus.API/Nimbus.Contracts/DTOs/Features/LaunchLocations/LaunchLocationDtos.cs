@@ -6,7 +6,7 @@ public record LaunchLocationRequestDto(
     string? IcaoCode,
     decimal Latitude,
     decimal Longitude,
-    decimal ElevationM,
+    decimal? ElevationM,
     string? AirspaceNotes);
 
 public record LaunchLocationDto(
@@ -15,5 +15,5 @@ public record LaunchLocationDto(
     string? IcaoCode,
     decimal Latitude,
     decimal Longitude,
-    decimal ElevationM,
+    decimal? ElevationM,
     string? AirspaceNotes);

@@ -12,7 +12,7 @@ vi.mock('leaflet', () => {
 });
 
 const dender: LaunchLocationDto = { id: 'l1', name: 'Dendermonde', icaoCode: 'EBDM', latitude: 51.02, longitude: 4.1, elevationM: 8, airspaceNotes: 'Class G' };
-const kluis: LaunchLocationDto = { id: 'l2', name: 'Kluisbos', icaoCode: null, latitude: 50.8, longitude: 3.5, elevationM: 120, airspaceNotes: null };
+const kluis: LaunchLocationDto = { id: 'l2', name: 'Kluisbos', icaoCode: null, latitude: 50.8, longitude: 3.5, elevationM: null, airspaceNotes: null };
 
 describe('LaunchLocations', () => {
   let api: Record<string, Mock>;
@@ -57,20 +57,34 @@ describe('LaunchLocations', () => {
 
   afterEach(() => vi.restoreAllMocks());
 
-  it('lists locations in API order with ICAO badge, coordinates and elevation', async () => {
+  it('lists locations with notes under the name, ICAO column, coordinates and elevation', async () => {
     const { el, q } = await setup();
     const names = Array.from(el.querySelectorAll('.nm')).map((n) => n.firstChild?.textContent?.trim());
     expect(names).toEqual(['Dendermonde', 'Kluisbos']);
-    expect(el.querySelectorAll('[data-testid="icao"]')).toHaveLength(1);
-    expect(q('location-l1').textContent).toContain('EBDM');
+    const heads = Array.from(el.querySelectorAll('[role="columnheader"]')).map((n) => n.textContent?.trim());
+    expect(heads).toEqual(['NAME', 'ICAO', 'COORDINATES', 'ELEV.']);
+    expect(q('location-l1').querySelector('.nm')?.textContent).toContain('Class G');
+    expect(q('location-l1').querySelector('[data-testid="icao"]')?.textContent?.trim()).toBe('EBDM');
     expect(q('location-l1').textContent).toContain('51.02, 4.1');
-    expect(q('location-l1').textContent).toContain('8 m');
-    expect(q('subtitle').textContent?.trim()).toBe('2 LOCATIONS · A–Z · DRIVES WEATHER & SUNRISE');
+    expect(q('location-l1').querySelector('[data-testid="elevation"]')?.textContent).toContain('8 m');
+  });
+
+  it('shows an em dash for a missing ICAO code or elevation', async () => {
+    const { q } = await setup();
+    expect(q('location-l2').querySelector('[data-testid="icao"]')?.textContent?.trim()).toBe('—');
+    expect(q('location-l2').querySelector('[data-testid="elevation"]')?.textContent?.trim()).toBe('—');
+  });
+
+  it('shows the subtitle and the METAR/TAF footnote', async () => {
+    const { q } = await setup();
+    expect(q('subtitle').textContent?.trim()).toBe('2 LOCATIONS · DRIVE METAR/TAF, FORECAST & SUNRISE');
+    expect(q('icao-footnote').textContent?.trim()).toBe('NO ICAO CODE → METAR/TAF LOOKUP SKIPPED FOR THAT LOCATION');
   });
 
   it('shows an empty state with an Add location button', async () => {
     const { el, q, click } = await setup([]);
     expect(el.textContent).toContain('No launch locations yet');
+    expect(el.textContent).toContain('Weather and sunrise are then calculated automatically for that spot.');
     await click('add-location-empty');
     expect(q('location-form')).toBeTruthy();
     expect(el.querySelector('[role="dialog"]')?.textContent).toContain('Add launch location');
@@ -84,14 +98,16 @@ describe('LaunchLocations', () => {
     expect(q('name-error')).toBeTruthy();
     expect(q('latitude-error')).toBeTruthy();
     expect(q('longitude-error')).toBeTruthy();
-    expect(q('elevation-error')).toBeTruthy();
+    expect(q('elevation-error')).toBeNull(); // elevation is optional
+    expect(q('name-error').textContent).toContain('Name is required.');
+    expect(q('form-warning').textContent).toContain('Fix the highlighted fields before saving. The server validates these again.');
 
     await fill({ name: 'X', lat: '91', lon: '181', elev: '5', icao: 'EBD' });
     await click('save-location');
     expect(api['postApiLaunchLocations']).not.toHaveBeenCalled();
-    expect(q('latitude-error').textContent).toContain('between -90 and 90');
-    expect(q('longitude-error').textContent).toContain('between -180 and 180');
-    expect(q('icao-error').textContent).toContain('four letters or digits');
+    expect(q('latitude-error').textContent).toContain('Between −90 and 90.');
+    expect(q('longitude-error').textContent).toContain('Between −180 and 180.');
+    expect(q('icao-error').textContent).toContain('ICAO code must be exactly 4 characters.');
   });
 
   it('accepts decimal degrees, uppercases the ICAO code and sends blank optionals as null', async () => {
@@ -105,24 +121,30 @@ describe('LaunchLocations', () => {
     expect(api['getApiLaunchLocations']).toHaveBeenCalledTimes(2);
   });
 
-  it('omits the ICAO code when left empty', async () => {
+  it('sends null for an empty ICAO code and an empty elevation', async () => {
     const { click, fill } = await setup();
     await click('add-location');
-    await fill({ name: 'Field', lat: '51', lon: '4', elev: '5' });
+    await fill({ name: 'Field', lat: '51', lon: '4' });
     await click('save-location');
-    expect(api['postApiLaunchLocations'].mock.calls[0][0].requestBody.icaoCode).toBeNull();
+    const body = api['postApiLaunchLocations'].mock.calls[0][0].requestBody;
+    expect(body.icaoCode).toBeNull();
+    expect(body.elevationM).toBeNull();
   });
 
   it('shows the preview map only for valid coordinates', async () => {
     const { q, click, fill, el } = await setup();
     await click('add-location');
     expect(q('location-map-empty')).toBeTruthy();
+    expect(q('location-map-reason').textContent).toBe('NO PIN · ENTER COORDINATES');
+    expect(q('form-warning')).toBeNull();
+    expect(el.querySelector('.preview')?.textContent).toContain('UPDATES AS YOU TYPE');
     await fill({ lat: '51.02', lon: '4.1' });
     await new Promise((r) => setTimeout(r));
     expect(q('location-map')).toBeTruthy();
     await fill({ lat: '151' });
     expect(q('location-map')).toBeNull();
     expect(el.querySelector('[data-testid="location-map-empty"]')).toBeTruthy();
+    expect(q('location-map-reason').textContent).toBe('NO PIN · LATITUDE OUT OF RANGE');
   });
 
   it('edits an existing location with its values prefilled', async () => {
@@ -180,5 +202,24 @@ describe('LaunchLocations', () => {
     expect(q('menu-edit-l1')).toBeTruthy();
     await click('menu-delete-l1');
     expect(dialog()?.textContent).toContain('Delete Dendermonde?');
+  });
+
+  it('edits a location without elevation and keeps it empty', async () => {
+    const { q, click } = await setup();
+    await click('edit-l2');
+    expect(q<HTMLInputElement>('elevationM').value).toBe('');
+    await click('save-location');
+    expect(api['putApiLaunchLocations'].mock.calls[0][0].requestBody.elevationM).toBeNull();
+  });
+
+  it('uses the wide dialog and the mockup labels and hints', async () => {
+    const { el, click } = await setup();
+    await click('add-location');
+    expect(el.querySelector('.modal.w-wide')).toBeTruthy();
+    const text = el.querySelector('[data-testid="location-form"]')?.textContent ?? '';
+    for (const t of ['ICAO CODE (OPTIONAL)', '4 CHARACTERS · DRIVES METAR/TAF', 'DECIMAL DEGREES · LAT −90…90 · LON −180…180', 'ELEVATION (M AMSL)', 'AIRSPACE NOTES']) {
+      expect(text).toContain(t);
+    }
+    expect(text).not.toContain('ELEVATION (M AMSL) *');
   });
 });

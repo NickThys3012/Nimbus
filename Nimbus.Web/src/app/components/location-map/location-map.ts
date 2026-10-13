@@ -34,6 +34,15 @@ export class LocationMap {
     return lat >= -90 && lat <= 90 && lon >= -180 && lon <= 180 ? [lat, lon] : null;
   });
 
+  /** Why there is no pin, shown in the placeholder. */
+  protected readonly reason = computed(() => {
+    const lat = this.latitude();
+    const lon = this.longitude();
+    if (lat !== null && Number.isFinite(lat) && Math.abs(lat) > 90) return 'LATITUDE OUT OF RANGE';
+    if (lon !== null && Number.isFinite(lon) && Math.abs(lon) > 180) return 'LONGITUDE OUT OF RANGE';
+    return 'ENTER COORDINATES';
+  });
+
   private readonly container = viewChild<ElementRef<HTMLElement>>('map');
   private map: LeafletMap | null = null;
   private marker: Marker | null = null;
@@ -82,7 +91,7 @@ export class LocationMap {
       }).addTo(this.map);
       // A divIcon avoids Leaflet's default marker images, which the bundler does not resolve.
       this.marker = L.marker(point, {
-        icon: L.divIcon({ className: 'nimbus-pin', html: '<i class="ti ti-map-pin-filled"></i>', iconSize: [28, 28], iconAnchor: [14, 28] }),
+        icon: L.divIcon({ className: 'nimbus-pin', html: '<i class="ti ti-map-pin-filled"></i>', iconSize: [34, 34], iconAnchor: [17, 34] }),
       }).addTo(this.map);
       return;
     }

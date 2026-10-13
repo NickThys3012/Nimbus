@@ -230,7 +230,7 @@ namespace Nimbus.Infrastructure.Persistence.EntityFramework.Migrations
                     b.Property<DateTime?>("CreatedDate")
                         .HasColumnType("datetime2");
 
-                    b.Property<decimal>("ElevationM")
+                    b.Property<decimal?>("ElevationM")
                         .HasPrecision(7, 2)
                         .HasColumnType("decimal(7,2)");
 

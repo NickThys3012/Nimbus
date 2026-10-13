@@ -81,9 +81,16 @@ describe('LocationMap', () => {
     await fixture.whenStable();
     expect(el.querySelector('[data-testid="location-map"]')).toBeNull();
     expect(el.querySelector('[data-testid="location-map-empty"]')).toBeTruthy();
-    fixture.componentInstance.lat.set(null);
+    expect(el.querySelector('[data-testid="location-map-reason"]')?.textContent).toBe('NO PIN · LATITUDE OUT OF RANGE');
+    expect(el.querySelector('.ti-map-off')).toBeTruthy();
+    fixture.componentInstance.lat.set(51);
+    fixture.componentInstance.lon.set(-200);
     await fixture.whenStable();
-    expect(el.querySelector('[data-testid="location-map-empty"]')).toBeTruthy();
+    expect(el.querySelector('[data-testid="location-map-reason"]')?.textContent).toBe('NO PIN · LONGITUDE OUT OF RANGE');
+    fixture.componentInstance.lat.set(null);
+    fixture.componentInstance.lon.set(4);
+    await fixture.whenStable();
+    expect(el.querySelector('[data-testid="location-map-reason"]')?.textContent).toBe('NO PIN · ENTER COORDINATES');
   });
 
   it('removes the map when destroyed', async () => {

@@ -7,7 +7,7 @@ export type LaunchLocationRequestDto = {
     icaoCode: string | null;
     latitude: number | string;
     longitude: number | string;
-    elevationM: number | string;
+    elevationM: number | string | null;
     airspaceNotes: string | null;
 };
 

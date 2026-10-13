@@ -19,10 +19,10 @@ describe('Settings', () => {
     return { fixture, el: fixture.nativeElement as HTMLElement };
   }
 
-  it('shows Profile / Balloons / Pilots / Launch locations / Preferences tabs with Balloons active', async () => {
+  it('shows Profile / Balloons / Pilots / Locations / Preferences tabs with Balloons active', async () => {
     const { el } = await setup();
     const tabs = Array.from(el.querySelectorAll('[role="tab"]')).map((t) => t.textContent?.trim());
-    expect(tabs).toEqual(['Profile', 'Balloons', 'Pilots', 'Launch locations', 'Preferences']);
+    expect(tabs).toEqual(['Profile', 'Balloons', 'Pilots', 'Locations', 'Preferences']);
     expect(el.querySelector('#tab-balloons')?.getAttribute('aria-selected')).toBe('true');
     expect(el.querySelector('Nimbus-balloons')).toBeTruthy();
   });
