@@ -1,0 +1,146 @@
+<section class="view" aria-label="My launch locations">
+  <div class="head">
+    <div>
+      <h1>My launch locations</h1>
+      @if (list().length > 0) {
+        <div class="sub" data-testid="subtitle">{{ subtitle() }}</div>
+      }
+    </div>
+    @if (list().length > 0) {
+      <Nimbus-button id="add-location" data-testid="add-location" class="add" icon="ti-plus" size="sm" variant="ghost" [fullWidth]="false" (click)="add()">Add location</Nimbus-button>
+      <button type="button" class="ico plus" data-testid="add-location-mobile" aria-label="Add launch location" (click)="add()"><i class="ti ti-plus" aria-hidden="true"></i></button>
+    }
+  </div>
+
+  @if (locations.isLoading() && !locations.hasValue()) { <p class="note">Loading…</p> }
+  @if (locations.error()) { <p class="note error" role="alert">Your launch locations could not be loaded.</p> }
+  @if (listError(); as msg) { <p class="note error" role="alert" data-testid="list-error">{{ msg }}</p> }
+
+  @if (locations.hasValue()) {
+    @if (list().length > 0) {
+      <div class="table" role="table" aria-label="My launch locations">
+        <div class="tr th" role="row">
+          <span role="presentation"></span>
+          <span role="columnheader">NAME</span>
+          <span class="c-m" role="columnheader">COORDINATES</span>
+          <span class="c-m" role="columnheader">ELEVATION</span>
+          <span role="presentation"></span>
+        </div>
+        @for (l of list(); track l.id) {
+          <div class="tr" role="row" [attr.data-testid]="'location-' + l.id">
+            <span class="avatar" role="presentation" aria-hidden="true"><i class="ti ti-map-pin"></i></span>
+            <span class="nm" role="cell">
+              {{ l.name }}@if (l.icaoCode) {<span class="icao" data-testid="icao">{{ l.icaoCode }}</span>}
+              <small>{{ num(l.latitude) }}, {{ num(l.longitude) }}</small>
+            </span>
+            <span class="c-m" role="cell">{{ num(l.latitude) }}, {{ num(l.longitude) }}</span>
+            <span class="c-m" role="cell">{{ num(l.elevationM) }} m</span>
+            <span class="c-act" role="cell">
+              <span class="acts">
+                <button type="button" class="ico" [attr.data-testid]="'edit-' + l.id" [attr.aria-label]="'Edit ' + l.name" (click)="edit(l)"><i class="ti ti-pencil" aria-hidden="true"></i></button>
+                <button type="button" class="ico" [attr.data-testid]="'delete-' + l.id" [attr.aria-label]="'Delete ' + l.name" (click)="askDelete(l)"><i class="ti ti-trash" aria-hidden="true"></i></button>
+              </span>
+              <span class="menu-wrap">
+                <button type="button" class="ico" [attr.data-testid]="'menu-' + l.id" [attr.aria-label]="'Actions for ' + l.name" aria-haspopup="menu" [attr.aria-expanded]="menuId() === l.id" (click)="toggleMenu(l.id)"><i class="ti ti-dots-vertical" aria-hidden="true"></i></button>
+                @if (menuId() === l.id) {
+                  <div class="menu" role="menu">
+                    <button type="button" role="menuitem" [attr.data-testid]="'menu-edit-' + l.id" (click)="edit(l)"><i class="ti ti-pencil" aria-hidden="true"></i>Edit</button>
+                    <button type="button" role="menuitem" class="danger" [attr.data-testid]="'menu-delete-' + l.id" (click)="askDelete(l)"><i class="ti ti-trash" aria-hidden="true"></i>Delete</button>
+                  </div>
+                }
+              </span>
+            </span>
+          </div>
+        }
+      </div>
+    } @else {
+      <div class="empty" data-testid="locations-empty">
+        <Nimbus-empty-state icon="ti-map-pin">
+          <strong>No launch locations yet</strong>
+          <span class="helper">Add the fields you launch from with their coordinates. Weather, METAR/TAF and sunrise are calculated for that spot.</span>
+        </Nimbus-empty-state>
+        <Nimbus-button id="add-location-empty" data-testid="add-location-empty" icon="ti-plus" [fullWidth]="false" (click)="add()">Add location</Nimbus-button>
+      </div>
+    }
+  }
+</section>
+
+<Nimbus-modal [isOpen]="formOpen()" [sheet]="true" width="narrow" [title]="title()" (closed)="cancel()" data-testid="location-dialog">
+  <div modal-body>
+    @if (formError(); as msg) {
+      <div class="general-err" role="alert" data-testid="form-error"><i class="ti ti-alert-triangle" aria-hidden="true"></i>{{ msg }}</div>
+    }
+    <form class="form" [formGroup]="form" (ngSubmit)="save()" (keydown.enter)="onEnter($event)" data-testid="location-form" novalidate>
+      <div class="field" [class.bad]="invalid('name') || !!fieldErrors().name">
+        <label for="f-name">NAME *</label>
+        <input id="f-name" formControlName="name" data-testid="name" maxlength="100" autocomplete="off" placeholder="e.g. Dendermonde" [attr.aria-invalid]="invalid('name') || !!fieldErrors().name" />
+        @if (invalid('name')) {
+          <div class="err" role="alert" data-testid="name-error"><i class="ti ti-alert-triangle" aria-hidden="true"></i>Name is required.</div>
+        } @else if (fieldErrors().name; as msg) {
+          <div class="err" role="alert" data-testid="name-server-error"><i class="ti ti-alert-triangle" aria-hidden="true"></i>{{ msg }}</div>
+        }
+      </div>
+      <div class="field" [class.bad]="invalid('icaoCode') || !!fieldErrors().icaoCode">
+        <label for="f-icao">ICAO CODE</label>
+        <input id="f-icao" formControlName="icaoCode" data-testid="icaoCode" maxlength="4" autocomplete="off" placeholder="e.g. EBDM" style="text-transform: uppercase" [attr.aria-invalid]="invalid('icaoCode') || !!fieldErrors().icaoCode" />
+        @if (invalid('icaoCode')) {
+          <div class="err" role="alert" data-testid="icao-error"><i class="ti ti-alert-triangle" aria-hidden="true"></i>ICAO code is four letters or digits.</div>
+        } @else if (fieldErrors().icaoCode; as msg) {
+          <div class="err" role="alert" data-testid="icao-server-error"><i class="ti ti-alert-triangle" aria-hidden="true"></i>{{ msg }}</div>
+        }
+      </div>
+      <div class="pair">
+      <div class="field" [class.bad]="invalid('latitude') || !!fieldErrors().latitude">
+        <label for="f-lat">LATITUDE *</label>
+        <input id="f-lat" formControlName="latitude" data-testid="latitude" type="number" step="any" inputmode="decimal" placeholder="e.g. 51.0200" [attr.aria-invalid]="invalid('latitude') || !!fieldErrors().latitude" />
+        @if (invalid('latitude')) {
+          <div class="err" role="alert" data-testid="latitude-error"><i class="ti ti-alert-triangle" aria-hidden="true"></i>Latitude is between -90 and 90.</div>
+        } @else if (fieldErrors().latitude; as msg) {
+          <div class="err" role="alert" data-testid="latitude-server-error"><i class="ti ti-alert-triangle" aria-hidden="true"></i>{{ msg }}</div>
+        }
+      </div>
+      <div class="field" [class.bad]="invalid('longitude') || !!fieldErrors().longitude">
+        <label for="f-lon">LONGITUDE *</label>
+        <input id="f-lon" formControlName="longitude" data-testid="longitude" type="number" step="any" inputmode="decimal" placeholder="e.g. 4.1000" [attr.aria-invalid]="invalid('longitude') || !!fieldErrors().longitude" />
+        @if (invalid('longitude')) {
+          <div class="err" role="alert" data-testid="longitude-error"><i class="ti ti-alert-triangle" aria-hidden="true"></i>Longitude is between -180 and 180.</div>
+        } @else if (fieldErrors().longitude; as msg) {
+          <div class="err" role="alert" data-testid="longitude-server-error"><i class="ti ti-alert-triangle" aria-hidden="true"></i>{{ msg }}</div>
+        }
+      </div>
+      </div>
+      <div class="hint">DECIMAL DEGREES · NORTH AND EAST ARE POSITIVE</div>
+      <Nimbus-location-map [latitude]="previewLat()" [longitude]="previewLon()"></Nimbus-location-map>
+      <div class="field" [class.bad]="invalid('elevationM') || !!fieldErrors().elevationM">
+        <label for="f-elev">ELEVATION (M AMSL) *</label>
+        <input id="f-elev" formControlName="elevationM" data-testid="elevationM" type="number" step="any" inputmode="decimal" placeholder="e.g. 8" [attr.aria-invalid]="invalid('elevationM') || !!fieldErrors().elevationM" />
+        @if (invalid('elevationM')) {
+          <div class="err" role="alert" data-testid="elevation-error"><i class="ti ti-alert-triangle" aria-hidden="true"></i>Enter an elevation between -500 and 9000 m.</div>
+        } @else if (fieldErrors().elevationM; as msg) {
+          <div class="err" role="alert" data-testid="elevation-server-error"><i class="ti ti-alert-triangle" aria-hidden="true"></i>{{ msg }}</div>
+        }
+      </div>
+      <div class="field" [class.bad]="invalid('airspaceNotes') || !!fieldErrors().airspaceNotes">
+        <label for="f-notes">AIRSPACE NOTES</label>
+        <textarea id="f-notes" formControlName="airspaceNotes" data-testid="airspaceNotes" rows="3" maxlength="2000" placeholder="Free text, e.g. CTR Antwerp nearby, class G below 1000 ft" [attr.aria-invalid]="invalid('airspaceNotes') || !!fieldErrors().airspaceNotes"></textarea>
+        @if (invalid('airspaceNotes')) {
+          <div class="err" role="alert" data-testid="notes-error"><i class="ti ti-alert-triangle" aria-hidden="true"></i>Notes can be at most 2000 characters.</div>
+        } @else if (fieldErrors().airspaceNotes; as msg) {
+          <div class="err" role="alert" data-testid="notes-server-error"><i class="ti ti-alert-triangle" aria-hidden="true"></i>{{ msg }}</div>
+        }
+      </div>
+    </form>
+  </div>
+  <div modal-actions>
+    <Nimbus-button id="cancel-location" data-testid="cancel-location" variant="ghost" [fullWidth]="false" (click)="cancel()">Cancel</Nimbus-button>
+    <Nimbus-button id="save-location" data-testid="save-location" [fullWidth]="false" [disabled]="saving()" (click)="save()">{{ isNew() ? 'Save location' : 'Save changes' }}</Nimbus-button>
+  </div>
+</Nimbus-modal>
+
+<Nimbus-modal [isOpen]="confirmOpen()" [alert]="true" width="confirm" [title]="confirmTitle()" [description]="confirmText()" (closed)="closeDialog()" data-testid="confirm-dialog">
+  <div modal-icon class="glyph err"><i class="ti ti-trash" aria-hidden="true"></i></div>
+  <div modal-actions>
+    <Nimbus-button id="dlg-cancel" data-testid="dlg-cancel" variant="ghost" [fullWidth]="false" (click)="closeDialog()">Cancel</Nimbus-button>
+    <Nimbus-button id="dlg-delete" data-testid="dlg-delete" variant="danger" [fullWidth]="false" [disabled]="deleting()" (click)="confirmDelete()">Delete</Nimbus-button>
+  </div>
+</Nimbus-modal>

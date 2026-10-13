@@ -11,6 +11,7 @@ import { OpenAPI } from './core/OpenAPI';
 import { AdminService } from './services/AdminService';
 import { AuthenticationService } from './services/AuthenticationService';
 import { BalloonsService } from './services/BalloonsService';
+import { LaunchLocationsService } from './services/LaunchLocationsService';
 import { PilotsService } from './services/PilotsService';
 import { TelemetryService } from './services/TelemetryService';
 @NgModule({
@@ -37,6 +38,7 @@ import { TelemetryService } from './services/TelemetryService';
         AdminService,
         AuthenticationService,
         BalloonsService,
+        LaunchLocationsService,
         PilotsService,
         TelemetryService,
     ]

@@ -1,0 +1,5 @@
+@if (point()) {
+  <div #map class="map" data-testid="location-map" role="img" [attr.aria-label]="'Map preview at ' + point()![0] + ', ' + point()![1]"></div>
+} @else {
+  <div class="placeholder" data-testid="location-map-empty"><i class="ti ti-map-pin-off" aria-hidden="true"></i>Enter a valid latitude and longitude to preview the spot.</div>
+}

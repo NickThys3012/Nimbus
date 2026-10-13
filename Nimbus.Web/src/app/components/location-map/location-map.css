@@ -1,0 +1,9 @@
+:host { display: block; }
+.map { height: 180px; border-radius: 8px; border: 1px solid var(--ln); overflow: hidden; background: var(--inp); }
+.placeholder {
+  height: 180px; border-radius: 8px; border: 1px dashed var(--ln); background: var(--inp); color: var(--fnt);
+  font: 11px var(--mono); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px;
+  text-align: center; padding: 0 16px;
+}
+.placeholder i { font-size: 20px; }
+:host ::ng-deep .nimbus-pin { background: none; border: 0; color: var(--ac); font-size: 28px; line-height: 28px; text-align: center; }
