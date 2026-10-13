@@ -233,6 +233,9 @@ public class AdminUsersTests
         var doomedLimits = new Nimbus.Domain.Entities.GoNoGoThreshold { Id = Guid.NewGuid(), OwnerId = doomedId, WindYellowKt = 8m, WindRedKt = 12m, VisibilityYellowKm = 6m, VisibilityRedKm = 4m, CapeYellow = 250m, CapeRed = 400m };
         var survivorLimits = new Nimbus.Domain.Entities.GoNoGoThreshold { Id = Guid.NewGuid(), OwnerId = survivorId, WindYellowKt = 8m, WindRedKt = 12m, VisibilityYellowKm = 6m, VisibilityRedKm = 4m, CapeYellow = 250m, CapeRed = 400m };
         db.GoNoGoThresholds.AddRange(doomedLimits, survivorLimits);
+        var doomedProfile = new Nimbus.Domain.Entities.UserProfile { Id = Guid.NewGuid(), OwnerId = doomedId, OperatorName = "Gone", PicWeightKg = 80m };
+        var survivorProfile = new Nimbus.Domain.Entities.UserProfile { Id = Guid.NewGuid(), OwnerId = survivorId, OperatorName = "Stays", PicWeightKg = 75m };
+        db.UserProfiles.AddRange(doomedProfile, survivorProfile);
         await db.SaveChangesAsync();
         db.ChangeTracker.Clear();
 
@@ -248,6 +251,8 @@ public class AdminUsersTests
         Assert.That(db.LaunchLocations.IgnoreQueryFilters().Any(l => l.Id == survivorSpot.Id), Is.True, "another user's launch locations are untouched");
         Assert.That(db.GoNoGoThresholds.Any(t => t.OwnerId == doomedId), Is.False, "thresholds cascade with the account");
         Assert.That(db.GoNoGoThresholds.Any(t => t.Id == survivorLimits.Id), Is.True, "another user's thresholds are untouched");
+        Assert.That(db.UserProfiles.Any(p => p.OwnerId == doomedId), Is.False, "profile cascades with the account");
+        Assert.That(db.UserProfiles.Any(p => p.Id == survivorProfile.Id), Is.True, "another user's profile is untouched");
         Assert.That(db.Users.Any(u => u.Id == survivorId.ToString()), Is.True);
         Assert.That(db.LoginEvents.Any(e => e.Email == doomedEmail), Is.True, "audit trail is retained");
     }

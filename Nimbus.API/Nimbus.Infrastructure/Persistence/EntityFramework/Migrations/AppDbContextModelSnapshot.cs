@@ -424,6 +424,34 @@ namespace Nimbus.Infrastructure.Persistence.EntityFramework.Migrations
                     b.ToTable("SentEmails");
                 });
 
+            modelBuilder.Entity("Nimbus.Domain.Entities.UserProfile", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("OperatorName")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<Guid>("OwnerId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<decimal?>("PicWeightKg")
+                        .HasPrecision(5, 2)
+                        .HasColumnType("decimal(5,2)");
+
+                    b.Property<DateTime?>("UpdatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OwnerId")
+                        .IsUnique();
+
+                    b.ToTable("UserProfiles");
+                });
+
             modelBuilder.Entity("Nimbus.Infrastructure.Identity.ApplicationUser", b =>
                 {
                     b.Property<string>("Id")
