@@ -74,6 +74,7 @@ public static class DependencyInjection
         services.AddScoped<IPilotRepository, PilotRepository>();
         services.AddScoped<ILaunchLocationRepository, LaunchLocationRepository>();
         services.AddScoped<IGoNoGoThresholdsRepository, GoNoGoThresholdsRepository>();
+        services.AddScoped<IUserProfileRepository, UserProfileRepository>();
         services.AddScoped<IOfpSettingsRepository, OfpSettingsRepository>();
         services.AddScoped<IBalloonUsageReader, NoFlightsBalloonUsageReader>();
 

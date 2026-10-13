@@ -1,0 +1,43 @@
+<section class="view" aria-label="My profile">
+  <div class="head">
+    <div>
+      <h1>My profile</h1>
+      @if (email(); as mail) { <div class="sub" data-testid="profile-email">{{ mail }}</div> }
+    </div>
+    @if (savedNotice()) { <span class="badge" data-testid="saved-badge">SAVED</span> }
+  </div>
+
+  @if (profile.isLoading() && !profile.hasValue()) { <p class="note">Loading…</p> }
+  @if (profile.error()) { <p class="note error" role="alert" data-testid="load-error">Your profile could not be loaded.</p> }
+
+  @if (profile.hasValue()) {
+    @if (formError(); as msg) {
+      <div class="banner" role="alert" data-testid="form-error"><i class="ti ti-alert-triangle" aria-hidden="true"></i>{{ msg }}</div>
+    }
+
+    <form class="card" [formGroup]="form" (ngSubmit)="save()" (input)="onEdit()" novalidate data-testid="profile-form">
+      <div class="eyebrow">PRE-FILLED ON EVERY NEW FLIGHT</div>
+      <div class="grid">
+        <div class="field">
+          <label for="f-operatorName">OPERATOR NAME</label>
+          <input id="f-operatorName" type="text" autocomplete="organization" data-testid="operatorName" formControlName="operatorName" [class.bad]="!!touchedError('operatorName')" [attr.aria-invalid]="!!touchedError('operatorName')" />
+          @if (touchedError('operatorName'); as msg) { <div class="err" role="alert" data-testid="operatorName-error">{{ msg }}</div> }
+        </div>
+        <div class="field">
+          <label for="f-picWeightKg">PIC WEIGHT (KG)</label>
+          <input id="f-picWeightKg" type="number" step="any" inputmode="decimal" data-testid="picWeightKg" formControlName="picWeightKg" [class.bad]="!!touchedError('picWeightKg')" [attr.aria-invalid]="!!touchedError('picWeightKg')" />
+          @if (touchedError('picWeightKg'); as msg) { <div class="err" role="alert" data-testid="picWeightKg-error"><i class="ti ti-alert-triangle" aria-hidden="true"></i>{{ msg }}</div> }
+        </div>
+      </div>
+      <div class="info"><i class="ti ti-info-circle" aria-hidden="true"></i>Both fields are optional. Copied onto a flight when you first create it. Later changes don't affect existing flights.</div>
+    </form>
+
+    <div class="actions">
+      <Nimbus-button id="save-profile" data-testid="save-profile" [fullWidth]="false" [disabled]="saving() || !valid()" (click)="save()">Save profile</Nimbus-button>
+    </div>
+
+    @if (savedNotice()) {
+      <div class="toast" role="status" data-testid="saved-notice"><i class="ti ti-circle-check" aria-hidden="true"></i>Profile saved</div>
+    }
+  }
+</section>

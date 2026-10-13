@@ -15,6 +15,7 @@ import { GoNoGoThresholdsService } from './services/GoNoGoThresholdsService';
 import { LaunchLocationsService } from './services/LaunchLocationsService';
 import { OfpSettingsService } from './services/OfpSettingsService';
 import { PilotsService } from './services/PilotsService';
+import { ProfileService } from './services/ProfileService';
 import { TelemetryService } from './services/TelemetryService';
 @NgModule({
     imports: [HttpClientModule],
@@ -44,6 +45,7 @@ import { TelemetryService } from './services/TelemetryService';
         LaunchLocationsService,
         OfpSettingsService,
         PilotsService,
+        ProfileService,
         TelemetryService,
     ]
 })

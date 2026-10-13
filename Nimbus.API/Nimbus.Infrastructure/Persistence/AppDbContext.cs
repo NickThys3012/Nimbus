@@ -18,6 +18,7 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
     public DbSet<Pilot> Pilots => Set<Pilot>();
     public DbSet<LaunchLocation> LaunchLocations => Set<LaunchLocation>();
     public DbSet<GoNoGoThreshold> GoNoGoThresholds => Set<GoNoGoThreshold>();
+    public DbSet<UserProfile> UserProfiles => Set<UserProfile>();
     public DbSet<OfpSettings> OfpSettings => Set<OfpSettings>();
 
     protected override void OnModelCreating(ModelBuilder builder)
@@ -111,17 +112,23 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
             e.HasIndex(t => t.OwnerId).IsUnique();
         });
 
-        builder.Entity<OfpSettings>(e =>
+        builder.Entity<UserProfile>(e =>
         {
-            e.Property(s => s.EquipmentWeightPerPassengerKg).HasPrecision(5, 2);
-            // One row per user.
-            e.HasIndex(s => s.OwnerId).IsUnique();
+            e.Property(p => p.OperatorName).HasMaxLength(200);
+            e.Property(p => p.PicWeightKg).HasPrecision(5, 2);
+            // One profile per user.
+            e.HasIndex(p => p.OwnerId).IsUnique();
+            builder.Entity<OfpSettings>(e =>
+            {
+                e.Property(s => s.EquipmentWeightPerPassengerKg).HasPrecision(5, 2);
+                // One row per user.
+                e.HasIndex(s => s.OwnerId).IsUnique();
+            });
+
+            builder.ApplyConfigurationsFromAssembly(typeof(AppDbContext).Assembly);
+            ApplySoftDeleteConvention(builder);
         });
-
-        builder.ApplyConfigurationsFromAssembly(typeof(AppDbContext).Assembly);
-        ApplySoftDeleteConvention(builder);
     }
-
     // datetime2 comes back as DateTimeKind.Unspecified; mark it UTC so JSON serialises with a "Z"
     // and clients do not read the UTC clock value as local time.
     private static readonly ValueConverter<DateTime, DateTime> AsUtc =

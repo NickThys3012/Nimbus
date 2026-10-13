@@ -1,8 +1,17 @@
+import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { of } from 'rxjs';
 
 import Settings from './settings';
-import { BalloonsService, GoNoGoThresholdsService, LaunchLocationsService, OfpSettingsService, PilotsService } from '../../core/api-client';
+import {
+  BalloonsService,
+  GoNoGoThresholdsService,
+  LaunchLocationsService,
+  OfpSettingsService,
+  PilotsService,
+  ProfileService,
+} from '../../core/api-client';
+import { AuthStore } from '../../core/auth/auth.store';
 
 describe('Settings', () => {
   async function setup() {
@@ -12,6 +21,8 @@ describe('Settings', () => {
         { provide: BalloonsService, useValue: { getApiBalloons: () => of([]) } },
         { provide: PilotsService, useValue: { getApiPilots: () => of([]) } },
         { provide: LaunchLocationsService, useValue: { getApiLaunchLocations: () => of([]) } },
+        { provide: AuthStore, useValue: { email: signal('pilot@example.be') } },
+        { provide: ProfileService, useValue: { getApiProfile: () => of({ operatorName: null, picWeightKg: null }) } },
         { provide: OfpSettingsService, useValue: { getApiOfpSettings: () => of({ equipmentWeightPerPassengerKg: 7, isCustom: false }) } },
         { provide: GoNoGoThresholdsService, useValue: { getApiGoNoGoThresholds: () => of({ windYellowKt: 10, windRedKt: 15, visibilityYellowKm: 5, visibilityRedKm: 3, capeYellow: 300, capeRed: 500, isCustom: false }) } },
       ],
@@ -29,11 +40,11 @@ describe('Settings', () => {
     expect(el.querySelector('Nimbus-balloons')).toBeTruthy();
   });
 
-  it('switches to the placeholder tabs', async () => {
+  it('shows the profile page on the Profile tab', async () => {
     const { fixture, el } = await setup();
     (el.querySelector('#tab-profile') as HTMLButtonElement).click();
     await fixture.whenStable();
-    expect(el.querySelector('[data-testid="profile-placeholder"]')).toBeTruthy();
+    expect(el.querySelector('Nimbus-profile')).toBeTruthy();
     expect(el.querySelector('Nimbus-balloons')).toBeNull();
   });
 

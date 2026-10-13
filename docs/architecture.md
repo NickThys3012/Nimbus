@@ -89,6 +89,7 @@ with **FluentValidation** for request validation.
 - `Features/Balloons/` — a user-owned reference-data feature (see [balloons.md](balloons.md)).
 - `Features/Pilots/` — a user-owned reference-data feature (see [pilots.md](pilots.md)).
 - `Features/GoNoGoThresholds/` — per-user Go/No-Go limits with a read-only global default (see [go-no-go-thresholds.md](go-no-go-thresholds.md)).
+- `Features/Profile/` — per-user profile: operator name and PIC weight (see [profile.md](profile.md)).
 - `Features/LaunchLocations/` — a user-owned reference-data feature (see [launch-locations.md](launch-locations.md)).
 
 ### Nimbus.Infrastructure
