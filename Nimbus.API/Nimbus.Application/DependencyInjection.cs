@@ -3,6 +3,7 @@ using MediatR;
 using Microsoft.Extensions.DependencyInjection;
 using Nimbus.Application.Common.Behaviours;
 using Nimbus.Application.Features.Balloons;
+using Nimbus.Application.Features.LaunchLocations;
 using Nimbus.Application.Features.Pilots;
 using Nimbus.Application.Helpers;
 namespace Nimbus.Application;
@@ -20,6 +21,7 @@ public static class DependencyInjection
         services.AddScoped<EmailHelpers>();
         services.AddScoped<IBalloonService, BalloonService>();
         services.AddScoped<IPilotService, PilotService>();
+        services.AddScoped<ILaunchLocationService, LaunchLocationService>();
         services.AddTransient(
             typeof(IPipelineBehavior<,>),
             typeof(ValidationBehaviour<,>));

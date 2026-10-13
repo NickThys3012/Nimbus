@@ -88,6 +88,7 @@ with **FluentValidation** for request validation.
   (see [owner-scoping.md](owner-scoping.md)).
 - `Features/Balloons/` — a user-owned reference-data feature (see [balloons.md](balloons.md)).
 - `Features/Pilots/` — a user-owned reference-data feature (see [pilots.md](pilots.md)).
+- `Features/LaunchLocations/` — a user-owned reference-data feature (see [launch-locations.md](launch-locations.md)).
 
 ### Nimbus.Infrastructure
 Implements interfaces defined in `Nimbus.Application`/`Nimbus.Domain` using

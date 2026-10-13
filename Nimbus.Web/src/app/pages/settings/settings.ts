@@ -1,14 +1,15 @@
 import { ChangeDetectionStrategy, Component, signal } from '@angular/core';
 
 import Balloons from './balloons/balloons';
+import LaunchLocations from './launch-locations/launch-locations';
 import Pilots from './pilots/pilots';
 import { type TabItem, Tabs } from '../../components/tabs/tabs';
 
-type SettingsTab = 'profile' | 'balloons' | 'pilots' | 'preferences';
+type SettingsTab = 'profile' | 'balloons' | 'pilots' | 'launch-locations' | 'preferences';
 
 @Component({
   selector: 'Nimbus-settings',
-  imports: [Balloons, Pilots, Tabs],
+  imports: [Balloons, LaunchLocations, Pilots, Tabs],
   templateUrl: './settings.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrl: './settings.css',
@@ -19,6 +20,7 @@ export default class Settings {
     { id: 'profile', label: 'Profile' },
     { id: 'balloons', label: 'Balloons' },
     { id: 'pilots', label: 'Pilots' },
+    { id: 'launch-locations', label: 'Locations' },
     { id: 'preferences', label: 'Preferences' },
   ];
 

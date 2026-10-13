@@ -19,6 +19,7 @@
 
 .modal.w-narrow { width: min(400px, 100%); }
 .modal.w-confirm { width: min(380px, 100%); }
+.modal.w-wide { width: min(860px, 100%); }
 
 .modal-actions {
   display: flex;

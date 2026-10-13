@@ -19,6 +19,12 @@
     }
   </div>
 
+  <div id="panel-launch-locations" role="tabpanel" aria-labelledby="tab-launch-locations" [hidden]="tab() !== 'launch-locations'">
+    @if (tab() === 'launch-locations') {
+      <Nimbus-launch-locations></Nimbus-launch-locations>
+    }
+  </div>
+
   <div id="panel-preferences" role="tabpanel" aria-labelledby="tab-preferences" [hidden]="tab() !== 'preferences'">
     @if (tab() === 'preferences') {
       <p class="note" data-testid="preferences-placeholder">Preferences are coming soon.</p>

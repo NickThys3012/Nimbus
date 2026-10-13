@@ -227,6 +227,9 @@ public class AdminUsersTests
         var doomedPilot = new Nimbus.Domain.Entities.Pilot { Name = "Gone", WeightKg = 80m, OwnerId = doomedId, IsDeleted = true };
         var survivorPilot = new Nimbus.Domain.Entities.Pilot { Name = "Stays", WeightKg = 80m, OwnerId = survivorId };
         db.Pilots.AddRange(doomedPilot, survivorPilot);
+        var doomedSpot = new Nimbus.Domain.Entities.LaunchLocation { Name = "Gone", Latitude = 50m, Longitude = 4m, OwnerId = doomedId, IsDeleted = true };
+        var survivorSpot = new Nimbus.Domain.Entities.LaunchLocation { Name = "Stays", Latitude = 50m, Longitude = 4m, OwnerId = survivorId };
+        db.LaunchLocations.AddRange(doomedSpot, survivorSpot);
         await db.SaveChangesAsync();
         db.ChangeTracker.Clear();
 
@@ -238,6 +241,8 @@ public class AdminUsersTests
         Assert.That(db.Balloons.IgnoreQueryFilters().Any(b => b.Id == survivorBalloon.Id), Is.True, "another user's balloons are untouched");
         Assert.That(db.Pilots.IgnoreQueryFilters().Any(p => p.OwnerId == doomedId), Is.False, "pilots (including soft-deleted) cascade with the account");
         Assert.That(db.Pilots.IgnoreQueryFilters().Any(p => p.Id == survivorPilot.Id), Is.True, "another user's pilots are untouched");
+        Assert.That(db.LaunchLocations.IgnoreQueryFilters().Any(l => l.OwnerId == doomedId), Is.False, "launch locations (including soft-deleted) cascade with the account");
+        Assert.That(db.LaunchLocations.IgnoreQueryFilters().Any(l => l.Id == survivorSpot.Id), Is.True, "another user's launch locations are untouched");
         Assert.That(db.Users.Any(u => u.Id == survivorId.ToString()), Is.True);
         Assert.That(db.LoginEvents.Any(e => e.Email == doomedEmail), Is.True, "audit trail is retained");
     }

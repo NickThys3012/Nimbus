@@ -1,0 +1,139 @@
+:host { display: block; }
+.view { display: flex; flex-direction: column; gap: 14px; }
+.head { display: flex; align-items: center; gap: 10px; }
+.head > div:first-child { flex: 1; }
+h1 { font-size: 16px; font-weight: 600; margin: 0; color: var(--tx); }
+.sub { font: 11px var(--mono); color: var(--fnt); margin-top: 2px; }
+.note { font-size: 12px; color: var(--dim); margin: 0; }
+.note.error { color: var(--r); }
+
+.table { background: var(--pan); border: 1px solid var(--ln); border-radius: 10px; }
+.tr:last-child { border-bottom: 0; }
+.tr.th { padding: 10px 14px; font: 10px var(--mono); color: var(--fnt); }
+.nm { font-size: 14px; color: var(--tx); min-width: 0; overflow-wrap: anywhere; }
+.th .c-act { display: flex; justify-content: flex-end; }
+.acts { display: flex; gap: 12px; }
+.menu-wrap { display: none; position: relative; }
+.ico.plus { display: none; color: var(--ac); font-size: 20px; }
+.ico {
+  background: none; border: 0; padding: 4px; cursor: pointer; color: var(--dim); font-size: 16px;
+  display: inline-flex; border-radius: 6px;
+}
+.ico:hover:not(:disabled) { color: var(--tx); }
+.ico:focus-visible { outline: 2px solid var(--ac); }
+.menu {
+  position: absolute; right: 0; top: 100%; z-index: 30; min-width: 150px; background: var(--pan);
+  border: 1px solid var(--ln2); border-radius: 11px; padding: 6px; margin-top: 4px;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, .32); display: flex; flex-direction: column;
+}
+:host-context(html.lt) .menu { box-shadow: 0 10px 28px rgba(0, 0, 0, .10); }
+.menu button {
+  background: none; border: 0; color: var(--tx); font-family: var(--sans); font-size: 13px; padding: 8px;
+  border-radius: 7px; display: flex; align-items: center; gap: 9px; cursor: pointer; text-align: left; width: 100%;
+}
+.menu button i { font-size: 16px; color: var(--dim); }
+.menu button:hover { background: var(--chip); }
+.menu button.danger, .menu button.danger i { color: var(--r); }
+.menu button.danger:hover { background: var(--rb); }
+.empty {
+  background: var(--pan); border: 1px solid var(--ln); border-radius: 14px; padding: 48px 26px;
+  display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center;
+}
+.empty strong { display: block; font-size: 16px; font-weight: 600; color: var(--tx); margin-bottom: 0; }
+.empty ::ng-deep .empty-state { padding: 0; display: flex; flex-direction: column; align-items: center; gap: 10px; }
+.empty ::ng-deep .empty-state i {
+  width: 44px; height: 44px; margin: 0; display: grid; place-items: center; font-size: 22px;
+  border-radius: 12px; background: var(--chip); color: var(--fnt);
+}
+.helper { display: block; font-size: 12px; color: var(--dim); max-width: 320px; margin: 0 auto; }
+
+.form { display: flex; flex-direction: column; gap: 14px; margin-top: 14px; }
+.field label { display: block; font: 11px var(--mono); color: var(--fnt); margin-bottom: 5px; }
+.field input {
+  width: 100%; box-sizing: border-box; background: var(--inp); border: 1px solid var(--ln); border-radius: 8px;
+  padding: 9px 11px; font-size: 14px; color: var(--tx); font-family: var(--sans);
+}
+.field input:focus { outline: none; border-color: var(--ac); }
+.field.bad input { border-color: var(--r); }
+.general-err {
+  font: 12px var(--mono); color: var(--r); background: var(--rb); border-radius: 8px; padding: 9px 11px;
+  margin-top: 14px; display: flex; gap: 6px; align-items: center;
+}
+.err { font: 11px var(--mono); color: var(--r); margin-top: 4px; display: flex; gap: 5px; align-items: center; }
+
+.glyph { width: 44px; height: 44px; border-radius: 12px; display: grid; place-items: center; font-size: 22px; margin-bottom: 12px; }
+.glyph.err { background: var(--rb); color: var(--r); }
+
+
+/* launch locations */
+.tr {
+  display: grid; grid-template-columns: 1fr 70px 170px 90px 60px; gap: 10px; align-items: center;
+  padding: 13px 14px; border-bottom: 1px solid var(--ln);
+}
+.nm small.notes { display: block; font: 11px var(--sans); color: var(--fnt); margin-top: 2px; }
+.icao { font: 13px var(--mono); color: var(--tx); }
+.icao.none { color: var(--fnt); }
+.coords { font: 12px var(--mono); color: var(--dim); }
+.c-e { font: 12px var(--mono); text-align: right; color: var(--tx); }
+.th .c-e { font: 10px var(--mono); color: var(--fnt); }
+.amsl { display: none; }
+.foot { font: 11px var(--mono); color: var(--fnt); }
+
+.cols { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; align-items: start; }
+.card { background: var(--pan); border: 1px solid var(--ln); border-radius: 14px; padding: 20px; display: flex; flex-direction: column; gap: 12px; }
+.cap { font: 10px var(--mono); color: var(--fnt); }
+.prev-head { display: flex; align-items: center; }
+.prev-head > span:first-child { flex: 1; }
+.live { color: var(--ac); }
+.fields { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 10px; }
+.fields > * { grid-column: 1 / -1; }
+.fields > .f-lat, .fields > .f-lon { grid-column: auto; }
+.field textarea {
+  width: 100%; box-sizing: border-box; background: var(--inp); border: 1px solid var(--ln2); border-radius: 8px;
+  padding: 10px 12px; font-size: 13px; color: var(--tx); font-family: var(--sans); resize: vertical; min-height: 72px;
+}
+.field textarea:focus { outline: none; border-color: var(--ac); }
+.field.bad textarea { border-color: var(--r); }
+.hint { font: 11px var(--mono); color: var(--fnt); margin-top: 4px; }
+.f-hint { margin: 0; }
+.sm { display: none; }
+.err { margin-top: 4px; }
+
+@media (max-width: 760px) {
+  .cols { grid-template-columns: 1fr; }
+  .preview { order: -1; }
+}
+@media (max-width: 600px) {
+  .head .add { display: none; }
+  .ico.plus { display: inline-flex; }
+  .tr.th { display: none; }
+  .tr, .tr:last-child {
+    grid-template-columns: 1fr auto auto; grid-template-areas: "nm icao act" "coords coords coords" "elev elev elev";
+    gap: 0 10px; padding: 13px;
+  }
+  .table { background: transparent; border: 0; display: flex; flex-direction: column; gap: 12px; }
+  .tr, .tr:last-child { background: var(--pan); border: 1px solid var(--ln); border-radius: 10px; }
+  .nm { grid-area: nm; }
+  .nm small.notes { display: none; }
+  .icao { grid-area: icao; font-size: 12px; }
+  .c-act { grid-area: act; }
+  .coords { grid-area: coords; font-size: 11px; color: var(--fnt); margin-top: 8px; }
+  .c-e { grid-area: elev; text-align: left; font-size: 11px; color: var(--dim); margin-top: 3px; }
+  .amsl { display: inline; }
+  .acts { display: none; }
+  .menu-wrap { display: block; }
+
+  .card { background: none; border: 0; padding: 0; }
+  .preview .cap { display: none; }
+  .fields > .cap { display: none; }
+  .fields { gap: 12px 10px; }
+  .f-icao { order: 1; grid-column: 1; }
+  .f-elev { order: 2; grid-column: 2; }
+  .f-lat { order: 3; }
+  .f-lon { order: 4; }
+  .f-notes { order: 5; }
+  .f-name { order: 0; }
+  .f-hint, .hint.lg { display: none; }
+  .lg { display: none; }
+  .sm { display: inline; }
+}
