@@ -64,6 +64,25 @@ public static class OwnedServiceContract
         Assert.That(await service.UpdateAsync(admin, created.Id, incoming), Is.EqualTo(OwnedResult.Success));
         Assert.That(created.OwnerId, Is.EqualTo(owner.UserId));
 
+        // Admin acts across owners, asserted explicitly: edit changes values, never the owner.
+        var adminEdit = newEntity();
+        mutate(adminEdit);
+        adminEdit.OwnerId = admin.UserId;
+        var updatesBefore = repo.UpdateCount;
+        Assert.That(await service.UpdateAsync(admin, created.Id, adminEdit), Is.EqualTo(OwnedResult.Success));
+        Assert.That(repo.UpdateCount - updatesBefore, Is.EqualTo(1), "admin update on a foreign row must persist");
+        Assert.That(created.OwnerId, Is.EqualTo(owner.UserId), "admin update must not reassign ownership");
+        Assert.That((await service.ListAsync(admin)).Select(e => e.Id), Does.Contain(created.Id), "admin lists across owners");
+
+        // Admin-created rows belong to the admin, and the admin can delete another user's row.
+        var adminOwned = await service.CreateAsync(admin, newEntity());
+        Assert.That(adminOwned.OwnerId, Is.EqualTo(admin.UserId));
+        Assert.That(await service.GetAsync(owner, adminOwned.Id), Is.Null, "owner must not read the admin's row");
+        var foreignRow = await service.CreateAsync(stranger, newEntity());
+        Assert.That(await service.DeleteAsync(admin, foreignRow.Id), Is.EqualTo(OwnedResult.Success), "admin may delete across owners");
+        Assert.That(await service.GetAsync(stranger, foreignRow.Id), Is.Null);
+        Assert.That(await service.DeleteAsync(admin, adminOwned.Id), Is.EqualTo(OwnedResult.Success));
+
         // Missing ids are a no-op too.
         Assert.That(await service.DeleteAsync(owner, Guid.NewGuid()), Is.EqualTo(OwnedResult.NotFound));
 
