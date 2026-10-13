@@ -4,13 +4,14 @@ import Balloons from './balloons/balloons';
 import GoNoGo from './go-no-go/go-no-go';
 import LaunchLocations from './launch-locations/launch-locations';
 import Pilots from './pilots/pilots';
+import Profile from './profile/profile';
 import { type TabItem, Tabs } from '../../components/tabs/tabs';
 
 type SettingsTab = 'profile' | 'balloons' | 'pilots' | 'launch-locations' | 'go-no-go' | 'preferences';
 
 @Component({
   selector: 'Nimbus-settings',
-  imports: [Balloons, GoNoGo, LaunchLocations, Pilots, Tabs],
+  imports: [Balloons, GoNoGo, LaunchLocations, Pilots, Profile, Tabs],
   templateUrl: './settings.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrl: './settings.css',

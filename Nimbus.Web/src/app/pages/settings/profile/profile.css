@@ -1,0 +1,42 @@
+:host { display: block; }
+.view { display: flex; flex-direction: column; gap: 14px; }
+.head { display: flex; align-items: center; gap: 10px; }
+.head > div:first-child { flex: 1; }
+h1 { font-size: 16px; font-weight: 600; margin: 0; color: var(--tx); }
+.sub { font: 11px var(--mono); color: var(--fnt); margin-top: 2px; }
+.note { font-size: 12px; color: var(--dim); margin: 0; }
+.note.error { color: var(--r); }
+.badge { font: 11px var(--mono); color: var(--ac); background: var(--acbg); padding: 4px 10px; border-radius: 8px; white-space: nowrap; }
+
+.banner {
+  font-size: 13px; color: var(--r); background: var(--rb); border-radius: 10px; padding: 11px 14px;
+  display: flex; gap: 8px; align-items: center;
+}
+
+.card { background: var(--pan); border: 1px solid var(--ln); border-radius: 14px; padding: 22px; display: flex; flex-direction: column; gap: 14px; }
+.eyebrow { font: 10px var(--mono); color: var(--fnt); }
+.grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; align-items: start; }
+.field { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+label { font: 10px var(--mono); color: var(--fnt); }
+input {
+  box-sizing: border-box; width: 100%; background: var(--inp); border: 1px solid var(--ln2); border-radius: 8px;
+  padding: 10px 12px; font: 14px var(--mono); color: var(--tx);
+}
+input:focus { outline: none; border-color: var(--ac); }
+input.bad { border-color: var(--r); }
+.err { font: 11px var(--mono); color: var(--r); display: flex; gap: 5px; align-items: center; }
+.info { font-size: 12px; color: var(--dim); display: flex; gap: 8px; align-items: center; }
+.info i { font-size: 15px; }
+
+.actions { display: flex; justify-content: flex-end; }
+.toast {
+  align-self: center; background: var(--pan); border: 1px solid var(--ln2); border-radius: 10px; padding: 11px 16px;
+  display: flex; gap: 10px; align-items: center; font-size: 13px; color: var(--tx); box-shadow: 0 8px 24px rgba(0, 0, 0, .45);
+}
+.toast i { color: var(--g); font-size: 17px; }
+
+@media (max-width: 600px) {
+  .card { padding: 16px; border-radius: 12px; }
+  .grid { grid-template-columns: 1fr; }
+  .actions ::ng-deep Nimbus-button { flex: 1; }
+}
