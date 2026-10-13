@@ -26,6 +26,8 @@ export type { LaunchLocationRequestDto } from './models/LaunchLocationRequestDto
 export type { LoginEventDto } from './models/LoginEventDto';
 export type { LoginRequestDto } from './models/LoginRequestDto';
 export type { LoginResponseDto } from './models/LoginResponseDto';
+export type { OfpSettingsDto } from './models/OfpSettingsDto';
+export type { OfpSettingsRequestDto } from './models/OfpSettingsRequestDto';
 export type { PilotDto } from './models/PilotDto';
 export type { PilotRequestDto } from './models/PilotRequestDto';
 export type { RegisterRequestDto } from './models/RegisterRequestDto';
@@ -40,5 +42,6 @@ export { AuthenticationService } from './services/AuthenticationService';
 export { BalloonsService } from './services/BalloonsService';
 export { GoNoGoThresholdsService } from './services/GoNoGoThresholdsService';
 export { LaunchLocationsService } from './services/LaunchLocationsService';
+export { OfpSettingsService } from './services/OfpSettingsService';
 export { PilotsService } from './services/PilotsService';
 export { TelemetryService } from './services/TelemetryService';
