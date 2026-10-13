@@ -13,7 +13,7 @@ h1 { font-size: 16px; font-weight: 600; margin: 0; color: var(--tx); }
   display: flex; gap: 8px; align-items: center;
 }
 
-.card { background: var(--pan); border: 1px solid var(--ln); border-radius: 14px; padding: 22px; display: flex; flex-direction: column; gap: 14px; }
+.card { width: auto; max-width: none; background: var(--pan); border: 1px solid var(--ln); border-radius: 14px; padding: 22px; display: flex; flex-direction: column; gap: 14px; }
 .eyebrow { font: 10px var(--mono); color: var(--fnt); }
 .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; align-items: start; }
 .field { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
