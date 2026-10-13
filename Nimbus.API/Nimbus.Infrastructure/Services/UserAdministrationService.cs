@@ -113,6 +113,7 @@ public class UserAdministrationService : IUserAdministrationService
             await _db.Balloons.IgnoreQueryFilters().Where(b => b.OwnerId == userId).ExecuteDeleteAsync(ct);
             await _db.Pilots.IgnoreQueryFilters().Where(p => p.OwnerId == userId).ExecuteDeleteAsync(ct);
             await _db.LaunchLocations.IgnoreQueryFilters().Where(l => l.OwnerId == userId).ExecuteDeleteAsync(ct);
+            await _db.GoNoGoThresholds.Where(t => t.OwnerId == userId).ExecuteDeleteAsync(ct);
             Ensure(await _userManager.DeleteAsync(user), user);
         }, ct);
     }

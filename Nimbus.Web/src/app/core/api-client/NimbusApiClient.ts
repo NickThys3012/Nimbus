@@ -11,6 +11,7 @@ import { OpenAPI } from './core/OpenAPI';
 import { AdminService } from './services/AdminService';
 import { AuthenticationService } from './services/AuthenticationService';
 import { BalloonsService } from './services/BalloonsService';
+import { GoNoGoThresholdsService } from './services/GoNoGoThresholdsService';
 import { LaunchLocationsService } from './services/LaunchLocationsService';
 import { PilotsService } from './services/PilotsService';
 import { TelemetryService } from './services/TelemetryService';
@@ -38,6 +39,7 @@ import { TelemetryService } from './services/TelemetryService';
         AdminService,
         AuthenticationService,
         BalloonsService,
+        GoNoGoThresholdsService,
         LaunchLocationsService,
         PilotsService,
         TelemetryService,

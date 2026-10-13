@@ -1,0 +1,82 @@
+:host { display: block; }
+.view { display: flex; flex-direction: column; gap: 14px; }
+.head { display: flex; align-items: center; gap: 10px; }
+.head > div:first-child { flex: 1; }
+h1 { font-size: 16px; font-weight: 600; margin: 0; color: var(--tx); }
+.sub { font: 11px var(--mono); color: var(--fnt); margin-top: 2px; }
+.note { font-size: 12px; color: var(--dim); margin: 0; }
+.note.error { color: var(--r); }
+.badge { font: 11px var(--mono); color: var(--dim); background: var(--chip); padding: 4px 10px; border-radius: 8px; white-space: nowrap; }
+.badge.custom { color: var(--ac); background: var(--acbg); }
+
+.banner {
+  font-size: 13px; color: var(--r); background: var(--rb); border-radius: 10px; padding: 11px 14px;
+  display: flex; gap: 8px; align-items: center;
+}
+
+.card { background: var(--pan); border: 1px solid var(--ln); border-radius: 14px; overflow: hidden; }
+.row {
+  display: grid; grid-template-columns: 1.2fr 1fr 1fr; gap: 16px; align-items: start;
+  padding: 16px 22px; border-bottom: 1px solid var(--ln);
+}
+.row:last-child { border-bottom: 0; }
+.row.th { padding: 12px 22px; font: 10px var(--mono); align-items: center; }
+.fnt { color: var(--fnt); }
+.yel { color: var(--a); }
+.red { color: var(--r); }
+.th .yel, .th .red { display: flex; gap: 6px; align-items: center; }
+.dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; display: inline-block; }
+.param { padding-top: 9px; }
+.lbl { font-size: 14px; color: var(--tx); }
+.hint { font: 11px var(--mono); color: var(--fnt); margin-top: 3px; }
+.mlabel { display: none; font: 10px var(--mono); margin-bottom: 5px; }
+
+.inp { display: flex; align-items: center; gap: 8px; }
+.inp input {
+  flex: 1; min-width: 0; box-sizing: border-box; background: var(--inp); border: 1px solid var(--ln2); border-radius: 8px;
+  padding: 9px 12px; font: 14px var(--mono); color: var(--tx);
+}
+.inp input:focus { outline: none; border-color: var(--ac); }
+.inp.bad input { border-color: var(--r); }
+.unit { font: 11px var(--mono); color: var(--fnt); width: 42px; }
+.err { font: 11px var(--mono); color: var(--r); margin-top: 5px; }
+
+.preview {
+  background: var(--pan); border: 1px solid var(--ln); border-radius: 10px; padding: 14px 18px;
+  display: flex; align-items: center; gap: 12px;
+}
+.ptxt { flex: 1; font: 10px var(--mono); color: var(--fnt); }
+.chip { font: 600 12px var(--mono); padding: 5px 12px; border-radius: 8px; }
+.chip.go { color: var(--g); background: var(--gb); }
+.chip.caution { color: var(--a); background: var(--ab); }
+.chip.nogo { color: var(--r); background: var(--rb); }
+
+.actions { display: flex; justify-content: space-between; gap: 10px; }
+.toast {
+  align-self: center; background: var(--pan); border: 1px solid var(--ln2); border-radius: 10px; padding: 11px 16px;
+  display: flex; gap: 10px; align-items: center; font-size: 13px; color: var(--tx); box-shadow: 0 8px 24px rgba(0, 0, 0, .45);
+}
+.toast i { color: var(--g); font-size: 17px; }
+
+.glyph { width: 44px; height: 44px; border-radius: 12px; display: grid; place-items: center; font-size: 22px; margin-bottom: 12px; background: var(--ab); color: var(--a); }
+.defaults-list { background: var(--chip); border-radius: 10px; font: 12px var(--mono); margin: 12px 0; }
+.drow { display: flex; justify-content: space-between; padding: 9px 12px; border-bottom: 1px solid var(--ln); color: var(--tx); }
+.drow:last-child { border-bottom: 0; }
+.drow span:first-child { color: var(--dim); }
+
+@media (max-width: 600px) {
+  .card { background: none; border: 0; border-radius: 0; overflow: visible; display: flex; flex-direction: column; gap: 12px; }
+  .row.th { display: none; }
+  .row, .row:last-child {
+    background: var(--pan); border: 1px solid var(--ln); border-radius: 12px; padding: 14px;
+    grid-template-columns: 1fr 1fr; gap: 10px;
+  }
+  .row.bad { border-color: var(--r); }
+  .param { grid-column: 1 / -1; padding-top: 0; display: flex; align-items: baseline; }
+  .lbl { flex: 1; }
+  .hint { margin-top: 0; }
+  .mlabel { display: block; }
+  .unit { display: none; }
+  .actions { gap: 10px; }
+  .actions ::ng-deep Nimbus-button { flex: 1; }
+}

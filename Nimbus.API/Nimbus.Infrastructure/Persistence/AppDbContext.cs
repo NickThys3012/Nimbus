@@ -17,6 +17,7 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
     public DbSet<Balloon> Balloons => Set<Balloon>();
     public DbSet<Pilot> Pilots => Set<Pilot>();
     public DbSet<LaunchLocation> LaunchLocations => Set<LaunchLocation>();
+    public DbSet<GoNoGoThreshold> GoNoGoThresholds => Set<GoNoGoThreshold>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -95,6 +96,18 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
             e.Property(l => l.ElevationM).HasPrecision(7, 2);
             e.Property(l => l.AirspaceNotes).HasMaxLength(2000);
             e.HasIndex(l => l.OwnerId);
+        });
+
+        builder.Entity<GoNoGoThreshold>(e =>
+        {
+            e.Property(t => t.WindYellowKt).HasPrecision(7, 2);
+            e.Property(t => t.WindRedKt).HasPrecision(7, 2);
+            e.Property(t => t.VisibilityYellowKm).HasPrecision(7, 2);
+            e.Property(t => t.VisibilityRedKm).HasPrecision(7, 2);
+            e.Property(t => t.CapeYellow).HasPrecision(7, 2);
+            e.Property(t => t.CapeRed).HasPrecision(7, 2);
+            // One row per user (unique on non-null owners); null-owner rows are the read-only global default.
+            e.HasIndex(t => t.OwnerId).IsUnique();
         });
 
         builder.ApplyConfigurationsFromAssembly(typeof(AppDbContext).Assembly);
