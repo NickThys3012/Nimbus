@@ -16,6 +16,7 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
     public DbSet<LoginEvent> LoginEvents => Set<LoginEvent>();
     public DbSet<Balloon> Balloons => Set<Balloon>();
     public DbSet<Pilot> Pilots => Set<Pilot>();
+    public DbSet<LaunchLocation> LaunchLocations => Set<LaunchLocation>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -83,6 +84,17 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
             e.Property(p => p.Name).IsRequired().HasMaxLength(100);
             e.Property(p => p.WeightKg).HasPrecision(5, 2);
             e.HasIndex(p => p.OwnerId);
+        });
+
+        builder.Entity<LaunchLocation>(e =>
+        {
+            e.Property(l => l.Name).IsRequired().HasMaxLength(100);
+            e.Property(l => l.IcaoCode).HasMaxLength(4);
+            e.Property(l => l.Latitude).HasPrecision(9, 6);
+            e.Property(l => l.Longitude).HasPrecision(9, 6);
+            e.Property(l => l.ElevationM).HasPrecision(7, 2);
+            e.Property(l => l.AirspaceNotes).HasMaxLength(2000);
+            e.HasIndex(l => l.OwnerId);
         });
 
         builder.ApplyConfigurationsFromAssembly(typeof(AppDbContext).Assembly);
