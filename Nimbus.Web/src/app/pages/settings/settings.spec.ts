@@ -3,9 +3,15 @@ import { TestBed } from '@angular/core/testing';
 import { of } from 'rxjs';
 
 import Settings from './settings';
-import { BalloonsService, GoNoGoThresholdsService, LaunchLocationsService, PilotsService, ProfileService } from '../../core/api-client';
+import {
+  BalloonsService,
+  GoNoGoThresholdsService,
+  LaunchLocationsService,
+  OfpSettingsService,
+  PilotsService,
+  ProfileService,
+} from '../../core/api-client';
 import { AuthStore } from '../../core/auth/auth.store';
-import { BalloonsService, GoNoGoThresholdsService, LaunchLocationsService, OfpSettingsService, PilotsService } from '../../core/api-client';
 
 describe('Settings', () => {
   async function setup() {
