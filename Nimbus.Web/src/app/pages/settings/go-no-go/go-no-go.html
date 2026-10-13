@@ -1,0 +1,89 @@
+<section class="view" aria-label="Go/No-Go thresholds">
+  <div class="head">
+    <div>
+      <h1>Go / No-Go thresholds</h1>
+      <div class="sub">YOUR PERSONAL MINIMA · DRIVE THE TRAFFIC LIGHT ON EVERY FLIGHT</div>
+    </div>
+    @if (thresholds.hasValue()) {
+      <span class="badge" [class.custom]="isCustom()" data-testid="mode-badge">{{ isCustom() ? 'CUSTOM' : 'USING DEFAULTS' }}</span>
+    }
+  </div>
+
+  @if (thresholds.isLoading() && !thresholds.hasValue()) { <p class="note">Loading…</p> }
+  @if (thresholds.error()) { <p class="note error" role="alert" data-testid="load-error">Your thresholds could not be loaded.</p> }
+
+  @if (thresholds.hasValue()) {
+    @if (inconsistentCount() > 0) {
+      <div class="banner" role="alert" data-testid="inconsistent-banner">
+        <i class="ti ti-alert-triangle" aria-hidden="true"></i>
+        {{ inconsistentCount() }} {{ inconsistentCount() === 1 ? 'threshold is' : 'thresholds are' }} inconsistent. No-go limits must be stricter than caution limits.
+      </div>
+    }
+    @if (formError(); as msg) {
+      <div class="banner" role="alert" data-testid="form-error"><i class="ti ti-alert-triangle" aria-hidden="true"></i>{{ msg }}</div>
+    }
+
+    <form class="card" [formGroup]="form" (ngSubmit)="save()" (input)="onEdit()" novalidate data-testid="thresholds-form">
+      <div class="row th" role="presentation">
+        <span class="fnt">PARAMETER</span>
+        <span class="yel"><i class="dot" aria-hidden="true"></i>CAUTION FROM</span>
+        <span class="red"><i class="dot" aria-hidden="true"></i>NO-GO FROM</span>
+      </div>
+      @for (r of rows; track r.id) {
+        <div class="row" [class.bad]="!!touchedError(r.yellow) || !!touchedError(r.red)" [attr.data-testid]="'row-' + r.id">
+          <div class="param">
+            <div class="lbl">{{ r.label }}</div>
+            <div class="hint">{{ thresholds.hasValue() && isCustom() ? 'DEFAULT ' + defaults[r.yellow] + ' / ' + defaults[r.red] + ' ' + r.unit : r.hint }}</div>
+          </div>
+          <div class="cell">
+            <span class="mlabel yel">CAUTION FROM</span>
+            <div class="inp" [class.bad]="!!touchedError(r.yellow)">
+              <input type="number" step="any" inputmode="decimal" [id]="'f-' + r.yellow" [attr.data-testid]="r.yellow" [attr.aria-label]="r.label + ' caution from'" [formControlName]="r.yellow" [attr.aria-invalid]="!!touchedError(r.yellow)" />
+              <span class="unit">{{ r.unit }}</span>
+            </div>
+            @if (touchedError(r.yellow); as msg) {
+              <div class="err" role="alert" [attr.data-testid]="r.yellow + '-error'">{{ msg }}</div>
+            }
+          </div>
+          <div class="cell">
+            <span class="mlabel red">NO-GO FROM</span>
+            <div class="inp" [class.bad]="!!touchedError(r.red)">
+              <input type="number" step="any" inputmode="decimal" [id]="'f-' + r.red" [attr.data-testid]="r.red" [attr.aria-label]="r.label + ' no-go from'" [formControlName]="r.red" [attr.aria-invalid]="!!touchedError(r.red)" />
+              <span class="unit">{{ r.unit }}</span>
+            </div>
+            @if (touchedError(r.red); as msg) {
+              <div class="err" role="alert" [attr.data-testid]="r.red + '-error'">{{ msg }}</div>
+            }
+          </div>
+        </div>
+      }
+    </form>
+
+    <div class="preview" data-testid="preview">
+      <span class="ptxt">{{ previewText }}</span>
+      <span class="chip" [class]="'chip ' + preview().level" data-testid="preview-chip">{{ preview().label }}</span>
+    </div>
+
+    <div class="actions">
+      <Nimbus-button id="reset-thresholds" data-testid="reset-thresholds" variant="ghost" icon="ti-restore" [fullWidth]="false" [disabled]="resetting()" (click)="askReset()">Reset to defaults</Nimbus-button>
+      <Nimbus-button id="save-thresholds" data-testid="save-thresholds" [fullWidth]="false" [disabled]="saving() || !valid()" (click)="save()">Save thresholds</Nimbus-button>
+    </div>
+
+    @if (savedNotice()) {
+      <div class="toast" role="status" data-testid="saved-notice"><i class="ti ti-circle-check" aria-hidden="true"></i>Thresholds saved</div>
+    }
+  }
+</section>
+
+<Nimbus-modal [isOpen]="resetOpen()" [alert]="true" width="confirm" title="Reset to defaults?" description="Your personal thresholds will be replaced by the defaults below. New and reopened flights are re-assessed." (closed)="closeReset()" data-testid="reset-dialog">
+  <div modal-icon class="glyph"><i class="ti ti-restore" aria-hidden="true"></i></div>
+  <div modal-body class="defaults-list" data-testid="reset-defaults">
+    @for (r of rows; track r.id) {
+      <div class="drow"><span>{{ r.label }}</span><span>{{ defaults[r.yellow] }} / {{ defaults[r.red] }} {{ r.unit }}</span></div>
+    }
+  </div>
+  <div modal-actions>
+    <Nimbus-button id="reset-cancel" data-testid="reset-cancel" variant="ghost" [fullWidth]="false" (click)="closeReset()">Cancel</Nimbus-button>
+    <Nimbus-button id="reset-confirm" data-testid="reset-confirm" [fullWidth]="false" [disabled]="resetting()" (click)="confirmReset()">Reset</Nimbus-button>
+  </div>
+</Nimbus-modal>
