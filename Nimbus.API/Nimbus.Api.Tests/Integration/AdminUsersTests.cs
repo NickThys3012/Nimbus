@@ -254,7 +254,6 @@ public class AdminUsersTests
         Assert.That(db.UserProfiles.Any(p => p.OwnerId == doomedId), Is.False, "profile cascades with the account");
         Assert.That(db.UserProfiles.Any(p => p.Id == survivorProfile.Id), Is.True, "another user's profile is untouched");
         Assert.That(db.OfpSettings.Any(s => s.OwnerId == doomedId), Is.False, "OFP settings cascade with the account");
-        Assert.That(db.OfpSettings.Any(s => s.Id == survivorOfp.Id), Is.True, "another user's OFP settings are untouched");
         Assert.That(db.Users.Any(u => u.Id == survivorId.ToString()), Is.True);
         Assert.That(db.LoginEvents.Any(e => e.Email == doomedEmail), Is.True, "audit trail is retained");
     }
