@@ -18,6 +18,7 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
     public DbSet<Pilot> Pilots => Set<Pilot>();
     public DbSet<LaunchLocation> LaunchLocations => Set<LaunchLocation>();
     public DbSet<GoNoGoThreshold> GoNoGoThresholds => Set<GoNoGoThreshold>();
+    public DbSet<OfpSettings> OfpSettings => Set<OfpSettings>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -108,6 +109,13 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
             e.Property(t => t.CapeRed).HasPrecision(7, 2);
             // One row per user (unique on non-null owners); null-owner rows are the read-only global default.
             e.HasIndex(t => t.OwnerId).IsUnique();
+        });
+
+        builder.Entity<OfpSettings>(e =>
+        {
+            e.Property(s => s.EquipmentWeightPerPassengerKg).HasPrecision(5, 2);
+            // One row per user.
+            e.HasIndex(s => s.OwnerId).IsUnique();
         });
 
         builder.ApplyConfigurationsFromAssembly(typeof(AppDbContext).Assembly);
