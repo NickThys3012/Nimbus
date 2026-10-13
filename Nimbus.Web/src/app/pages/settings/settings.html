@@ -31,6 +31,12 @@
     }
   </div>
 
+  <div id="panel-ofp" role="tabpanel" aria-labelledby="tab-ofp" [hidden]="tab() !== 'ofp'">
+    @if (tab() === 'ofp') {
+      <Nimbus-ofp></Nimbus-ofp>
+    }
+  </div>
+
   <div id="panel-preferences" role="tabpanel" aria-labelledby="tab-preferences" [hidden]="tab() !== 'preferences'">
     @if (tab() === 'preferences') {
       <p class="note" data-testid="preferences-placeholder">Preferences are coming soon.</p>

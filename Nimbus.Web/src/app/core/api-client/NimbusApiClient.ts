@@ -13,6 +13,7 @@ import { AuthenticationService } from './services/AuthenticationService';
 import { BalloonsService } from './services/BalloonsService';
 import { GoNoGoThresholdsService } from './services/GoNoGoThresholdsService';
 import { LaunchLocationsService } from './services/LaunchLocationsService';
+import { OfpSettingsService } from './services/OfpSettingsService';
 import { PilotsService } from './services/PilotsService';
 import { TelemetryService } from './services/TelemetryService';
 @NgModule({
@@ -41,6 +42,7 @@ import { TelemetryService } from './services/TelemetryService';
         BalloonsService,
         GoNoGoThresholdsService,
         LaunchLocationsService,
+        OfpSettingsService,
         PilotsService,
         TelemetryService,
     ]
