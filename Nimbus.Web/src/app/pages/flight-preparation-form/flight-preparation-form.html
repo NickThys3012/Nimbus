@@ -50,31 +50,31 @@
       >
         @switch (section.id) {
           @case ('General') {
-            <Nimbus-general-section [formGroup]="form().controls.general" />
+            <Nimbus-general-section [group]="form().controls.general" />
           }
           @case ('Meteo') {
-            <Nimbus-meteo-section [formGroup]="form().controls.meteo" />
+            <Nimbus-meteo-section [group]="form().controls.meteo" />
           }
           @case ('Airspace') {
-            <Nimbus-airspace-section [formGroup]="form().controls.airspace" />
+            <Nimbus-airspace-section [group]="form().controls.airspace" />
           }
           @case ('Checklists') {
-            <Nimbus-checklists-section [formGroup]="form().controls.checklists" />
+            <Nimbus-checklists-section [group]="form().controls.checklists" />
           }
           @case ('LoadCalculation') {
-            <Nimbus-load-calculation-section [formGroup]="form().controls.loadCalculation" />
+            <Nimbus-load-calculation-section [group]="form().controls.loadCalculation" />
           }
           @case ('Route') {
-            <Nimbus-route-section [formGroup]="form().controls.route" />
+            <Nimbus-route-section [group]="form().controls.route" />
           }
           @case ('Bulletin') {
-            <Nimbus-bulletin-section [formGroup]="form().controls.bulletin" />
+            <Nimbus-bulletin-section [group]="form().controls.bulletin" />
           }
           @case ('Ofp') {
-            <Nimbus-ofp-section [formGroup]="form().controls.ofp" />
+            <Nimbus-ofp-section [group]="form().controls.ofp" />
           }
           @case ('PaxBriefing') {
-            <Nimbus-pax-briefing-section [formGroup]="form().controls.paxBriefing" />
+            <Nimbus-pax-briefing-section [group]="form().controls.paxBriefing" />
           }
         }
       </Nimbus-section-card>

@@ -13,5 +13,5 @@ import { FieldErrorPipe } from '../field-error.pipe';
   styleUrls: ['./route-section.css', '../section-fields.css'],
 })
 export class RouteSection {
-  formGroup = input.required<RouteFormGroup>();
+  group = input.required<RouteFormGroup>();
 }

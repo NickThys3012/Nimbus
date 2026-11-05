@@ -1,19 +1,20 @@
-<div [formGroup]="formGroup()" class="field-grid">
-  <div class="field" [class.bad]="formGroup().controls.flightDate.invalid && formGroup().controls.flightDate.touched">
+<div [formGroup]="group()">
+<div class="field-grid">
+  <div class="field" [class.bad]="group().controls.flightDate.invalid && group().controls.flightDate.touched">
     <label for="fp-flight-date">DATE *</label>
     <input id="fp-flight-date" data-testid="flight-date" formControlName="flightDate" type="date" />
-    @if (formGroup().controls.flightDate.invalid && formGroup().controls.flightDate.touched) {
-      <div class="err" data-testid="flight-date-error">{{ formGroup().controls.flightDate.errors | fieldError }}</div>
+    @if (group().controls.flightDate.invalid && group().controls.flightDate.touched) {
+      <div class="err" data-testid="flight-date-error">{{ group().controls.flightDate.errors | fieldError }}</div>
     }
   </div>
-  <div class="field" [class.bad]="formGroup().controls.flightTime.invalid && formGroup().controls.flightTime.touched">
+  <div class="field" [class.bad]="group().controls.flightTime.invalid && group().controls.flightTime.touched">
     <label for="fp-flight-time">TIME *</label>
     <input id="fp-flight-time" data-testid="flight-time" formControlName="flightTime" type="time" />
-    @if (formGroup().controls.flightTime.invalid && formGroup().controls.flightTime.touched) {
-      <div class="err" data-testid="flight-time-error">{{ formGroup().controls.flightTime.errors | fieldError }}</div>
+    @if (group().controls.flightTime.invalid && group().controls.flightTime.touched) {
+      <div class="err" data-testid="flight-time-error">{{ group().controls.flightTime.errors | fieldError }}</div>
     }
   </div>
-  <div class="field" [class.bad]="formGroup().controls.balloonId.invalid && formGroup().controls.balloonId.touched">
+  <div class="field" [class.bad]="group().controls.balloonId.invalid && group().controls.balloonId.touched">
     <label for="fp-balloon">BALLOON *</label>
     <select id="fp-balloon" data-testid="balloon" formControlName="balloonId">
       <option value="">Select a balloon</option>
@@ -21,11 +22,11 @@
         <option [value]="b.id">{{ b.registration }}</option>
       }
     </select>
-    @if (formGroup().controls.balloonId.invalid && formGroup().controls.balloonId.touched) {
-      <div class="err" data-testid="balloon-error">{{ formGroup().controls.balloonId.errors | fieldError }}</div>
+    @if (group().controls.balloonId.invalid && group().controls.balloonId.touched) {
+      <div class="err" data-testid="balloon-error">{{ group().controls.balloonId.errors | fieldError }}</div>
     }
   </div>
-  <div class="field" [class.bad]="formGroup().controls.pilotId.invalid && formGroup().controls.pilotId.touched">
+  <div class="field" [class.bad]="group().controls.pilotId.invalid && group().controls.pilotId.touched">
     <label for="fp-pilot">PILOT *</label>
     <select id="fp-pilot" data-testid="pilot" formControlName="pilotId">
       <option value="">Select a pilot</option>
@@ -33,15 +34,15 @@
         <option [value]="p.id">{{ p.name }}</option>
       }
     </select>
-    @if (formGroup().controls.pilotId.invalid && formGroup().controls.pilotId.touched) {
-      <div class="err" data-testid="pilot-error">{{ formGroup().controls.pilotId.errors | fieldError }}</div>
+    @if (group().controls.pilotId.invalid && group().controls.pilotId.touched) {
+      <div class="err" data-testid="pilot-error">{{ group().controls.pilotId.errors | fieldError }}</div>
     }
   </div>
 </div>
 <div class="field-grid">
   <div
     class="field"
-    [class.bad]="formGroup().controls.launchLocationId.invalid && formGroup().controls.launchLocationId.touched"
+    [class.bad]="group().controls.launchLocationId.invalid && group().controls.launchLocationId.touched"
     style="grid-column: span 2;"
   >
     <label for="fp-location">LAUNCH LOCATION *</label>
@@ -51,8 +52,8 @@
         <option [value]="l.id">{{ l.name }}</option>
       }
     </select>
-    @if (formGroup().controls.launchLocationId.invalid && formGroup().controls.launchLocationId.touched) {
-      <div class="err" data-testid="launch-location-error">{{ formGroup().controls.launchLocationId.errors | fieldError }}</div>
+    @if (group().controls.launchLocationId.invalid && group().controls.launchLocationId.touched) {
+      <div class="err" data-testid="launch-location-error">{{ group().controls.launchLocationId.errors | fieldError }}</div>
     }
   </div>
   <div class="field">
@@ -68,3 +69,4 @@
   <input data-testid="field-owner-notified" formControlName="fieldOwnerNotified" type="checkbox" />
   Field owner notified
 </label>
+</div>

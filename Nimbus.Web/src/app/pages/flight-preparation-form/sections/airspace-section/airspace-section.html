@@ -1,10 +1,10 @@
-<div [formGroup]="formGroup()">
-  <label class="check-row" [class.bad]="formGroup().controls.notamsChecked.invalid && formGroup().controls.notamsChecked.touched">
+<div [formGroup]="group()">
+  <label class="check-row" [class.bad]="group().controls.notamsChecked.invalid && group().controls.notamsChecked.touched">
     <input data-testid="notams-checked" formControlName="notamsChecked" type="checkbox" />
     NOTAMs checked *
   </label>
-  @if (formGroup().controls.notamsChecked.invalid && formGroup().controls.notamsChecked.touched) {
-    <div class="err" data-testid="notams-checked-error">{{ formGroup().controls.notamsChecked.errors | fieldError }}</div>
+  @if (group().controls.notamsChecked.invalid && group().controls.notamsChecked.touched) {
+    <div class="err" data-testid="notams-checked-error">{{ group().controls.notamsChecked.errors | fieldError }}</div>
   }
   <div class="field" style="margin-top: 10px;">
     <label for="fp-airspace-structure">AIRSPACE STRUCTURE NOTES</label>

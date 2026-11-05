@@ -12,5 +12,5 @@ import { type BulletinFormGroup } from '../../../../core/flight-preparations/fli
   styleUrls: ['./bulletin-section.css', '../section-fields.css'],
 })
 export class BulletinSection {
-  formGroup = input.required<BulletinFormGroup>();
+  group = input.required<BulletinFormGroup>();
 }

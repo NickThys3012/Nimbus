@@ -13,5 +13,5 @@ import { FieldErrorPipe } from '../field-error.pipe';
   styleUrls: ['./airspace-section.css', '../section-fields.css'],
 })
 export class AirspaceSection {
-  formGroup = input.required<AirspaceFormGroup>();
+  group = input.required<AirspaceFormGroup>();
 }

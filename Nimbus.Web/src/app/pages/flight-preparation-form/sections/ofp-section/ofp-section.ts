@@ -13,5 +13,5 @@ import { FieldErrorPipe } from '../field-error.pipe';
   styleUrls: ['./ofp-section.css', '../section-fields.css'],
 })
 export class OfpSection {
-  formGroup = input.required<OfpFormGroup>();
+  group = input.required<OfpFormGroup>();
 }

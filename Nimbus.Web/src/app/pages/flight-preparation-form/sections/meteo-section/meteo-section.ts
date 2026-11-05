@@ -13,12 +13,12 @@ import { FieldErrorPipe } from '../field-error.pipe';
   styleUrls: ['./meteo-section.css', '../section-fields.css'],
 })
 export class MeteoSection {
-  formGroup = input.required<MeteoFormGroup>();
+  group = input.required<MeteoFormGroup>();
 
   private readonly fb = inject(NonNullableFormBuilder);
 
   protected get windLevels() {
-    return this.formGroup().controls.windLevels;
+    return this.group().controls.windLevels;
   }
 
   protected addWindLevel(): void {

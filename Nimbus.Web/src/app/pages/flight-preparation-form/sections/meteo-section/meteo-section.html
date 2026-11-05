@@ -1,24 +1,24 @@
-<div [formGroup]="formGroup()">
+<div [formGroup]="group()">
   <div class="field-grid">
-    <div class="field" [class.bad]="formGroup().controls.windSpeedKt.invalid && formGroup().controls.windSpeedKt.touched">
+    <div class="field" [class.bad]="group().controls.windSpeedKt.invalid && group().controls.windSpeedKt.touched">
       <label for="fp-wind-speed">WIND KT *</label>
       <input id="fp-wind-speed" data-testid="wind-speed" formControlName="windSpeedKt" type="number" />
-      @if (formGroup().controls.windSpeedKt.invalid && formGroup().controls.windSpeedKt.touched) {
-        <div class="err" data-testid="wind-speed-error">{{ formGroup().controls.windSpeedKt.errors | fieldError }}</div>
+      @if (group().controls.windSpeedKt.invalid && group().controls.windSpeedKt.touched) {
+        <div class="err" data-testid="wind-speed-error">{{ group().controls.windSpeedKt.errors | fieldError }}</div>
       }
     </div>
-    <div class="field" [class.bad]="formGroup().controls.windDirectionDeg.invalid && formGroup().controls.windDirectionDeg.touched">
+    <div class="field" [class.bad]="group().controls.windDirectionDeg.invalid && group().controls.windDirectionDeg.touched">
       <label for="fp-wind-dir">DIRECTION ° *</label>
       <input id="fp-wind-dir" data-testid="wind-direction" formControlName="windDirectionDeg" type="number" />
-      @if (formGroup().controls.windDirectionDeg.invalid && formGroup().controls.windDirectionDeg.touched) {
-        <div class="err" data-testid="wind-direction-error">{{ formGroup().controls.windDirectionDeg.errors | fieldError }}</div>
+      @if (group().controls.windDirectionDeg.invalid && group().controls.windDirectionDeg.touched) {
+        <div class="err" data-testid="wind-direction-error">{{ group().controls.windDirectionDeg.errors | fieldError }}</div>
       }
     </div>
-    <div class="field" [class.bad]="formGroup().controls.visibilityKm.invalid && formGroup().controls.visibilityKm.touched">
+    <div class="field" [class.bad]="group().controls.visibilityKm.invalid && group().controls.visibilityKm.touched">
       <label for="fp-visibility">VISIBILITY KM</label>
       <input id="fp-visibility" data-testid="visibility" formControlName="visibilityKm" type="number" />
-      @if (formGroup().controls.visibilityKm.invalid && formGroup().controls.visibilityKm.touched) {
-        <div class="err" data-testid="visibility-error">{{ formGroup().controls.visibilityKm.errors | fieldError }}</div>
+      @if (group().controls.visibilityKm.invalid && group().controls.visibilityKm.touched) {
+        <div class="err" data-testid="visibility-error">{{ group().controls.visibilityKm.errors | fieldError }}</div>
       }
     </div>
     <div class="field">

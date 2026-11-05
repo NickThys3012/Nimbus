@@ -13,12 +13,12 @@ import { FieldErrorPipe } from '../field-error.pipe';
   styleUrls: ['./load-calculation-section.css', '../section-fields.css'],
 })
 export class LoadCalculationSection {
-  formGroup = input.required<LoadCalculationFormGroup>();
+  group = input.required<LoadCalculationFormGroup>();
 
   private readonly fb = inject(NonNullableFormBuilder);
 
   protected get passengers() {
-    return this.formGroup().controls.passengers;
+    return this.group().controls.passengers;
   }
 
   protected readonly totalWeightKg = () =>

@@ -16,7 +16,7 @@ import { FieldErrorPipe } from '../field-error.pipe';
   styleUrls: ['./general-section.css', '../section-fields.css'],
 })
 export class GeneralSection {
-  formGroup = input.required<GeneralFormGroup>();
+  group = input.required<GeneralFormGroup>();
 
   private readonly balloonsStore = inject(BalloonsStore);
   private readonly pilotsStore = inject(PilotsStore);

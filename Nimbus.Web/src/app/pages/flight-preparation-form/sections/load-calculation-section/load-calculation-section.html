@@ -1,17 +1,17 @@
-<div [formGroup]="formGroup()">
+<div [formGroup]="group()">
   <div class="field-grid">
-    <div class="field" [class.bad]="formGroup().controls.envelopeWeightKg.invalid && formGroup().controls.envelopeWeightKg.touched">
+    <div class="field" [class.bad]="group().controls.envelopeWeightKg.invalid && group().controls.envelopeWeightKg.touched">
       <label for="fp-envelope-weight">ENVELOPE WEIGHT KG *</label>
       <input id="fp-envelope-weight" data-testid="envelope-weight" formControlName="envelopeWeightKg" type="number" />
-      @if (formGroup().controls.envelopeWeightKg.invalid && formGroup().controls.envelopeWeightKg.touched) {
-        <div class="err" data-testid="envelope-weight-error">{{ formGroup().controls.envelopeWeightKg.errors | fieldError }}</div>
+      @if (group().controls.envelopeWeightKg.invalid && group().controls.envelopeWeightKg.touched) {
+        <div class="err" data-testid="envelope-weight-error">{{ group().controls.envelopeWeightKg.errors | fieldError }}</div>
       }
     </div>
-    <div class="field" [class.bad]="formGroup().controls.maxAltitudeFt.invalid && formGroup().controls.maxAltitudeFt.touched">
+    <div class="field" [class.bad]="group().controls.maxAltitudeFt.invalid && group().controls.maxAltitudeFt.touched">
       <label for="fp-max-altitude">MAX ALTITUDE FT *</label>
       <input id="fp-max-altitude" data-testid="max-altitude" formControlName="maxAltitudeFt" type="number" />
-      @if (formGroup().controls.maxAltitudeFt.invalid && formGroup().controls.maxAltitudeFt.touched) {
-        <div class="err" data-testid="max-altitude-error">{{ formGroup().controls.maxAltitudeFt.errors | fieldError }}</div>
+      @if (group().controls.maxAltitudeFt.invalid && group().controls.maxAltitudeFt.touched) {
+        <div class="err" data-testid="max-altitude-error">{{ group().controls.maxAltitudeFt.errors | fieldError }}</div>
       }
     </div>
   </div>

@@ -12,9 +12,9 @@ import { type ChecklistsFormGroup } from '../../../../core/flight-preparations/f
   styleUrls: ['./checklists-section.css', '../section-fields.css'],
 })
 export class ChecklistsSection {
-  formGroup = input.required<ChecklistsFormGroup>();
+  group = input.required<ChecklistsFormGroup>();
 
   protected get items() {
-    return this.formGroup().controls.items;
+    return this.group().controls.items;
   }
 }

@@ -13,5 +13,5 @@ import { type PaxBriefingFormGroup } from '../../../../core/flight-preparations/
   styleUrls: ['./pax-briefing-section.css', '../section-fields.css'],
 })
 export class PaxBriefingSection {
-  formGroup = input.required<PaxBriefingFormGroup>();
+  group = input.required<PaxBriefingFormGroup>();
 }
