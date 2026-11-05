@@ -52,4 +52,26 @@ describe('SectionCard', () => {
   it('sets data-section on the host for focus targeting', () => {
     expect((fixture.nativeElement as HTMLElement).getAttribute('data-section')).toBe('General');
   });
+
+  it('renders no badge by default', () => {
+    expect(fixture.nativeElement.querySelector('[data-testid="section-badge"]')).toBeNull();
+  });
+
+  it('renders an "EDITED" badge when badge input is "edited"', () => {
+    fixture.componentRef.setInput('badge', 'edited');
+    fixture.detectChanges();
+    const badge = fixture.nativeElement.querySelector('[data-testid="section-badge"]');
+    expect(badge).not.toBeNull();
+    expect(badge.classList.contains('from-draft')).toBe(false);
+    expect(badge.textContent.trim()).toContain('EDITED');
+  });
+
+  it('renders a "FROM DRAFT" badge when badge input is "from-draft"', () => {
+    fixture.componentRef.setInput('badge', 'from-draft');
+    fixture.detectChanges();
+    const badge = fixture.nativeElement.querySelector('[data-testid="section-badge"]');
+    expect(badge).not.toBeNull();
+    expect(badge.classList.contains('from-draft')).toBe(true);
+    expect(badge.textContent.trim()).toContain('FROM DRAFT');
+  });
 });
