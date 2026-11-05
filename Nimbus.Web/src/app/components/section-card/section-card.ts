@@ -27,6 +27,9 @@ export class SectionCard {
   status = input<SectionCompletionStatus>('pending');
   /** Short live summary shown next to the title while collapsed, e.g. "6 kt · 240°". */
   summary = input<string | null>(null);
+  /** `'edited'` shows a "● EDITED" badge, `'from-draft'` a "● FROM DRAFT" one (issue #32 mockup
+   *  frames 1B/3A); `null` shows neither. */
+  badge = input<'edited' | 'from-draft' | null>(null);
   expanded = model(false);
 
   protected readonly orderLabel = computed(() => this.order().toString().padStart(2, '0'));

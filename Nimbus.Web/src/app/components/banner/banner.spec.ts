@@ -19,4 +19,11 @@ describe('Banner', () => {
   it('should create', () => {
     expect(component).toBeTruthy();
   });
+
+  it('uses the error palette for type="error"', () => {
+    fixture.componentRef.setInput('type', 'error');
+    fixture.detectChanges();
+    expect(component.backgroundColor()).toBe('var(--rb)');
+    expect(component.color()).toBe('var(--r)');
+  });
 });

@@ -14,8 +14,16 @@ import { ChangeDetectionStrategy, Component, computed, input } from '@angular/co
 export class Banner {
   id = input.required<string>();
   icon = input<string>();
-  type = input<'info' | 'warning'>('info');
+  type = input<'info' | 'warning' | 'error'>('info');
 
-  backgroundColor = computed(() => (this.type() === 'info' ? 'var(--acbg)' : 'var(--ab)'));
-  color = computed(() => (this.type() === 'info' ? 'var(--ac)' : 'var(--a)'));
+  backgroundColor = computed(() => {
+    const t = this.type();
+    if (t === 'info') return 'var(--acbg)';
+    return t === 'error' ? 'var(--rb)' : 'var(--ab)';
+  });
+  color = computed(() => {
+    const t = this.type();
+    if (t === 'info') return 'var(--ac)';
+    return t === 'error' ? 'var(--r)' : 'var(--a)';
+  });
 }

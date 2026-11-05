@@ -9,6 +9,11 @@
     <span class="sec-num">{{ orderLabel() }}</span>
     <span [class]="'dot ' + status()" aria-hidden="true"></span>
     <span class="sec-title">{{ title() }}</span>
+    @if (badge(); as b) {
+      <span class="badge" [class.from-draft]="b === 'from-draft'" data-testid="section-badge">
+        ● {{ b === 'from-draft' ? 'FROM DRAFT' : 'EDITED' }}
+      </span>
+    }
     <span class="spacer"></span>
     @if (summary(); as text) {
       <span class="sec-meta">{{ text }}</span>

@@ -23,6 +23,12 @@ export interface FlightPreparationDraft<T> {
 @Injectable({ providedIn: 'root' })
 export class FlightPreparationDraftStore {
   private static readonly prefix = 'nimbus.flight-prep.';
+  /** A second, separate bucket for the continuous (debounced, every keystroke) autosave, kept
+   *  apart from the "saved" bucket above so the form can tell a page reload mid-edit (an autosave
+   *  that diverges from what was last explicitly saved) apart from a flight that's simply being
+   *  reopened as last saved — see `FlightPreparationFormPage`'s draft-restored banner (issue #32
+   *  mockup frame 3A). */
+  private static readonly autosavePrefix = 'nimbus.flight-prep.autosave.';
 
   private readonly auth = inject(AuthStore);
   private readonly storage = inject(LOCAL_STORAGE);
@@ -33,28 +39,54 @@ export class FlightPreparationDraftStore {
   }
 
   load<T>(flightId: string): FlightPreparationDraft<T> | null {
+    return this.read<T>(this.key(flightId));
+  }
+
+  /** Persists the dossier's current value and returns the timestamp it was saved at. */
+  save<T>(flightId: string, value: T): string {
+    return this.write(this.key(flightId), value);
+  }
+
+  remove(flightId: string): void {
+    this.erase(this.key(flightId));
+  }
+
+  /** The continuous per-keystroke backup — written on every debounced change so a refresh never
+   *  loses work, independent of whether the pilot has explicitly saved yet. */
+  loadAutosave<T>(flightId: string): FlightPreparationDraft<T> | null {
+    return this.read<T>(this.autosaveKey(flightId));
+  }
+
+  saveAutosave<T>(flightId: string, value: T): string {
+    return this.write(this.autosaveKey(flightId), value);
+  }
+
+  removeAutosave(flightId: string): void {
+    this.erase(this.autosaveKey(flightId));
+  }
+
+  private read<T>(key: string): FlightPreparationDraft<T> | null {
     try {
-      const raw = this.storage?.getItem(this.key(flightId)) ?? null;
+      const raw = this.storage?.getItem(key) ?? null;
       return raw === null ? null : (JSON.parse(raw) as FlightPreparationDraft<T>);
     } catch {
       return null;
     }
   }
 
-  /** Persists the dossier's current value and returns the timestamp it was saved at. */
-  save<T>(flightId: string, value: T): string {
+  private write<T>(key: string, value: T): string {
     const updatedAt = new Date().toISOString();
     try {
-      this.storage?.setItem(this.key(flightId), JSON.stringify({ value, updatedAt }));
+      this.storage?.setItem(key, JSON.stringify({ value, updatedAt }));
     } catch {
       // Best effort: losing the draft must never crash the form (private mode, quota, ...).
     }
     return updatedAt;
   }
 
-  remove(flightId: string): void {
+  private erase(key: string): void {
     try {
-      this.storage?.removeItem(this.key(flightId));
+      this.storage?.removeItem(key);
     } catch {
       // Nothing to clean up.
     }
@@ -63,5 +95,10 @@ export class FlightPreparationDraftStore {
   private key(flightId: string): string {
     const owner = this.auth.email() ?? 'anonymous';
     return `${FlightPreparationDraftStore.prefix}${owner}.${flightId}`;
+  }
+
+  private autosaveKey(flightId: string): string {
+    const owner = this.auth.email() ?? 'anonymous';
+    return `${FlightPreparationDraftStore.autosavePrefix}${owner}.${flightId}`;
   }
 }

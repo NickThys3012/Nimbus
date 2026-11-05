@@ -1,6 +1,12 @@
 import { AbstractControl, FormArray, NonNullableFormBuilder, Validators } from '@angular/forms';
 
-import { hasAnyValue, type SectionCompletionStatus } from './flight-preparation.model';
+import {
+  FLIGHT_PREPARATION_SECTION_IDS,
+  hasAnyValue,
+  type FlightPreparationSectionId,
+  sectionFormKey,
+  type SectionCompletionStatus,
+} from './flight-preparation.model';
 
 /**
  * Builds the single reactive form that drives the whole nine-section dossier (issue #32): one
@@ -149,6 +155,21 @@ export function hydrateFlightPreparationForm(
 function resizeArray<T extends AbstractControl>(array: FormArray<T>, targetLength: number, create: () => T): void {
   while (array.length < targetLength) array.push(create());
   while (array.length > targetLength) array.removeAt(array.length - 1);
+}
+
+/**
+ * Which sections differ between two loaded dossier values — used to tell a restored
+ * autosave-after-refresh apart from the last explicitly saved version (issue #32 mockup frame 3A:
+ * "● FROM DRAFT"), and to summarize what changed in the unsaved-changes dialog (frame 2B).
+ */
+export function diffingSectionIds(
+  a: FlightPreparationFormValue,
+  b: FlightPreparationFormValue,
+): FlightPreparationSectionId[] {
+  return FLIGHT_PREPARATION_SECTION_IDS.filter((id) => {
+    const key = sectionFormKey(id) as keyof FlightPreparationFormValue;
+    return JSON.stringify(a[key]) !== JSON.stringify(b[key]);
+  });
 }
 
 /**

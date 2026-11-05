@@ -83,5 +83,45 @@ describe('FlightPreparationDraftStore', () => {
 
       expect(store.load<{ note: string }>('flight-1')?.value).toEqual({ note: "user A's dossier" });
     });
+
+    it("never lets user B read or overwrite user A's autosave backup", () => {
+      store.saveAutosave('flight-1', { note: "user A's autosave" });
+
+      email = 'pilot.b@example.com';
+      setup();
+      expect(store.loadAutosave('flight-1')).toBeNull();
+      store.saveAutosave('flight-1', { note: "user B's autosave" });
+
+      email = 'pilot.a@example.com';
+      setup();
+      expect(store.loadAutosave<{ note: string }>('flight-1')?.value).toEqual({ note: "user A's autosave" });
+    });
+  });
+
+  describe('autosave bucket', () => {
+    it('round-trips an autosave independently of the saved bucket', () => {
+      store.save('flight-1', { general: { flightDate: 'saved' } });
+      const autosavedAt = store.saveAutosave('flight-1', { general: { flightDate: 'autosaved' } });
+
+      expect(store.load<{ general: { flightDate: string } }>('flight-1')?.value).toEqual({
+        general: { flightDate: 'saved' },
+      });
+      const autosave = store.loadAutosave<{ general: { flightDate: string } }>('flight-1');
+      expect(autosave?.value).toEqual({ general: { flightDate: 'autosaved' } });
+      expect(autosave?.updatedAt).toBe(autosavedAt);
+    });
+
+    it('removes only the autosave, leaving the saved bucket untouched', () => {
+      store.save('flight-1', { a: 1 });
+      store.saveAutosave('flight-1', { a: 2 });
+      store.removeAutosave('flight-1');
+
+      expect(store.loadAutosave('flight-1')).toBeNull();
+      expect(store.load('flight-1')).toEqual(expect.objectContaining({ value: { a: 1 } }));
+    });
+
+    it('returns null for an autosave that was never saved', () => {
+      expect(store.loadAutosave('unknown')).toBeNull();
+    });
   });
 });

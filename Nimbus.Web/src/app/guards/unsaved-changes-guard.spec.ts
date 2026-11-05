@@ -1,30 +1,36 @@
 import { TestBed } from '@angular/core/testing';
 import { ActivatedRouteSnapshot, RouterStateSnapshot } from '@angular/router';
+import { firstValueFrom, Observable, of } from 'rxjs';
 import { vi } from 'vitest';
 
 import { unsavedChangesGuard } from './unsaved-changes-guard';
 
 describe('unsavedChangesGuard', () => {
-  const run = (hasUnsavedChanges: boolean) =>
+  const run = (hasUnsavedChanges: boolean, confirmDiscard: (destinationUrl: string) => Observable<boolean>) =>
     TestBed.runInInjectionContext(() =>
       unsavedChangesGuard(
-        { hasUnsavedChanges: () => hasUnsavedChanges },
+        { hasUnsavedChanges: () => hasUnsavedChanges, confirmDiscard },
         {} as ActivatedRouteSnapshot,
         {} as RouterStateSnapshot,
-        {} as RouterStateSnapshot,
+        { url: '/logbook' } as RouterStateSnapshot,
       ),
     );
 
-  it('allows navigation when there are no unsaved changes', () => {
-    expect(run(false)).toBe(true);
+  it('allows navigation when there are no unsaved changes, without asking the component to confirm', () => {
+    const confirmDiscard = vi.fn(() => of(true));
+    expect(run(false, confirmDiscard)).toBe(true);
+    expect(confirmDiscard).not.toHaveBeenCalled();
   });
 
-  it('confirms before discarding unsaved changes, and respects the answer', () => {
-    const confirmSpy = vi.spyOn(globalThis, 'confirm').mockReturnValue(true);
-    expect(run(true)).toBe(true);
-    expect(confirmSpy).toHaveBeenCalledWith('You have unsaved changes. Leave this page and discard them?');
+  it('delegates the confirmation to the component, passing the destination URL', async () => {
+    const confirmDiscard = vi.fn(() => of(true));
+    const result = run(true, confirmDiscard) as Observable<boolean>;
+    expect(confirmDiscard).toHaveBeenCalledWith('/logbook');
+    expect(await firstValueFrom(result)).toBe(true);
+  });
 
-    confirmSpy.mockReturnValue(false);
-    expect(run(true)).toBe(false);
+  it('respects the component resolving to stay on the page', async () => {
+    const result = run(true, () => of(false)) as Observable<boolean>;
+    expect(await firstValueFrom(result)).toBe(false);
   });
 });
