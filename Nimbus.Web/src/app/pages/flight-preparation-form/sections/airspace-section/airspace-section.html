@@ -1,0 +1,18 @@
+<div [formGroup]="formGroup()">
+  <label class="check-row">
+    <input data-testid="notams-checked" formControlName="notamsChecked" type="checkbox" />
+    NOTAMs checked *
+  </label>
+  <div class="field" style="margin-top: 10px;">
+    <label for="fp-airspace-structure">AIRSPACE STRUCTURE NOTES</label>
+    <textarea id="fp-airspace-structure" data-testid="airspace-structure-notes" formControlName="airspaceStructureNotes"></textarea>
+  </div>
+  <div class="field">
+    <label for="fp-airspace-restrictions">RESTRICTIONS</label>
+    <textarea id="fp-airspace-restrictions" data-testid="airspace-restrictions" formControlName="airspaceRestrictions"></textarea>
+  </div>
+  <div class="field">
+    <label for="fp-obstacles">OBSTACLES</label>
+    <textarea id="fp-obstacles" data-testid="obstacles" formControlName="obstacles"></textarea>
+  </div>
+</div>

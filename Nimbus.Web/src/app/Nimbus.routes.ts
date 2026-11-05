@@ -1,6 +1,7 @@
 import { Routes } from '@angular/router';
 import { authGuard } from './guards/auth-guard';
 import { adminGuard } from './guards/admin-guard';
+import { unsavedChangesGuard } from './guards/unsaved-changes-guard';
 
 export const routes: Routes = [
   {
@@ -16,6 +17,18 @@ export const routes: Routes = [
     path: 'flights',
     loadComponent: () => import('./pages/flight-overview/flight-overview'),
     canActivate: [authGuard],
+  },
+  {
+    path: 'flight-preparations/new',
+    loadComponent: () => import('./pages/flight-preparation-form/flight-preparation-form'),
+    canActivate: [authGuard],
+    canDeactivate: [unsavedChangesGuard],
+  },
+  {
+    path: 'flight-preparations/:id',
+    loadComponent: () => import('./pages/flight-preparation-form/flight-preparation-form'),
+    canActivate: [authGuard],
+    canDeactivate: [unsavedChangesGuard],
   },
   {
     path: 'logbook',

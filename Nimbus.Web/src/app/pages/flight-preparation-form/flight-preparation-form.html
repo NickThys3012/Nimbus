@@ -1,0 +1,63 @@
+<div class="wrap">
+  <div class="topbar">
+    <button (click)="goBack()" aria-label="Back to my flights" class="icon-btn" data-testid="back" type="button">
+      <i aria-hidden="true" class="ti ti-arrow-left"></i>
+    </button>
+    <div class="title-block">
+      <div class="name" data-testid="title">{{ title() }}</div>
+    </div>
+    <span class="spacer"></span>
+    @if (savedAt(); as t) {
+      <span class="saved-tag" data-testid="saved-tag"><i aria-hidden="true" class="ti ti-check"></i> draft saved</span>
+    }
+  </div>
+
+  <form (ngSubmit)="save()" [formGroup]="form()" class="sections" data-testid="flight-preparation-form" novalidate>
+    @for (section of sections; track section.id) {
+      <Nimbus-section-card
+        (expandedChange)="setExpanded(section.id, $event)"
+        [expanded]="isExpanded(section.id)"
+        [order]="section.order"
+        [sectionId]="section.id"
+        [status]="sectionStatus(section.id)"
+        [summary]="sectionSummary(section.id)"
+        [title]="section.title"
+      >
+        @switch (section.id) {
+          @case ('General') {
+            <Nimbus-general-section [formGroup]="form().controls.general" />
+          }
+          @case ('Meteo') {
+            <Nimbus-meteo-section [formGroup]="form().controls.meteo" />
+          }
+          @case ('Airspace') {
+            <Nimbus-airspace-section [formGroup]="form().controls.airspace" />
+          }
+          @case ('Checklists') {
+            <Nimbus-checklists-section [formGroup]="form().controls.checklists" />
+          }
+          @case ('LoadCalculation') {
+            <Nimbus-load-calculation-section [formGroup]="form().controls.loadCalculation" />
+          }
+          @case ('Route') {
+            <Nimbus-route-section [formGroup]="form().controls.route" />
+          }
+          @case ('Bulletin') {
+            <Nimbus-bulletin-section [formGroup]="form().controls.bulletin" />
+          }
+          @case ('Ofp') {
+            <Nimbus-ofp-section [formGroup]="form().controls.ofp" />
+          }
+          @case ('PaxBriefing') {
+            <Nimbus-pax-briefing-section [formGroup]="form().controls.paxBriefing" />
+          }
+        }
+      </Nimbus-section-card>
+    }
+
+    <div class="bar">
+      <Nimbus-button (click)="goBack()" [fullWidth]="false" id="cancel-flight-prep" variant="ghost" type="button">Cancel</Nimbus-button>
+      <Nimbus-button [fullWidth]="false" data-testid="save-flight-prep" id="save-flight-prep" type="submit">Save flight preparation</Nimbus-button>
+    </div>
+  </form>
+</div>

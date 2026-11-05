@@ -1,0 +1,26 @@
+<div [formGroup]="formGroup()">
+  <div class="field-grid">
+    <div class="field">
+      <label for="fp-ofp-operator">OPERATOR *</label>
+      <input id="fp-ofp-operator" data-testid="ofp-operator" formControlName="ofpOperatorName" type="text" />
+    </div>
+    <div class="field">
+      <label for="fp-ofp-pic-weight">PIC WEIGHT KG</label>
+      <input id="fp-ofp-pic-weight" data-testid="ofp-pic-weight" formControlName="ofpPicWeightKg" type="number" />
+    </div>
+  </div>
+  <div class="field-grid">
+    <div class="field">
+      <label for="fp-ofp-fuel-available">FUEL AVAILABLE MIN</label>
+      <input id="fp-ofp-fuel-available" data-testid="ofp-fuel-available" formControlName="ofpFuelAvailableMinutes" type="number" />
+    </div>
+    <div class="field">
+      <label for="fp-ofp-fuel-required">FUEL REQUIRED MIN</label>
+      <input id="fp-ofp-fuel-required" data-testid="ofp-fuel-required" formControlName="ofpFuelRequiredMinutes" type="number" />
+    </div>
+    <div class="field">
+      <label for="fp-ofp-landing">LANDING LOCATION</label>
+      <input id="fp-ofp-landing" data-testid="ofp-landing-location" formControlName="ofpLandingLocation" type="text" />
+    </div>
+  </div>
+</div>

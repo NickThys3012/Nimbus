@@ -1,0 +1,16 @@
+<div [formGroup]="formGroup()">
+  <div class="field">
+    <label for="fp-pax-briefing-text">BRIEFING TEXT</label>
+    <textarea id="fp-pax-briefing-text" data-testid="pax-briefing-text" formControlName="paxBriefingText"></textarea>
+  </div>
+  <div class="field-grid">
+    <div class="field">
+      <label for="fp-pax-briefing-version">VERSION</label>
+      <input id="fp-pax-briefing-version" data-testid="pax-briefing-version" formControlName="paxBriefingVersion" type="text" />
+    </div>
+  </div>
+  <label class="check-row">
+    <input data-testid="pax-briefing-custom" formControlName="paxBriefingIsCustom" type="checkbox" />
+    Customized for this flight
+  </label>
+</div>

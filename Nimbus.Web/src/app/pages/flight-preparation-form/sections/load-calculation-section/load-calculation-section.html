@@ -1,0 +1,48 @@
+<div [formGroup]="formGroup()">
+  <div class="field-grid">
+    <div class="field">
+      <label for="fp-envelope-weight">ENVELOPE WEIGHT KG *</label>
+      <input id="fp-envelope-weight" data-testid="envelope-weight" formControlName="envelopeWeightKg" type="number" />
+    </div>
+    <div class="field">
+      <label for="fp-max-altitude">MAX ALTITUDE FT *</label>
+      <input id="fp-max-altitude" data-testid="max-altitude" formControlName="maxAltitudeFt" type="number" />
+    </div>
+  </div>
+
+  <div class="rows" formArrayName="passengers">
+    <span style="font: 10.5px var(--mono); color: var(--fnt);">PASSENGERS</span>
+    @for (passenger of passengers.controls; track $index) {
+      <div [formGroupName]="$index" class="row-card">
+        <div class="field">
+          <label [attr.for]="'fp-pax-name-' + $index">NAME</label>
+          <input [attr.data-testid]="'passenger-name-' + $index" [id]="'fp-pax-name-' + $index" formControlName="name" type="text" />
+        </div>
+        <div class="field">
+          <label [attr.for]="'fp-pax-weight-' + $index">WEIGHT KG</label>
+          <input [attr.data-testid]="'passenger-weight-' + $index" [id]="'fp-pax-weight-' + $index" formControlName="weightKg" type="number" />
+        </div>
+        <label class="check-row" style="padding: 0;">
+          <input formControlName="needsAssistance" type="checkbox" /> Assistance
+        </label>
+        <label class="check-row" style="padding: 0;">
+          <input formControlName="isChild" type="checkbox" /> Child
+        </label>
+        <button (click)="removePassenger($index)" [attr.data-testid]="'remove-passenger-' + $index" class="btn danger" type="button">
+          <i aria-hidden="true" class="ti ti-trash"></i>
+        </button>
+      </div>
+    }
+  </div>
+  <button (click)="addPassenger()" class="btn" data-testid="add-passenger" type="button">
+    <i aria-hidden="true" class="ti ti-plus"></i> Passenger
+  </button>
+  <div class="field" style="margin-top: 12px;" data-testid="total-passenger-weight">
+    <span class="label-like">TOTAL PASSENGER WEIGHT</span>
+    <output>{{ totalWeightKg() }} kg</output>
+  </div>
+  <div class="field">
+    <label for="fp-load-remarks">REMARKS</label>
+    <textarea id="fp-load-remarks" data-testid="load-remarks" formControlName="loadRemarks"></textarea>
+  </div>
+</div>

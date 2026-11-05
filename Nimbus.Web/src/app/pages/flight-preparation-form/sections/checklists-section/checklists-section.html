@@ -1,0 +1,8 @@
+<div [formGroup]="formGroup()" formArrayName="items">
+  @for (item of items.controls; track $index) {
+    <label [formGroupName]="$index" class="check-row">
+      <input [attr.data-testid]="'checklist-item-' + $index" formControlName="checked" type="checkbox" />
+      {{ item.controls.label.value }}
+    </label>
+  }
+</div>

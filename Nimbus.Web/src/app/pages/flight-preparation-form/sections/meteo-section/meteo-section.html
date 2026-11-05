@@ -1,0 +1,72 @@
+<div [formGroup]="formGroup()">
+  <div class="field-grid">
+    <div class="field">
+      <label for="fp-wind-speed">WIND KT *</label>
+      <input id="fp-wind-speed" data-testid="wind-speed" formControlName="windSpeedKt" type="number" />
+    </div>
+    <div class="field">
+      <label for="fp-wind-dir">DIRECTION ° *</label>
+      <input id="fp-wind-dir" data-testid="wind-direction" formControlName="windDirectionDeg" type="number" />
+    </div>
+    <div class="field">
+      <label for="fp-visibility">VISIBILITY KM</label>
+      <input id="fp-visibility" data-testid="visibility" formControlName="visibilityKm" type="number" />
+    </div>
+    <div class="field">
+      <label for="fp-cape">CAPE J/KG</label>
+      <input id="fp-cape" data-testid="cape" formControlName="capeJPerKg" type="number" />
+    </div>
+  </div>
+  <div class="field-grid">
+    <div class="field">
+      <label for="fp-temp">TEMP °C</label>
+      <input id="fp-temp" data-testid="temperature" formControlName="temperatureC" type="number" />
+    </div>
+    <div class="field">
+      <label for="fp-dewpoint">DEW POINT °C</label>
+      <input id="fp-dewpoint" data-testid="dew-point" formControlName="dewPointC" type="number" />
+    </div>
+    <div class="field">
+      <label for="fp-qnh">QNH HPA</label>
+      <input id="fp-qnh" data-testid="qnh" formControlName="qnhHpa" type="number" />
+    </div>
+  </div>
+  <div class="field">
+    <label for="fp-metar">METAR</label>
+    <textarea id="fp-metar" data-testid="metar" formControlName="metar"></textarea>
+  </div>
+  <div class="field">
+    <label for="fp-taf">TAF</label>
+    <textarea id="fp-taf" data-testid="taf" formControlName="taf"></textarea>
+  </div>
+
+  <div class="rows" formArrayName="windLevels">
+    <span style="font: 10.5px var(--mono); color: var(--fnt);">WIND ON ALTITUDE</span>
+    @for (level of windLevels.controls; track $index) {
+      <div [formGroupName]="$index" class="row-card">
+        <div class="field">
+          <label [attr.for]="'fp-wl-alt-' + $index">ALT (M)</label>
+          <input [attr.data-testid]="'wind-level-altitude-' + $index" [id]="'fp-wl-alt-' + $index" formControlName="altitudeM" type="number" />
+        </div>
+        <div class="field">
+          <label [attr.for]="'fp-wl-dir-' + $index">DIR °</label>
+          <input [attr.data-testid]="'wind-level-direction-' + $index" [id]="'fp-wl-dir-' + $index" formControlName="directionDeg" type="number" />
+        </div>
+        <div class="field">
+          <label [attr.for]="'fp-wl-speed-' + $index">KT</label>
+          <input [attr.data-testid]="'wind-level-speed-' + $index" [id]="'fp-wl-speed-' + $index" formControlName="speedKt" type="number" />
+        </div>
+        <div class="field">
+          <label [attr.for]="'fp-wl-temp-' + $index">°C</label>
+          <input [attr.data-testid]="'wind-level-temp-' + $index" [id]="'fp-wl-temp-' + $index" formControlName="temperatureC" type="number" />
+        </div>
+        <button (click)="removeWindLevel($index)" [attr.data-testid]="'remove-wind-level-' + $index" class="btn danger" type="button">
+          <i aria-hidden="true" class="ti ti-trash"></i>
+        </button>
+      </div>
+    }
+  </div>
+  <button (click)="addWindLevel()" class="btn" data-testid="add-wind-level" type="button">
+    <i aria-hidden="true" class="ti ti-plus"></i> Level
+  </button>
+</div>

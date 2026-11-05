@@ -1,0 +1,20 @@
+<div [formGroup]="formGroup()">
+  <div class="field">
+    <label for="fp-route-description">ROUTE</label>
+    <textarea id="fp-route-description" data-testid="route-description" formControlName="routeDescription"></textarea>
+  </div>
+  <div class="field-grid">
+    <div class="field">
+      <label for="fp-climb-rate">CLIMB RATE M/S</label>
+      <input id="fp-climb-rate" data-testid="climb-rate" formControlName="climbRateMetersPerSecond" type="number" />
+    </div>
+    <div class="field">
+      <label for="fp-descent-rate">DESCENT RATE M/S</label>
+      <input id="fp-descent-rate" data-testid="descent-rate" formControlName="descentRateMetersPerSecond" type="number" />
+    </div>
+    <div class="field">
+      <label for="fp-cruise-altitudes">CRUISE ALTITUDES FT (CSV)</label>
+      <input id="fp-cruise-altitudes" data-testid="cruise-altitudes" formControlName="cruiseAltitudesFtCsv" type="text" />
+    </div>
+  </div>
+</div>
