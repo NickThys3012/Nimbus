@@ -20,6 +20,11 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
     public DbSet<GoNoGoThreshold> GoNoGoThresholds => Set<GoNoGoThreshold>();
     public DbSet<UserProfile> UserProfiles => Set<UserProfile>();
     public DbSet<OfpSettings> OfpSettings => Set<OfpSettings>();
+    public DbSet<FlightPreparation> FlightPreparations => Set<FlightPreparation>();
+    public DbSet<Passenger> Passengers => Set<Passenger>();
+    public DbSet<FlightPreparationImage> FlightPreparationImages => Set<FlightPreparationImage>();
+    public DbSet<WindLevel> WindLevels => Set<WindLevel>();
+    public DbSet<FlightPreparationShare> FlightPreparationShares => Set<FlightPreparationShare>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -118,15 +123,124 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
             e.Property(p => p.PicWeightKg).HasPrecision(5, 2);
             // One profile per user.
             e.HasIndex(p => p.OwnerId).IsUnique();
-            builder.Entity<OfpSettings>(e =>
-            {
-                e.Property(s => s.EquipmentWeightPerPassengerKg).HasPrecision(5, 2);
-                // One row per user.
-                e.HasIndex(s => s.OwnerId).IsUnique();
-            });
+        });
 
-            builder.ApplyConfigurationsFromAssembly(typeof(AppDbContext).Assembly);
-            ApplySoftDeleteConvention(builder);
+        builder.Entity<OfpSettings>(e =>
+        {
+            e.Property(s => s.EquipmentWeightPerPassengerKg).HasPrecision(5, 2);
+            // One row per user.
+            e.HasIndex(s => s.OwnerId).IsUnique();
+        });
+
+        ConfigureFlightPreparation(builder);
+
+        builder.ApplyConfigurationsFromAssembly(typeof(AppDbContext).Assembly);
+        ApplySoftDeleteConvention(builder);
+    }
+
+    /// <summary>
+    ///     Flight preparation dossier and its children (issue #31). Column naming is English
+    ///     throughout (see docs/flight-preparation.md). All four child collections cascade-delete
+    ///     with the parent row; <c>BalloonId</c>/<c>PilotId</c>/<c>LaunchLocationId</c> and
+    ///     <c>Shares.SharedWithUserId</c> are plain ids (no FK constraint), the same convention
+    ///     already used for <c>OwnerId</c>.
+    /// </summary>
+    private static void ConfigureFlightPreparation(ModelBuilder builder)
+    {
+        builder.Entity<FlightPreparation>(e =>
+        {
+            e.Property(f => f.Title).IsRequired().HasMaxLength(200);
+            e.Property(f => f.Status).HasConversion<string>().HasMaxLength(20);
+
+            e.Property(f => f.WindSpeedKt).HasPrecision(5, 1);
+            e.Property(f => f.VisibilityKm).HasPrecision(6, 2);
+            e.Property(f => f.CapeJPerKg).HasPrecision(7, 2);
+            e.Property(f => f.TemperatureC).HasPrecision(5, 2);
+            e.Property(f => f.DewPointC).HasPrecision(5, 2);
+            e.Property(f => f.QnhHpa).HasPrecision(6, 2);
+            e.Property(f => f.Precipitation).HasMaxLength(200);
+            e.Property(f => f.Metar).HasMaxLength(500);
+            e.Property(f => f.Taf).HasMaxLength(1000);
+
+            e.Property(f => f.AirspaceStructureNotes).HasMaxLength(2000);
+            e.Property(f => f.AirspaceRestrictions).HasMaxLength(2000);
+            e.Property(f => f.Obstacles).HasMaxLength(2000);
+
+            e.Property(f => f.EnvelopeWeightKg).HasPrecision(7, 2);
+            e.Property(f => f.LoadRemarks).HasMaxLength(2000);
+
+            e.Property(f => f.RouteDescription).HasMaxLength(2000);
+            e.Property(f => f.ClimbRateMetersPerSecond).HasPrecision(4, 2);
+            e.Property(f => f.DescentRateMetersPerSecond).HasPrecision(4, 2);
+            e.Property(f => f.CruiseAltitudesFtCsv).HasMaxLength(100);
+
+            e.Property(f => f.BulletinText).HasMaxLength(4000);
+
+            e.Property(f => f.OfpOperatorName).HasMaxLength(200);
+            e.Property(f => f.OfpPicWeightKg).HasPrecision(5, 2);
+            e.Property(f => f.OfpLandingLocation).HasMaxLength(200);
+
+            e.Property(f => f.PaxBriefingVersion).HasMaxLength(50);
+
+            e.Property(f => f.ActualLandingLocation).HasMaxLength(200);
+            e.Property(f => f.FuelConsumedLiters).HasPrecision(6, 2);
+            e.Property(f => f.DefectsDescription).HasMaxLength(2000);
+            e.Property(f => f.OutcomeRemarks).HasMaxLength(2000);
+            e.Property(f => f.KmlTrackObjectKey).HasMaxLength(1024);
+            e.Property(f => f.KmlTrackContentType).HasMaxLength(100);
+
+            // "My flights" list/paging (issue #40) and the owner-scoping convention.
+            e.HasIndex(f => f.OwnerId);
+
+            e.HasMany(f => f.Passengers)
+                .WithOne(p => p.FlightPreparation)
+                .HasForeignKey(p => p.FlightPreparationId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            e.HasMany(f => f.Images)
+                .WithOne(i => i.FlightPreparation)
+                .HasForeignKey(i => i.FlightPreparationId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            e.HasMany(f => f.WindLevels)
+                .WithOne(w => w.FlightPreparation)
+                .HasForeignKey(w => w.FlightPreparationId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            e.HasMany(f => f.Shares)
+                .WithOne(s => s.FlightPreparation)
+                .HasForeignKey(s => s.FlightPreparationId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        builder.Entity<Passenger>(e =>
+        {
+            e.Property(p => p.Name).IsRequired().HasMaxLength(200);
+            e.Property(p => p.WeightKg).HasPrecision(5, 2);
+            e.HasIndex(p => new { p.FlightPreparationId, p.Order });
+        });
+
+        builder.Entity<FlightPreparationImage>(e =>
+        {
+            e.Property(i => i.Section).HasConversion<string>().HasMaxLength(30);
+            e.Property(i => i.ObjectKey).IsRequired().HasMaxLength(1024);
+            e.Property(i => i.ContentType).IsRequired().HasMaxLength(100);
+            e.HasIndex(i => new { i.FlightPreparationId, i.Section, i.Order });
+        });
+
+        builder.Entity<WindLevel>(e =>
+        {
+            e.Property(w => w.SpeedKt).HasPrecision(5, 1);
+            e.Property(w => w.TemperatureC).HasPrecision(5, 2);
+            e.HasIndex(w => new { w.FlightPreparationId, w.Order });
+        });
+
+        builder.Entity<FlightPreparationShare>(e =>
+        {
+            // One active share per recipient; a soft-deleted (revoked) share frees the slot for re-sharing.
+            e.HasIndex(s => new { s.FlightPreparationId, s.SharedWithUserId })
+                .IsUnique()
+                .HasFilter("[IsDeleted] = 0");
         });
     }
     // datetime2 comes back as DateTimeKind.Unspecified; mark it UTC so JSON serialises with a "Z"
