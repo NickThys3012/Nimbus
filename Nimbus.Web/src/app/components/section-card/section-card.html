@@ -11,7 +11,8 @@
     <span class="sec-title">{{ title() }}</span>
     @if (badge(); as b) {
       <span class="badge" [class.from-draft]="b === 'from-draft'" data-testid="section-badge">
-        ● {{ b === 'from-draft' ? 'FROM DRAFT' : 'EDITED' }}
+        <span class="badge-dot" aria-hidden="true">●</span>
+        <span class="badge-text">{{ b === 'from-draft' ? 'FROM DRAFT' : 'EDITED' }}</span>
       </span>
     }
     <span class="spacer"></span>

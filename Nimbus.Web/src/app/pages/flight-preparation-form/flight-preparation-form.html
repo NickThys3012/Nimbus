@@ -89,8 +89,8 @@
     } @else {
       <span class="spacer"></span>
     }
-    <Nimbus-button (click)="goBack()" [fullWidth]="false" id="cancel-flight-prep" variant="ghost" type="button">Discard</Nimbus-button>
-    <Nimbus-button (click)="save()" [fullWidth]="false" data-testid="save-flight-prep" id="save-flight-prep" type="button">
+    <Nimbus-button (click)="goBack()" class="discard-action" [fullWidth]="false" id="cancel-flight-prep" variant="ghost" type="button">Discard</Nimbus-button>
+    <Nimbus-button (click)="save()" class="save-action" [fullWidth]="false" data-testid="save-flight-prep" id="save-flight-prep" type="button">
       {{ isExistingFlight() ? 'Save changes' : 'Create flight' }}
     </Nimbus-button>
   </div>

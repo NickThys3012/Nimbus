@@ -63,4 +63,9 @@
     bottom: var(--mobile-bottom-nav-height, 68px);
     padding: 12px 12px calc(12px + env(safe-area-inset-bottom));
   }
+  /* Mockup frame 4A: on a phone, the bottom bar is action-only (no dirty-summary copy) so the
+     primary "Save changes" button can take most of the thumb zone's width. */
+  .dirty-summary { display: none; }
+  .action-bar-inner .spacer { display: none; }
+  .save-action { flex: 1; }
 }

@@ -22,13 +22,20 @@
 .card-head:focus-visible { outline: 2px solid var(--ac); outline-offset: -2px; }
 
 .sec-num { font: 10.5px var(--mono); color: var(--fnt); flex: 0 0 auto; }
-.sec-title { color: var(--tx); font-size: 14px; font-weight: 600; }
+.sec-title {
+  color: var(--tx); font-size: 14px; font-weight: 600;
+  min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
 .spacer { flex: 1; }
 .sec-meta { font: 11px var(--mono); color: var(--fnt); white-space: nowrap; }
 .chev { color: var(--fnt); font-size: 15px; flex: 0 0 auto; }
 
-.badge { font: 10px var(--mono); color: var(--a); white-space: nowrap; flex: 0 0 auto; }
+.badge {
+  font: 10px var(--mono); color: var(--a); white-space: nowrap; flex: 0 0 auto;
+  display: flex; align-items: center; gap: 4px;
+}
 .badge.from-draft { color: var(--ac); }
+.badge-dot { font-size: 6px; }
 
 .dot { width: 9px; height: 9px; border-radius: 50%; flex: 0 0 auto; }
 .dot.complete { background: var(--g); }
@@ -44,4 +51,7 @@
 
 @media (max-width: 600px) {
   .sec-meta { display: none; }
+  /* Mirror mockup frame 4A: collapse the "EDITED"/"FROM DRAFT" word to a plain dot on
+     narrow screens so the title keeps the room it needs in the one-handed layout. */
+  .badge-text { display: none; }
 }
