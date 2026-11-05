@@ -4,13 +4,19 @@
     <textarea id="fp-route-description" data-testid="route-description" formControlName="routeDescription"></textarea>
   </div>
   <div class="field-grid">
-    <div class="field">
+    <div class="field" [class.bad]="formGroup().controls.climbRateMetersPerSecond.invalid && formGroup().controls.climbRateMetersPerSecond.touched">
       <label for="fp-climb-rate">CLIMB RATE M/S</label>
       <input id="fp-climb-rate" data-testid="climb-rate" formControlName="climbRateMetersPerSecond" type="number" />
+      @if (formGroup().controls.climbRateMetersPerSecond.invalid && formGroup().controls.climbRateMetersPerSecond.touched) {
+        <div class="err" data-testid="climb-rate-error">{{ formGroup().controls.climbRateMetersPerSecond.errors | fieldError }}</div>
+      }
     </div>
-    <div class="field">
+    <div class="field" [class.bad]="formGroup().controls.descentRateMetersPerSecond.invalid && formGroup().controls.descentRateMetersPerSecond.touched">
       <label for="fp-descent-rate">DESCENT RATE M/S</label>
       <input id="fp-descent-rate" data-testid="descent-rate" formControlName="descentRateMetersPerSecond" type="number" />
+      @if (formGroup().controls.descentRateMetersPerSecond.invalid && formGroup().controls.descentRateMetersPerSecond.touched) {
+        <div class="err" data-testid="descent-rate-error">{{ formGroup().controls.descentRateMetersPerSecond.errors | fieldError }}</div>
+      }
     </div>
     <div class="field">
       <label for="fp-cruise-altitudes">CRUISE ALTITUDES FT (CSV)</label>

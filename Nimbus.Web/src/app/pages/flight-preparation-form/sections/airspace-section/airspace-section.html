@@ -1,8 +1,11 @@
 <div [formGroup]="formGroup()">
-  <label class="check-row">
+  <label class="check-row" [class.bad]="formGroup().controls.notamsChecked.invalid && formGroup().controls.notamsChecked.touched">
     <input data-testid="notams-checked" formControlName="notamsChecked" type="checkbox" />
     NOTAMs checked *
   </label>
+  @if (formGroup().controls.notamsChecked.invalid && formGroup().controls.notamsChecked.touched) {
+    <div class="err" data-testid="notams-checked-error">{{ formGroup().controls.notamsChecked.errors | fieldError }}</div>
+  }
   <div class="field" style="margin-top: 10px;">
     <label for="fp-airspace-structure">AIRSPACE STRUCTURE NOTES</label>
     <textarea id="fp-airspace-structure" data-testid="airspace-structure-notes" formControlName="airspaceStructureNotes"></textarea>

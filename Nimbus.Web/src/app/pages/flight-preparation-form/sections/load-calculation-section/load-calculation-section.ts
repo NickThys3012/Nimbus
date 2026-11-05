@@ -2,11 +2,12 @@ import { ChangeDetectionStrategy, Component, inject, input } from '@angular/core
 import { NonNullableFormBuilder, ReactiveFormsModule } from '@angular/forms';
 
 import { createPassengerGroup, type LoadCalculationFormGroup } from '../../../../core/flight-preparations/flight-preparation-form';
+import { FieldErrorPipe } from '../field-error.pipe';
 
 /** Section 05 — envelope weight, max altitude, and the passenger list. */
 @Component({
   selector: 'Nimbus-load-calculation-section',
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, FieldErrorPipe],
   templateUrl: './load-calculation-section.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrls: ['./load-calculation-section.css', '../section-fields.css'],

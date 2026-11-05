@@ -36,7 +36,14 @@
 .field.bad input,
 .field.bad select,
 .field.bad textarea { border-color: var(--r); }
+.field.bad input:focus,
+.field.bad select:focus,
+.field.bad textarea:focus { outline: none; border-color: var(--r); box-shadow: 0 0 0 3px var(--rb); }
 .field .err { font: 11px var(--mono); color: var(--r); margin-top: 4px; }
+
+.check-row.bad { color: var(--r); }
+.check-row.bad input[type='checkbox'] { outline: 1px solid var(--r); }
+.check-row .err { font: 11px var(--mono); color: var(--r); margin-top: -4px; padding-left: 27px; }
 
 .check-row {
   display: flex;

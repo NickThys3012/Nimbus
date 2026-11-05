@@ -1,22 +1,34 @@
 <div [formGroup]="formGroup()">
   <div class="field-grid">
-    <div class="field">
+    <div class="field" [class.bad]="formGroup().controls.ofpOperatorName.invalid && formGroup().controls.ofpOperatorName.touched">
       <label for="fp-ofp-operator">OPERATOR *</label>
       <input id="fp-ofp-operator" data-testid="ofp-operator" formControlName="ofpOperatorName" type="text" />
+      @if (formGroup().controls.ofpOperatorName.invalid && formGroup().controls.ofpOperatorName.touched) {
+        <div class="err" data-testid="ofp-operator-error">{{ formGroup().controls.ofpOperatorName.errors | fieldError }}</div>
+      }
     </div>
-    <div class="field">
+    <div class="field" [class.bad]="formGroup().controls.ofpPicWeightKg.invalid && formGroup().controls.ofpPicWeightKg.touched">
       <label for="fp-ofp-pic-weight">PIC WEIGHT KG</label>
       <input id="fp-ofp-pic-weight" data-testid="ofp-pic-weight" formControlName="ofpPicWeightKg" type="number" />
+      @if (formGroup().controls.ofpPicWeightKg.invalid && formGroup().controls.ofpPicWeightKg.touched) {
+        <div class="err" data-testid="ofp-pic-weight-error">{{ formGroup().controls.ofpPicWeightKg.errors | fieldError }}</div>
+      }
     </div>
   </div>
   <div class="field-grid">
-    <div class="field">
+    <div class="field" [class.bad]="formGroup().controls.ofpFuelAvailableMinutes.invalid && formGroup().controls.ofpFuelAvailableMinutes.touched">
       <label for="fp-ofp-fuel-available">FUEL AVAILABLE MIN</label>
       <input id="fp-ofp-fuel-available" data-testid="ofp-fuel-available" formControlName="ofpFuelAvailableMinutes" type="number" />
+      @if (formGroup().controls.ofpFuelAvailableMinutes.invalid && formGroup().controls.ofpFuelAvailableMinutes.touched) {
+        <div class="err" data-testid="ofp-fuel-available-error">{{ formGroup().controls.ofpFuelAvailableMinutes.errors | fieldError }}</div>
+      }
     </div>
-    <div class="field">
+    <div class="field" [class.bad]="formGroup().controls.ofpFuelRequiredMinutes.invalid && formGroup().controls.ofpFuelRequiredMinutes.touched">
       <label for="fp-ofp-fuel-required">FUEL REQUIRED MIN</label>
       <input id="fp-ofp-fuel-required" data-testid="ofp-fuel-required" formControlName="ofpFuelRequiredMinutes" type="number" />
+      @if (formGroup().controls.ofpFuelRequiredMinutes.invalid && formGroup().controls.ofpFuelRequiredMinutes.touched) {
+        <div class="err" data-testid="ofp-fuel-required-error">{{ formGroup().controls.ofpFuelRequiredMinutes.errors | fieldError }}</div>
+      }
     </div>
     <div class="field">
       <label for="fp-ofp-landing">LANDING LOCATION</label>

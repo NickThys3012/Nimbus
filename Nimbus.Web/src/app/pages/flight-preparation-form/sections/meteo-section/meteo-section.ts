@@ -2,11 +2,12 @@ import { ChangeDetectionStrategy, Component, inject, input } from '@angular/core
 import { NonNullableFormBuilder, ReactiveFormsModule } from '@angular/forms';
 
 import { createWindLevelGroup, type MeteoFormGroup } from '../../../../core/flight-preparations/flight-preparation-form';
+import { FieldErrorPipe } from '../field-error.pipe';
 
 /** Section 02 — wind/visibility/METAR-TAF plus the wind-on-altitude table. */
 @Component({
   selector: 'Nimbus-meteo-section',
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, FieldErrorPipe],
   templateUrl: './meteo-section.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrls: ['./meteo-section.css', '../section-fields.css'],

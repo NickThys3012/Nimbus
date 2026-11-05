@@ -2,7 +2,6 @@ import { AbstractControl, FormArray, NonNullableFormBuilder, Validators } from '
 
 import {
   FLIGHT_PREPARATION_SECTION_IDS,
-  hasAnyValue,
   type FlightPreparationSectionId,
   sectionFormKey,
   type SectionCompletionStatus,

@@ -5,11 +5,12 @@ import { type GeneralFormGroup } from '../../../../core/flight-preparations/flig
 import { BalloonsStore } from '../../../../core/balloons/balloons.store';
 import { LaunchLocationsStore } from '../../../../core/launch-locations/launch-locations.store';
 import { PilotsStore } from '../../../../core/pilots/pilots.store';
+import { FieldErrorPipe } from '../field-error.pipe';
 
 /** Section 01 — flight date/time, balloon/pilot/location pickers, sunrise/sunset. */
 @Component({
   selector: 'Nimbus-general-section',
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, FieldErrorPipe],
   templateUrl: './general-section.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrls: ['./general-section.css', '../section-fields.css'],
