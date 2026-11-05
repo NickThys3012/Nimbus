@@ -12,6 +12,15 @@
     }
   </div>
 
+  <div class="progress-row" data-testid="progress-row">
+    <div class="segments" data-testid="progress-segments">
+      @for (seg of progressSegments(); track seg.id) {
+        <span [class]="'segment ' + seg.status" [attr.data-status]="seg.status"></span>
+      }
+    </div>
+    <span class="progress-count" data-testid="progress-count">{{ completedCount() }}/{{ sections.length }} complete</span>
+  </div>
+
   <form (ngSubmit)="save()" [formGroup]="form()" class="sections" data-testid="flight-preparation-form" novalidate>
     @for (section of sections; track section.id) {
       <Nimbus-section-card

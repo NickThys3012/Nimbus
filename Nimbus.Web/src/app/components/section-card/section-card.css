@@ -30,6 +30,7 @@
 .dot { width: 9px; height: 9px; border-radius: 50%; flex: 0 0 auto; }
 .dot.complete { background: var(--g); }
 .dot.invalid { background: var(--r); }
+.dot.partial { background: var(--a); }
 .dot.pending { background: none; border: 1.5px solid var(--ln2); }
 
 .card-body {

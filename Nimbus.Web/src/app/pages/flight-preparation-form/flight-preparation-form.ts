@@ -88,6 +88,15 @@ export default class FlightPreparationFormPage implements CanComponentDeactivate
   protected readonly expandedIds = signal<ReadonlySet<FlightPreparationSectionId>>(new Set(['General']));
   protected readonly savedAt = signal<string | null>(null);
 
+  /** One entry per section, in order, for the segmented progress bar (mockup frames 1A/1B/2A). */
+  protected readonly progressSegments = computed(() => {
+    this.formVersion();
+    return this.sections.map((s) => ({ id: s.id, status: this.sectionStatus(s.id) }));
+  });
+  protected readonly completedCount = computed(
+    () => this.progressSegments().filter((s) => s.status === 'complete').length,
+  );
+
   private lastKnownId: string | null = null;
   private valueSub: Subscription | null = null;
   private autosaveSub: Subscription | null = null;

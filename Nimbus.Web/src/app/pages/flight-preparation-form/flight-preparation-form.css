@@ -17,6 +17,15 @@
 
 .sections { display: flex; flex-direction: column; gap: 10px; }
 
+.progress-row { display: flex; align-items: center; gap: 10px; }
+.segments { display: flex; gap: 3px; flex: 1; }
+.segment { flex: 1; height: 4px; border-radius: 2px; background: var(--ln2); }
+.segment.complete { background: var(--g); }
+.segment.invalid { background: var(--r); }
+.segment.partial { background: var(--a); }
+.segment.pending { background: var(--ln2); }
+.progress-count { font: 11px var(--mono); color: var(--dim); white-space: nowrap; }
+
 .bar { display: flex; justify-content: space-between; gap: 10px; margin-top: 4px; }
 .bar > * { flex: 1; }
 

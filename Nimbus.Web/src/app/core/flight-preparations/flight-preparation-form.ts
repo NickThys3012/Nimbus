@@ -1,6 +1,6 @@
 import { AbstractControl, FormArray, NonNullableFormBuilder, Validators } from '@angular/forms';
 
-import { type SectionCompletionStatus } from './flight-preparation.model';
+import { hasAnyValue, type SectionCompletionStatus } from './flight-preparation.model';
 
 /**
  * Builds the single reactive form that drives the whole nine-section dossier (issue #32): one
@@ -152,14 +152,43 @@ function resizeArray<T extends AbstractControl>(array: FormArray<T>, targetLengt
 }
 
 /**
- * A section's completion dot: `'complete'` once it's valid and has been touched/edited,
- * `'invalid'` once it's been touched/submitted but fails validation, `'pending'` while untouched.
- * Optional-only sections (no required fields) read as `'complete'` as soon as they're touched —
- * there's nothing further for the pilot to complete.
+ * A section's completion dot (issue #32 / mockup "Flight Prep Form Mockups" frames 1A/2A):
+ * `'complete'` once the section validates — regardless of whether it's been touched, so a
+ * preloaded flight with already-valid sections reads as done immediately; `'invalid'` once an
+ * invalid section has been visited (blurred/touched) or a save was attempted; `'partial'` once an
+ * invalid section already has *some* values filled in but hasn't been visited/submitted yet (e.g.
+ * profile defaults or a restored draft); `'pending'` while fully empty and untouched.
  */
 export function sectionCompletionStatus(group: AbstractControl): SectionCompletionStatus {
-  const touched = group.touched || group.dirty;
-  if (group.invalid) return touched ? 'invalid' : 'pending';
-  return touched ? 'complete' : 'pending';
+  if (group.valid) return 'complete';
+  if (group.touched) return 'invalid';
+  return hasAnyValue(group.getRawValue()) ? 'partial' : 'pending';
+}
+
+/** Counts invalid *leaf* controls under a group/array (a nested group being invalid because one
+ *  of its children is invalid is not double-counted) — drives the save-error banner's per-section
+ *  error counts (issue #32 mockup frame 2A). */
+export function countInvalidLeaves(control: AbstractControl): number {
+  const children = (control as FormArray | { controls?: unknown }).controls;
+  if (children && typeof children === 'object') {
+    return Object.values(children as Record<string, AbstractControl>).reduce(
+      (sum, child) => sum + countInvalidLeaves(child),
+      0,
+    );
+  }
+  return control.invalid ? 1 : 0;
+}
+
+/** True if any leaf value in a (possibly nested) raw form value is non-empty/non-default —
+ *  used to tell a freshly-opened, still-empty section apart from one that already has some
+ *  values filled in but isn't valid yet (`'pending'` vs `'partial'`). */
+export function hasAnyValue(value: unknown): boolean {
+  if (value === null || value === undefined) return false;
+  if (typeof value === 'string') return value.trim() !== '';
+  if (typeof value === 'number') return value !== 0;
+  if (typeof value === 'boolean') return value === true;
+  if (Array.isArray(value)) return value.some(hasAnyValue);
+  if (typeof value === 'object') return Object.values(value).some(hasAnyValue);
+  return false;
 }
 

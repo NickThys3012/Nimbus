@@ -38,9 +38,11 @@ export const FLIGHT_PREPARATION_SECTIONS: readonly FlightPreparationSectionMeta[
 /** The id a not-yet-saved flight preparation uses in the route until it gets a real id. */
 export const NEW_FLIGHT_PREPARATION_ID = 'new';
 
-/** A section header's completion dot: green once its required fields validate, red once an
- *  invalid section has been visited/submitted, grey while still untouched. */
-export type SectionCompletionStatus = 'complete' | 'invalid' | 'pending';
+/** A section header's completion dot: `'complete'` (green) once its required fields validate,
+ *  `'invalid'` (red) once an invalid section has been visited/submitted, `'partial'` (amber) once
+ *  it has some values but is still missing required ones, and `'pending'` (grey) while fully
+ *  untouched/empty. */
+export type SectionCompletionStatus = 'complete' | 'invalid' | 'partial' | 'pending';
 
 /** `'LoadCalculation'` -> `'loadCalculation'`: the parent form's control key for a section id. */
 export function sectionFormKey(id: FlightPreparationSectionId): string {
