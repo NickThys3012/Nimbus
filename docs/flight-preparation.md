@@ -38,7 +38,7 @@ Covers all nine pre-flight sections as flat columns, grouped and commented in th
 | 01 | General | `FlightDate`, `FlightTime`, `SunriseTime`, `SunsetTime`, `FieldOwnerNotified` |
 | 02 | Meteo | `WindSpeedKt`, `WindDirectionDeg`, `VisibilityKm`, `CapeJPerKg`, `Metar`, `Taf`, … |
 | 03 | Airspace & NOTAMs | `NotamsChecked`, `AirspaceStructureNotes`, `AirspaceRestrictions`, `Obstacles` |
-| 04 | Checklists | `ChecklistCompletedCount`, `ChecklistTotalCount`, `ChecklistItemsJson` |
+| 04 | Checklists | safety: `FirstAidAndExtinguisher`, `PassengerListFilled`, `FlightPlanFiled` (`ChecklistAnswer`); technical: `BurnerTested`, `GasCylindersChecked`, `BalloonVisualInspectionDone`, `MooringsChecked`, `InstrumentsChecked` |
 | 05 | Load calculation | `EnvelopeWeightKg`, `MaxAltitudeFt`, `LoadRemarks` (passengers are a child collection, see below) |
 | 06 | Route & trajectory | `RouteDescription`, `ClimbRateMetersPerSecond`, `DescentRateMetersPerSecond`, `CruiseAltitudesFtCsv` |
 | 07 | Balloon bulletin | `BulletinText` |
@@ -120,3 +120,9 @@ English, consistently, for every property and the column it maps to:
 - Balloon, pilot, launch location and the optional landing location come from the owner's own reference data (the stores only return the signed-in user's rows).
 - Picking a balloon on a not-yet-saved flight snapshots its envelope, basket, burner and cylinder weights into the load-calculation section; saved flights keep their snapshot.
 - The selected launch location's coordinates are exposed as `launchCoordinates` on the form page for the weather and sunrise features.
+
+## Sections 3-5 checks (issue #34)
+
+- Section 03 keeps `NotamsChecked` (a bool, required to complete the section) plus the airspace/restrictions/obstacles notes.
+- The checklist section holds eight typed checks instead of the old items list/JSON blob. The three safety checks use the `ChecklistAnswer` enum (`No` | `Yes` | `NotApplicable`, stored as a string column and serialised by name; replaces the POC's "JA"/"NEE"/"NVT"). The five technical checks are plain booleans because "not applicable" is never valid for them.
+- Everything defaults to the unchecked state (`No` / `false`); nothing is pre-ticked. Migration `ChecklistSafetyAndTechnicalChecks` drops `ChecklistCompletedCount`/`ChecklistTotalCount`/`ChecklistItemsJson` (never written by any feature) and adds the new columns.

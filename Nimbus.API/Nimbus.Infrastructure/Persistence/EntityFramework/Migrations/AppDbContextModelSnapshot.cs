@@ -241,22 +241,19 @@ namespace Nimbus.Infrastructure.Persistence.EntityFramework.Migrations
                     b.Property<Guid?>("BalloonId")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<bool>("BalloonVisualInspectionDone")
+                        .HasColumnType("bit");
+
                     b.Property<string>("BulletinText")
                         .HasMaxLength(4000)
                         .HasColumnType("nvarchar(4000)");
 
+                    b.Property<bool>("BurnerTested")
+                        .HasColumnType("bit");
+
                     b.Property<decimal?>("CapeJPerKg")
                         .HasPrecision(7, 2)
                         .HasColumnType("decimal(7,2)");
-
-                    b.Property<int>("ChecklistCompletedCount")
-                        .HasColumnType("int");
-
-                    b.Property<string>("ChecklistItemsJson")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("ChecklistTotalCount")
-                        .HasColumnType("int");
 
                     b.Property<decimal?>("ClimbRateMetersPerSecond")
                         .HasPrecision(4, 2)
@@ -288,8 +285,18 @@ namespace Nimbus.Infrastructure.Persistence.EntityFramework.Migrations
                     b.Property<bool>("FieldOwnerNotified")
                         .HasColumnType("bit");
 
+                    b.Property<string>("FirstAidAndExtinguisher")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
                     b.Property<DateOnly>("FlightDate")
                         .HasColumnType("date");
+
+                    b.Property<string>("FlightPlanFiled")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
 
                     b.Property<TimeOnly>("FlightTime")
                         .HasColumnType("time");
@@ -301,7 +308,13 @@ namespace Nimbus.Infrastructure.Persistence.EntityFramework.Migrations
                         .HasPrecision(6, 2)
                         .HasColumnType("decimal(6,2)");
 
+                    b.Property<bool>("GasCylindersChecked")
+                        .HasColumnType("bit");
+
                     b.Property<bool?>("HasVisibleDefects")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("InstrumentsChecked")
                         .HasColumnType("bit");
 
                     b.Property<bool>("IsDeleted")
@@ -328,6 +341,9 @@ namespace Nimbus.Infrastructure.Persistence.EntityFramework.Migrations
                     b.Property<string>("Metar")
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
+
+                    b.Property<bool>("MooringsChecked")
+                        .HasColumnType("bit");
 
                     b.Property<bool>("NotamsChecked")
                         .HasColumnType("bit");
@@ -366,6 +382,11 @@ namespace Nimbus.Infrastructure.Persistence.EntityFramework.Migrations
 
                     b.Property<Guid>("OwnerId")
                         .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("PassengerListFilled")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
 
                     b.Property<bool>("PaxBriefingIsCustom")
                         .HasColumnType("bit");

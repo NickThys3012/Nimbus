@@ -166,6 +166,11 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
             e.Property(f => f.AirspaceRestrictions).HasMaxLength(2000);
             e.Property(f => f.Obstacles).HasMaxLength(2000);
 
+            // Three-state safety checks stored as readable strings, like Status (issue #34).
+            e.Property(f => f.FirstAidAndExtinguisher).HasConversion<string>().HasMaxLength(20);
+            e.Property(f => f.PassengerListFilled).HasConversion<string>().HasMaxLength(20);
+            e.Property(f => f.FlightPlanFiled).HasConversion<string>().HasMaxLength(20);
+
             e.Property(f => f.EnvelopeWeightKg).HasPrecision(7, 2);
             e.Property(f => f.LoadRemarks).HasMaxLength(2000);
 

@@ -1,6 +1,7 @@
 import { AbstractControl, FormArray, NonNullableFormBuilder, Validators } from '@angular/forms';
 
 import {
+  ChecklistAnswer,
   FLIGHT_PREPARATION_SECTION_IDS,
   type FlightPreparationSectionId,
   sectionFormKey,
@@ -50,7 +51,16 @@ export function createFlightPreparationForm(fb: NonNullableFormBuilder) {
       obstacles: [''],
     }),
     checklists: fb.group({
-      items: fb.array(DEFAULT_CHECKLIST_ITEMS.map((label) => createChecklistItemGroup(fb, label))),
+      // Safety checks: three-state, default No (unchecked) — never pre-ticked.
+      firstAidAndExtinguisher: [ChecklistAnswer.No as ChecklistAnswer],
+      passengerListFilled: [ChecklistAnswer.No as ChecklistAnswer],
+      flightPlanFiled: [ChecklistAnswer.No as ChecklistAnswer],
+      // Technical checks: always applicable, so plain checkboxes defaulting to unchecked.
+      burnerTested: [false],
+      gasCylindersChecked: [false],
+      balloonVisualInspectionDone: [false],
+      mooringsChecked: [false],
+      instrumentsChecked: [false],
     }),
     loadCalculation: fb.group({
       envelopeWeightKg: [0, [Validators.required, Validators.min(0)]],
@@ -128,24 +138,24 @@ export function createPassengerGroup(fb: NonNullableFormBuilder) {
   });
 }
 
-export function createChecklistItemGroup(fb: NonNullableFormBuilder, label: string) {
-  return fb.group({
-    label: [label, Validators.required],
-    checked: [false],
-  });
-}
+/** The three-state safety checks (section 04, first group). */
+export const SAFETY_CHECK_KEYS = ['firstAidAndExtinguisher', 'passengerListFilled', 'flightPlanFiled'] as const;
 
-/** Starter checklist, grouped like the mockup's "safety & comms" / "technical check" sections. */
-export const DEFAULT_CHECKLIST_ITEMS: readonly string[] = [
-  'First-aid kit & fire extinguisher',
-  'Passenger list completed',
-  'Flight plan filed',
-  'Burner tested',
-  'Gas cylinders checked',
-  'Envelope visually inspected',
-  'Mooring lines checked',
-  'Instruments working',
-];
+/** The five technical checks (section 04, second group). */
+export const TECHNICAL_CHECK_KEYS = [
+  'burnerTested',
+  'gasCylindersChecked',
+  'balloonVisualInspectionDone',
+  'mooringsChecked',
+  'instrumentsChecked',
+] as const;
+
+/** How many of the eight checks are done: a safety answer counts once it is Yes or N/A. */
+export function checklistProgress(value: FlightPreparationFormValue['checklists']): { done: number; total: number } {
+  const safety = SAFETY_CHECK_KEYS.filter((k) => value[k] !== ChecklistAnswer.No).length;
+  const technical = TECHNICAL_CHECK_KEYS.filter((k) => value[k]).length;
+  return { done: safety + technical, total: SAFETY_CHECK_KEYS.length + TECHNICAL_CHECK_KEYS.length };
+}
 
 export type FlightPreparationForm = ReturnType<typeof createFlightPreparationForm>;
 export type FlightPreparationFormValue = ReturnType<FlightPreparationForm['getRawValue']>;
@@ -160,8 +170,7 @@ export type OfpFormGroup = FlightPreparationForm['controls']['ofp'];
 export type PaxBriefingFormGroup = FlightPreparationForm['controls']['paxBriefing'];
 
 /**
- * Rebuilds a freshly-constructed form's dynamic `FormArray`s (wind levels, passengers, checklist
- * items) to match a loaded draft's shape, then patches in every value. Needed because
+ * Rebuilds a freshly-constructed form's dynamic `FormArray`s (wind levels, passengers) to match a loaded draft's shape, then patches in every value. Needed because
  * `FormGroup.reset()` only resets *existing* controls — it can't grow/shrink a `FormArray` to a
  * different saved flight's number of rows, which is why switching between two drafts rebuilds the
  * whole form (see `FlightPreparationDraftStore` / the form page) rather than reusing one instance.
@@ -174,9 +183,6 @@ export function hydrateFlightPreparationForm(
   resizeArray(form.controls.meteo.controls.windLevels, value.meteo.windLevels.length, () => createWindLevelGroup(fb));
   resizeArray(form.controls.loadCalculation.controls.passengers, value.loadCalculation.passengers.length, () =>
     createPassengerGroup(fb),
-  );
-  resizeArray(form.controls.checklists.controls.items, value.checklists.items.length, () =>
-    createChecklistItemGroup(fb, ''),
   );
   form.patchValue(value);
 }

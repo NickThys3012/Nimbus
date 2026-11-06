@@ -48,3 +48,21 @@ export type SectionCompletionStatus = 'complete' | 'invalid' | 'partial' | 'pend
 export function sectionFormKey(id: FlightPreparationSectionId): string {
   return id.charAt(0).toLowerCase() + id.slice(1);
 }
+
+/**
+ * The answer to a safety check that can genuinely be not applicable (issue #34); mirrors the
+ * backend's `ChecklistAnswer` enum (serialised by name). `No` is the safe, unchecked default.
+ */
+export const ChecklistAnswer = {
+  No: 'No',
+  Yes: 'Yes',
+  NotApplicable: 'NotApplicable',
+} as const;
+
+export type ChecklistAnswer = (typeof ChecklistAnswer)[keyof typeof ChecklistAnswer];
+
+export const CHECKLIST_ANSWERS: readonly ChecklistAnswer[] = [
+  ChecklistAnswer.No,
+  ChecklistAnswer.Yes,
+  ChecklistAnswer.NotApplicable,
+];

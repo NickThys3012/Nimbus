@@ -22,6 +22,7 @@ import { BalloonsStore } from '../../core/balloons/balloons.store';
 import { LaunchLocationsStore } from '../../core/launch-locations/launch-locations.store';
 import {
   countInvalidLeaves,
+  checklistProgress,
   createFlightPreparationForm,
   diffingSectionIds,
   type FlightPreparationForm,
@@ -272,9 +273,8 @@ export default class FlightPreparationFormPage implements CanComponentDeactivate
       case 'Meteo':
         return v.meteo.windSpeedKt ? `${v.meteo.windSpeedKt} kt · ${v.meteo.windDirectionDeg}°` : null;
       case 'Checklists': {
-        const total = v.checklists.items.length;
-        const done = v.checklists.items.filter((i) => i.checked).length;
-        return total > 0 ? `${done}/${total}` : null;
+        const { done, total } = checklistProgress(v.checklists);
+        return done > 0 ? `${done}/${total}` : null;
       }
       case 'LoadCalculation':
         return v.loadCalculation.envelopeWeightKg ? `${v.loadCalculation.envelopeWeightKg} kg` : null;

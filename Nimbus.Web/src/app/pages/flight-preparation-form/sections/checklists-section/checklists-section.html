@@ -1,10 +1,33 @@
 <div [formGroup]="group()">
-  <div formArrayName="items">
-    @for (item of items.controls; track $index) {
-      <label [formGroupName]="$index" class="check-row">
-        <input [attr.data-testid]="'checklist-item-' + $index" formControlName="checked" type="checkbox" />
-        {{ item.controls.label.value }}
+  <fieldset class="check-group">
+    <legend>SAFETY &amp; COMMS</legend>
+    @for (check of safetyChecks; track check.key) {
+      <div class="tri-row" role="radiogroup" [attr.aria-label]="check.label">
+        <span class="tri-label">{{ check.label }}</span>
+        <span class="tri-options">
+          @for (answer of answers; track answer) {
+            <label class="tri-option">
+              <input
+                [attr.data-testid]="check.key + '-' + answer"
+                [formControlName]="check.key"
+                [name]="check.key"
+                [value]="answer"
+                type="radio"
+              />
+              {{ answerLabels[answer] }}
+            </label>
+          }
+        </span>
+      </div>
+    }
+  </fieldset>
+  <fieldset class="check-group">
+    <legend>TECHNICAL CHECK</legend>
+    @for (check of technicalChecks; track check.key) {
+      <label class="check-row">
+        <input [attr.data-testid]="check.key" [formControlName]="check.key" type="checkbox" />
+        {{ check.label }}
       </label>
     }
-  </div>
+  </fieldset>
 </div>

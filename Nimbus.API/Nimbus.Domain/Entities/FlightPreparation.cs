@@ -66,17 +66,19 @@ public class FlightPreparation : OwnedEntity
     public string? AirspaceRestrictions { get; set; }
     public string? Obstacles { get; set; }
 
-    // ----- Section 04 — checklists -----
-    public int ChecklistCompletedCount { get; set; }
-    public int ChecklistTotalCount { get; set; }
+    // ----- Section 04 — checklists: safety checks (issue #34) -----
+    // Three-state answers; the default is No (unchecked), never a pre-ticked box.
+    public ChecklistAnswer FirstAidAndExtinguisher { get; set; } = ChecklistAnswer.No;
+    public ChecklistAnswer PassengerListFilled { get; set; } = ChecklistAnswer.No;
+    public ChecklistAnswer FlightPlanFiled { get; set; } = ChecklistAnswer.No;
 
-    /// <summary>
-    ///     Serialised checklist item state (label, group, checked), e.g. <c>[{"group":"...","label":"...","checked":true}]</c>.
-    ///     The checklist template isn't owner-scoped reference data of its own yet, so it is kept
-    ///     as a single JSON blob rather than a child table — revisit if items need to be queried or
-    ///     reused across flights (issue #34).
-    /// </summary>
-    public string? ChecklistItemsJson { get; set; }
+    // ----- Section 04 — checklists: technical checks (issue #34) -----
+    // Always applicable, so plain booleans that default to unchecked.
+    public bool BurnerTested { get; set; }
+    public bool GasCylindersChecked { get; set; }
+    public bool BalloonVisualInspectionDone { get; set; }
+    public bool MooringsChecked { get; set; }
+    public bool InstrumentsChecked { get; set; }
 
     // ----- Section 05 — load calculation -----
     public decimal? EnvelopeWeightKg { get; set; }

@@ -19,6 +19,32 @@ public class FlightPreparationTests
     }
 
     [Test]
+    public void NewFlightPreparation_ChecklistsDefaultToUnchecked()
+    {
+        var flight = new FlightPreparation();
+
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(flight.FirstAidAndExtinguisher, Is.EqualTo(ChecklistAnswer.No));
+            Assert.That(flight.PassengerListFilled, Is.EqualTo(ChecklistAnswer.No));
+            Assert.That(flight.FlightPlanFiled, Is.EqualTo(ChecklistAnswer.No));
+            Assert.That(flight.NotamsChecked, Is.False);
+            Assert.That(flight.BurnerTested, Is.False);
+            Assert.That(flight.GasCylindersChecked, Is.False);
+            Assert.That(flight.BalloonVisualInspectionDone, Is.False);
+            Assert.That(flight.MooringsChecked, Is.False);
+            Assert.That(flight.InstrumentsChecked, Is.False);
+        }
+    }
+
+    [Test]
+    public void ChecklistAnswer_HasYesNoNotApplicable_WithNoAsDefaultValue()
+    {
+        Assert.That(Enum.GetValues<ChecklistAnswer>(), Is.EquivalentTo(new[] { ChecklistAnswer.No, ChecklistAnswer.Yes, ChecklistAnswer.NotApplicable }));
+        Assert.That(default(ChecklistAnswer), Is.EqualTo(ChecklistAnswer.No));
+    }
+
+    [Test]
     public void NewFlightPreparation_ChildCollectionsStartEmpty()
     {
         var flight = new FlightPreparation();

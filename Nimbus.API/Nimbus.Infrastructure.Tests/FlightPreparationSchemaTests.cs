@@ -47,6 +47,40 @@ public class FlightPreparationSchemaTests
     };
 
     [Test]
+    public async Task ChecklistAnswers_RoundTripAsReadableStrings_AndDefaultToNo()
+    {
+        var ownerId = Guid.NewGuid();
+        var defaults = NewFlightPreparation(ownerId);
+        var answered = NewFlightPreparation(ownerId);
+        answered.FirstAidAndExtinguisher = ChecklistAnswer.Yes;
+        answered.FlightPlanFiled = ChecklistAnswer.NotApplicable;
+        answered.BurnerTested = true;
+
+        await using (var db = CreateContext())
+        {
+            db.FlightPreparations.AddRange(defaults, answered);
+            await db.SaveChangesAsync();
+        }
+
+        await using (var db = CreateContext())
+        {
+            var loadedDefaults = await db.FlightPreparations.SingleAsync(f => f.Id == defaults.Id && f.OwnerId == ownerId);
+            var loadedAnswered = await db.FlightPreparations.SingleAsync(f => f.Id == answered.Id && f.OwnerId == ownerId);
+            var raw = await db.Database.SqlQuery<string>($"SELECT FlightPlanFiled AS Value FROM FlightPreparations WHERE Id = {answered.Id}").SingleAsync();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(loadedDefaults.FirstAidAndExtinguisher, Is.EqualTo(ChecklistAnswer.No));
+                Assert.That(loadedDefaults.BurnerTested, Is.False);
+                Assert.That(loadedAnswered.FirstAidAndExtinguisher, Is.EqualTo(ChecklistAnswer.Yes));
+                Assert.That(loadedAnswered.FlightPlanFiled, Is.EqualTo(ChecklistAnswer.NotApplicable));
+                Assert.That(loadedAnswered.BurnerTested, Is.True);
+                Assert.That(raw, Is.EqualTo("NotApplicable"));
+            }
+        }
+    }
+
+    [Test]
     public async Task DeletingAFlightPreparation_CascadeDeletes_AllChildRows_LeavingNoOrphans()
     {
         var ownerId = Guid.NewGuid();
