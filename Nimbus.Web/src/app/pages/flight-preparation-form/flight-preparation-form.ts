@@ -27,6 +27,7 @@ import {
   type FlightPreparationForm,
   type FlightPreparationFormValue,
   hydrateFlightPreparationForm,
+  nextFlightSlot,
   sectionCompletionStatus,
 } from '../../core/flight-preparations/flight-preparation-form';
 import { FlightPreparationDraftStore } from '../../core/flight-preparations/flight-preparation-draft.store';
@@ -168,6 +169,7 @@ export default class FlightPreparationFormPage implements CanComponentDeactivate
   private lastKnownId: string | null = null;
   private valueSub: Subscription | null = null;
   private autosaveSub: Subscription | null = null;
+  private balloonSub: Subscription | null = null;
 
   protected readonly title = computed(() => {
     this.formVersion();
@@ -176,6 +178,14 @@ export default class FlightPreparationFormPage implements CanComponentDeactivate
     const balloon = this.balloonsStore.list().find((b) => b.id === general.balloonId);
     if (!location) return this.flightId() === NEW_FLIGHT_PREPARATION_ID ? 'New flight preparation' : 'Flight preparation';
     return balloon ? `${location.name} · ${balloon.registration}` : location.name;
+  });
+
+  /** The selected launch location's coordinates, for the weather and sunrise features. */
+  readonly launchCoordinates = computed(() => {
+    this.formVersion();
+    const id = this.form().controls.general.controls.launchLocationId.value;
+    const location = this.locationsStore.list().find((l) => l.id === id);
+    return location ? { latitude: Number(location.latitude), longitude: Number(location.longitude) } : null;
   });
 
   constructor() {
@@ -196,6 +206,7 @@ export default class FlightPreparationFormPage implements CanComponentDeactivate
   ngOnDestroy(): void {
     this.valueSub?.unsubscribe();
     this.autosaveSub?.unsubscribe();
+    this.balloonSub?.unsubscribe();
   }
 
   /** `CanComponentDeactivate` — the route guard prompts when this is true (issue #32 AC). */
@@ -387,6 +398,7 @@ export default class FlightPreparationFormPage implements CanComponentDeactivate
 
     const form = createFlightPreparationForm(this.fb);
     if (valueToUse) hydrateFlightPreparationForm(form, this.fb, valueToUse);
+    else form.controls.general.patchValue(nextFlightSlot());
     form.markAsPristine();
 
     this.replaceForm(form);
@@ -405,15 +417,34 @@ export default class FlightPreparationFormPage implements CanComponentDeactivate
   private replaceForm(form: FlightPreparationForm): void {
     this.valueSub?.unsubscribe();
     this.autosaveSub?.unsubscribe();
+    this.balloonSub?.unsubscribe();
 
     this.form.set(form);
     this.formVersion.update((v) => v + 1);
 
+    this.balloonSub = form.controls.general.controls.balloonId.valueChanges.subscribe((id) =>
+      this.snapshotBalloonWeights(form, id),
+    );
     this.valueSub = form.valueChanges.subscribe(() => this.formVersion.update((v) => v + 1));
     this.autosaveSub = form.valueChanges.pipe(debounceTime(400)).subscribe(() => {
       if (!form.dirty) return;
       const saveId = this.ensureId();
       this.draftStore.saveAutosave(saveId, form.getRawValue());
+    });
+  }
+
+  /** Copies the picked balloon's reference weights onto a flight that has not been saved yet, so
+   *  later edits to the balloon never change the weights this flight was prepared with. Saved
+   *  flights keep their snapshot. */
+  private snapshotBalloonWeights(form: FlightPreparationForm, balloonId: string): void {
+    if (this.isExistingFlight()) return;
+    const balloon = this.balloonsStore.list().find((b) => b.id === balloonId);
+    if (!balloon) return;
+    form.controls.loadCalculation.patchValue({
+      envelopeWeightKg: Number(balloon.envelopeWeightKg),
+      basketWeightKg: Number(balloon.basketWeightKg),
+      burnerWeightKg: Number(balloon.burnerWeightKg),
+      cylindersWeightKg: Number(balloon.cylindersWeightKg),
     });
   }
 }

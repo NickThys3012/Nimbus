@@ -113,3 +113,10 @@ English, consistently, for every property and the column it maps to:
   SQL Server (Testcontainers) and proves: cascade delete leaves no orphaned child rows across all
   four children; the documented composite indexes exist; and listing/deleting by owner never
   crosses into another owner's flights (per-user isolation at the data layer).
+
+## Section 1 form behaviour (issue #33)
+
+- A new flight's date/time default to the next launch window (07:00 or 19:00 local, at least one hour ahead).
+- Balloon, pilot, launch location and the optional landing location come from the owner's own reference data (the stores only return the signed-in user's rows).
+- Picking a balloon on a not-yet-saved flight snapshots its envelope, basket, burner and cylinder weights into the load-calculation section; saved flights keep their snapshot.
+- The selected launch location's coordinates are exposed as `launchCoordinates` on the form page for the weather and sunrise features.

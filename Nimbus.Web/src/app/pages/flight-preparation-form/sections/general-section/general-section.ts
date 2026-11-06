@@ -17,6 +17,8 @@ import { FieldErrorPipe } from '../field-error.pipe';
 })
 export class GeneralSection {
   group = input.required<GeneralFormGroup>();
+  /** Coordinates of the selected launch location (shown as a hint; consumed by weather/sunrise). */
+  coordinates = input<{ latitude: number; longitude: number } | null>(null);
 
   private readonly balloonsStore = inject(BalloonsStore);
   private readonly pilotsStore = inject(PilotsStore);

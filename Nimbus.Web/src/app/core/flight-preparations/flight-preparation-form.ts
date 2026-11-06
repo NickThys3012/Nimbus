@@ -25,6 +25,8 @@ export function createFlightPreparationForm(fb: NonNullableFormBuilder) {
       balloonId: ['', Validators.required],
       pilotId: ['', Validators.required],
       launchLocationId: ['', Validators.required],
+      /** Optional: the landing site is often only known after the flight. */
+      landingLocationId: [''],
       sunriseTime: [''],
       sunsetTime: [''],
       fieldOwnerNotified: [false],
@@ -52,6 +54,10 @@ export function createFlightPreparationForm(fb: NonNullableFormBuilder) {
     }),
     loadCalculation: fb.group({
       envelopeWeightKg: [0, [Validators.required, Validators.min(0)]],
+      // Snapshotted from the balloon's reference weights when it is picked on a new flight.
+      basketWeightKg: [0, [Validators.min(0)]],
+      burnerWeightKg: [0, [Validators.min(0)]],
+      cylindersWeightKg: [0, [Validators.min(0)]],
       maxAltitudeFt: [0, [Validators.required, Validators.min(0)]],
       loadRemarks: [''],
       passengers: fb.array<ReturnType<typeof createPassengerGroup>>([]),
@@ -78,6 +84,30 @@ export function createFlightPreparationForm(fb: NonNullableFormBuilder) {
       paxBriefingIsCustom: [false],
     }),
   });
+}
+
+/** Morning and evening are the usual balloon launch windows (local time). */
+const DEFAULT_SLOT_HOURS = [7, 19] as const;
+
+/**
+ * The next sensible flight slot: the first launch window (07:00 or 19:00 local) at least an hour
+ * from `now`, rolling over to tomorrow morning. Used to prefill a new flight's date and time.
+ */
+export function nextFlightSlot(now: Date = new Date()): { flightDate: string; flightTime: string } {
+  const earliest = now.getTime() + 60 * 60 * 1000;
+  for (let dayOffset = 0; dayOffset < 2; dayOffset++) {
+    for (const hour of DEFAULT_SLOT_HOURS) {
+      const candidate = new Date(now.getFullYear(), now.getMonth(), now.getDate() + dayOffset, hour, 0, 0, 0);
+      if (candidate.getTime() >= earliest) {
+        const pad = (n: number) => String(n).padStart(2, '0');
+        return {
+          flightDate: `${candidate.getFullYear()}-${pad(candidate.getMonth() + 1)}-${pad(candidate.getDate())}`,
+          flightTime: `${pad(hour)}:00`,
+        };
+      }
+    }
+  }
+  throw new Error('unreachable');
 }
 
 export function createWindLevelGroup(fb: NonNullableFormBuilder) {
