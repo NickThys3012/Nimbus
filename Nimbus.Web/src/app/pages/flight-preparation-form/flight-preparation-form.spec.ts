@@ -98,7 +98,10 @@ describe('FlightPreparationFormPage', () => {
         dewPointC: 0, qnhHpa: 1018, metar: '', taf: '', windLevels: [],
       },
       airspace: { notamsChecked: true, airspaceStructureNotes: '', airspaceRestrictions: '', obstacles: '' },
-      checklists: { items: [] },
+      checklists: {
+        firstAidAndExtinguisher: 'No', passengerListFilled: 'No', flightPlanFiled: 'No', burnerTested: false,
+        gasCylindersChecked: false, balloonVisualInspectionDone: false, mooringsChecked: false, instrumentsChecked: false,
+      },
       loadCalculation: { envelopeWeightKg: 118, maxAltitudeFt: 4500, loadRemarks: '', passengers: [] },
       route: { routeDescription: '', climbRateMetersPerSecond: 0, descentRateMetersPerSecond: 0, cruiseAltitudesFtCsv: '' },
       bulletin: { bulletinText: '' },
