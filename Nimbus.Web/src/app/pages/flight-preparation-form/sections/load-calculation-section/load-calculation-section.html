@@ -1,0 +1,71 @@
+<div [formGroup]="group()">
+  <div class="field-grid">
+    <div class="field" [class.bad]="group().controls.envelopeWeightKg.invalid && group().controls.envelopeWeightKg.touched">
+      <label for="fp-envelope-weight">ENVELOPE WEIGHT KG *</label>
+      <input id="fp-envelope-weight" data-testid="envelope-weight" formControlName="envelopeWeightKg" type="number" />
+      @if (group().controls.envelopeWeightKg.invalid && group().controls.envelopeWeightKg.touched) {
+        <div class="err" data-testid="envelope-weight-error">{{ group().controls.envelopeWeightKg.errors | fieldError }}</div>
+      }
+    </div>
+    <div class="field" [class.bad]="group().controls.maxAltitudeFt.invalid && group().controls.maxAltitudeFt.touched">
+      <label for="fp-max-altitude">MAX ALTITUDE FT *</label>
+      <input id="fp-max-altitude" data-testid="max-altitude" formControlName="maxAltitudeFt" type="number" />
+      @if (group().controls.maxAltitudeFt.invalid && group().controls.maxAltitudeFt.touched) {
+        <div class="err" data-testid="max-altitude-error">{{ group().controls.maxAltitudeFt.errors | fieldError }}</div>
+      }
+    </div>
+  </div>
+
+  <div class="rows" formArrayName="passengers">
+    <span style="font: 10.5px var(--mono); color: var(--fnt);">PASSENGERS</span>
+    @for (passenger of passengers.controls; track $index) {
+      <div [formGroupName]="$index" class="row-card">
+        <div class="row-card-head">
+          <span class="row-card-title">PASSENGER {{ $index + 1 }}</span>
+          <button
+            (click)="removePassenger($index)"
+            [attr.data-testid]="'remove-passenger-' + $index"
+            aria-label="Remove passenger"
+            class="row-card-remove"
+            type="button"
+          >
+            <i aria-hidden="true" class="ti ti-trash"></i>
+          </button>
+        </div>
+        <div class="row-card-fields">
+          <div class="field" [class.bad]="passenger.controls.name.invalid && passenger.controls.name.touched">
+            <label [attr.for]="'fp-pax-name-' + $index">NAME</label>
+            <input [attr.data-testid]="'passenger-name-' + $index" [id]="'fp-pax-name-' + $index" formControlName="name" type="text" />
+            @if (passenger.controls.name.invalid && passenger.controls.name.touched) {
+              <div class="err">{{ passenger.controls.name.errors | fieldError }}</div>
+            }
+          </div>
+          <div class="field" [class.bad]="passenger.controls.weightKg.invalid && passenger.controls.weightKg.touched">
+            <label [attr.for]="'fp-pax-weight-' + $index">WEIGHT KG</label>
+            <input [attr.data-testid]="'passenger-weight-' + $index" [id]="'fp-pax-weight-' + $index" formControlName="weightKg" type="number" />
+            @if (passenger.controls.weightKg.invalid && passenger.controls.weightKg.touched) {
+              <div class="err">{{ passenger.controls.weightKg.errors | fieldError }}</div>
+            }
+          </div>
+          <label class="check-row" style="padding: 0;">
+            <input formControlName="needsAssistance" type="checkbox" /> Assistance
+          </label>
+          <label class="check-row" style="padding: 0;">
+            <input formControlName="isChild" type="checkbox" /> Child
+          </label>
+        </div>
+      </div>
+    }
+  </div>
+  <button (click)="addPassenger()" class="btn" data-testid="add-passenger" type="button">
+    <i aria-hidden="true" class="ti ti-plus"></i> Passenger
+  </button>
+  <div class="field" style="margin-top: 12px;" data-testid="total-passenger-weight">
+    <span class="label-like">TOTAL PASSENGER WEIGHT</span>
+    <output>{{ totalWeightKg() }} kg</output>
+  </div>
+  <div class="field">
+    <label for="fp-load-remarks">REMARKS</label>
+    <textarea id="fp-load-remarks" data-testid="load-remarks" formControlName="loadRemarks"></textarea>
+  </div>
+</div>

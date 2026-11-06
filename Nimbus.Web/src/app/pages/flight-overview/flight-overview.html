@@ -8,7 +8,7 @@
 
 
 
-      .wrap { max-width: 780px; margin: 0 auto; padding: 20px; }
+      .wrap { max-width: var(--page-max-width); margin: 0 auto; padding: 20px; }
 
       /* ===== shared app nav (desktop: inline top bar / mobile: bottom tabs) ===== */
 
@@ -25,6 +25,7 @@
       .new-flight-btn {
           font-size:12px; color:var(--ac); background:none; border:1px solid var(--ln2);
           padding:7px 13px; border-radius:8px; cursor:pointer; display:flex; align-items:center; gap:6px;
+          text-decoration:none;
       }
       .new-flight-btn:hover { background: var(--chip); }
 
@@ -67,7 +68,7 @@
       <div class="sub">N. Thys</div>
     </div>
     <div class="spacer"></div>
-    <button class="new-flight-btn" onclick="window.location.href='nimbus-prep-form.html'"><i class="ti ti-plus" aria-hidden="true"></i> New Flight</button>
+    <a class="new-flight-btn" routerLink="/flight-preparations/new"><i class="ti ti-plus" aria-hidden="true"></i> New Flight</a>
   </div>
 
   <div class="stat-grid">

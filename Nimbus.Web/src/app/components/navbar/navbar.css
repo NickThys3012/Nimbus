@@ -6,7 +6,7 @@
     gap: 12px;
     padding: 12px clamp(16px, 4vw, 32px);
     border-bottom: 1px solid var(--ln);
-    max-width: 780px;
+    max-width: var(--page-max-width);
     margin: 0 auto;
     position: relative;
 }
