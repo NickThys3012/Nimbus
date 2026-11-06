@@ -161,6 +161,9 @@ export default class FlightPreparationFormPage implements CanComponentDeactivate
   protected readonly deactivateDialogOpen = signal(false);
   protected readonly deactivateDestination = signal('');
   private deactivateDecision: Subject<boolean> | null = null;
+  /** True while this component swaps `/new` for its own freshly-assigned id URL — that param
+   *  change re-runs `canDeactivate`, but it isn't the pilot leaving, so the guard must not prompt. */
+  private assigningId = false;
 
   private lastKnownId: string | null = null;
   private valueSub: Subscription | null = null;
@@ -197,7 +200,7 @@ export default class FlightPreparationFormPage implements CanComponentDeactivate
 
   /** `CanComponentDeactivate` — the route guard prompts when this is true (issue #32 AC). */
   hasUnsavedChanges(): boolean {
-    return this.form().dirty;
+    return !this.assigningId && this.form().dirty;
   }
 
   /** `CanComponentDeactivate` — opens this component's own "Leave without saving?" dialog
@@ -352,7 +355,10 @@ export default class FlightPreparationFormPage implements CanComponentDeactivate
       id = this.draftStore.newId();
       this.flightId.set(id);
       this.lastKnownId = id;
-      this.router.navigate(['/flight-preparations', id], { replaceUrl: true });
+      this.assigningId = true;
+      void this.router
+        .navigate(['/flight-preparations', id], { replaceUrl: true })
+        .finally(() => (this.assigningId = false));
     }
     return id;
   }
