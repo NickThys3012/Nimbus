@@ -1,6 +1,8 @@
 :host { display: block; }
 
 .card {
+  width: auto;
+  max-width: none;
   background: var(--pan);
   border: 1px solid var(--ln);
   border-radius: 10px;

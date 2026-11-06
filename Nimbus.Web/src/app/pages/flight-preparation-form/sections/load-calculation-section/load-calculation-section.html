@@ -20,29 +20,40 @@
     <span style="font: 10.5px var(--mono); color: var(--fnt);">PASSENGERS</span>
     @for (passenger of passengers.controls; track $index) {
       <div [formGroupName]="$index" class="row-card">
-        <div class="field" [class.bad]="passenger.controls.name.invalid && passenger.controls.name.touched">
-          <label [attr.for]="'fp-pax-name-' + $index">NAME</label>
-          <input [attr.data-testid]="'passenger-name-' + $index" [id]="'fp-pax-name-' + $index" formControlName="name" type="text" />
-          @if (passenger.controls.name.invalid && passenger.controls.name.touched) {
-            <div class="err">{{ passenger.controls.name.errors | fieldError }}</div>
-          }
+        <div class="row-card-head">
+          <span class="row-card-title">PASSENGER {{ $index + 1 }}</span>
+          <button
+            (click)="removePassenger($index)"
+            [attr.data-testid]="'remove-passenger-' + $index"
+            aria-label="Remove passenger"
+            class="row-card-remove"
+            type="button"
+          >
+            <i aria-hidden="true" class="ti ti-trash"></i>
+          </button>
         </div>
-        <div class="field" [class.bad]="passenger.controls.weightKg.invalid && passenger.controls.weightKg.touched">
-          <label [attr.for]="'fp-pax-weight-' + $index">WEIGHT KG</label>
-          <input [attr.data-testid]="'passenger-weight-' + $index" [id]="'fp-pax-weight-' + $index" formControlName="weightKg" type="number" />
-          @if (passenger.controls.weightKg.invalid && passenger.controls.weightKg.touched) {
-            <div class="err">{{ passenger.controls.weightKg.errors | fieldError }}</div>
-          }
+        <div class="row-card-fields">
+          <div class="field" [class.bad]="passenger.controls.name.invalid && passenger.controls.name.touched">
+            <label [attr.for]="'fp-pax-name-' + $index">NAME</label>
+            <input [attr.data-testid]="'passenger-name-' + $index" [id]="'fp-pax-name-' + $index" formControlName="name" type="text" />
+            @if (passenger.controls.name.invalid && passenger.controls.name.touched) {
+              <div class="err">{{ passenger.controls.name.errors | fieldError }}</div>
+            }
+          </div>
+          <div class="field" [class.bad]="passenger.controls.weightKg.invalid && passenger.controls.weightKg.touched">
+            <label [attr.for]="'fp-pax-weight-' + $index">WEIGHT KG</label>
+            <input [attr.data-testid]="'passenger-weight-' + $index" [id]="'fp-pax-weight-' + $index" formControlName="weightKg" type="number" />
+            @if (passenger.controls.weightKg.invalid && passenger.controls.weightKg.touched) {
+              <div class="err">{{ passenger.controls.weightKg.errors | fieldError }}</div>
+            }
+          </div>
+          <label class="check-row" style="padding: 0;">
+            <input formControlName="needsAssistance" type="checkbox" /> Assistance
+          </label>
+          <label class="check-row" style="padding: 0;">
+            <input formControlName="isChild" type="checkbox" /> Child
+          </label>
         </div>
-        <label class="check-row" style="padding: 0;">
-          <input formControlName="needsAssistance" type="checkbox" /> Assistance
-        </label>
-        <label class="check-row" style="padding: 0;">
-          <input formControlName="isChild" type="checkbox" /> Child
-        </label>
-        <button (click)="removePassenger($index)" [attr.data-testid]="'remove-passenger-' + $index" class="btn danger" type="button">
-          <i aria-hidden="true" class="ti ti-trash"></i>
-        </button>
       </div>
     }
   </div>

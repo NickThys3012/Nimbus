@@ -57,15 +57,52 @@
 .check-row input[type='checkbox'] { width: 17px; height: 17px; accent-color: var(--ac); flex: 0 0 auto; }
 
 .rows { display: flex; flex-direction: column; gap: 10px; margin-top: 10px; }
+/* Each repeated-item card (wind level, passenger, ...) is a compact 2-row layout: a thin header
+   row with the item label and a delete button, then a field grid below. Note: grid-template-columns
+   can't mix an auto-fit repeat() with a trailing `auto` track (invalid per the CSS Grid spec, so the
+   whole declaration gets dropped) — that previously collapsed this grid to a single implicit column,
+   stacking every field full-width. Splitting the delete button into its own header row avoids that. */
 .row-card {
   background: var(--chip);
   border-radius: 8px;
   padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.row-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.row-card-title {
+  font: 10.5px var(--mono);
+  color: var(--fnt);
+  letter-spacing: .02em;
+}
+.row-card-fields {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(90px, 1fr)) auto;
+  grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
   gap: 10px;
   align-items: end;
 }
+.row-card-remove {
+  background: none;
+  border: 0.5px solid var(--ln2);
+  color: var(--r);
+  width: 26px;
+  height: 26px;
+  border-radius: 7px;
+  cursor: pointer;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  flex: 0 0 auto;
+}
+.row-card-remove:hover { background: var(--rb); }
 
 .btn {
   font-size: 12px;
@@ -87,5 +124,5 @@
 
 @media (max-width: 600px) {
   .field-grid { grid-template-columns: 1fr 1fr; }
-  .row-card { grid-template-columns: 1fr; }
+  .row-card-fields { grid-template-columns: 1fr; }
 }

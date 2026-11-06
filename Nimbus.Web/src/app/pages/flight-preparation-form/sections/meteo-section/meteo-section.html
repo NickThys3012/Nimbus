@@ -53,34 +53,45 @@
     <span style="font: 10.5px var(--mono); color: var(--fnt);">WIND ON ALTITUDE</span>
     @for (level of windLevels.controls; track $index) {
       <div [formGroupName]="$index" class="row-card">
-        <div class="field" [class.bad]="level.controls.altitudeM.invalid && level.controls.altitudeM.touched">
-          <label [attr.for]="'fp-wl-alt-' + $index">ALT (M)</label>
-          <input [attr.data-testid]="'wind-level-altitude-' + $index" [id]="'fp-wl-alt-' + $index" formControlName="altitudeM" type="number" />
-          @if (level.controls.altitudeM.invalid && level.controls.altitudeM.touched) {
-            <div class="err">{{ level.controls.altitudeM.errors | fieldError }}</div>
-          }
+        <div class="row-card-head">
+          <span class="row-card-title">LEVEL {{ $index + 1 }}</span>
+          <button
+            (click)="removeWindLevel($index)"
+            [attr.data-testid]="'remove-wind-level-' + $index"
+            aria-label="Remove wind level"
+            class="row-card-remove"
+            type="button"
+          >
+            <i aria-hidden="true" class="ti ti-trash"></i>
+          </button>
         </div>
-        <div class="field" [class.bad]="level.controls.directionDeg.invalid && level.controls.directionDeg.touched">
-          <label [attr.for]="'fp-wl-dir-' + $index">DIR °</label>
-          <input [attr.data-testid]="'wind-level-direction-' + $index" [id]="'fp-wl-dir-' + $index" formControlName="directionDeg" type="number" />
-          @if (level.controls.directionDeg.invalid && level.controls.directionDeg.touched) {
-            <div class="err">{{ level.controls.directionDeg.errors | fieldError }}</div>
-          }
+        <div class="row-card-fields">
+          <div class="field" [class.bad]="level.controls.altitudeM.invalid && level.controls.altitudeM.touched">
+            <label [attr.for]="'fp-wl-alt-' + $index">ALT (M)</label>
+            <input [attr.data-testid]="'wind-level-altitude-' + $index" [id]="'fp-wl-alt-' + $index" formControlName="altitudeM" type="number" />
+            @if (level.controls.altitudeM.invalid && level.controls.altitudeM.touched) {
+              <div class="err">{{ level.controls.altitudeM.errors | fieldError }}</div>
+            }
+          </div>
+          <div class="field" [class.bad]="level.controls.directionDeg.invalid && level.controls.directionDeg.touched">
+            <label [attr.for]="'fp-wl-dir-' + $index">DIR °</label>
+            <input [attr.data-testid]="'wind-level-direction-' + $index" [id]="'fp-wl-dir-' + $index" formControlName="directionDeg" type="number" />
+            @if (level.controls.directionDeg.invalid && level.controls.directionDeg.touched) {
+              <div class="err">{{ level.controls.directionDeg.errors | fieldError }}</div>
+            }
+          </div>
+          <div class="field" [class.bad]="level.controls.speedKt.invalid && level.controls.speedKt.touched">
+            <label [attr.for]="'fp-wl-speed-' + $index">KT</label>
+            <input [attr.data-testid]="'wind-level-speed-' + $index" [id]="'fp-wl-speed-' + $index" formControlName="speedKt" type="number" />
+            @if (level.controls.speedKt.invalid && level.controls.speedKt.touched) {
+              <div class="err">{{ level.controls.speedKt.errors | fieldError }}</div>
+            }
+          </div>
+          <div class="field">
+            <label [attr.for]="'fp-wl-temp-' + $index">°C</label>
+            <input [attr.data-testid]="'wind-level-temp-' + $index" [id]="'fp-wl-temp-' + $index" formControlName="temperatureC" type="number" />
+          </div>
         </div>
-        <div class="field" [class.bad]="level.controls.speedKt.invalid && level.controls.speedKt.touched">
-          <label [attr.for]="'fp-wl-speed-' + $index">KT</label>
-          <input [attr.data-testid]="'wind-level-speed-' + $index" [id]="'fp-wl-speed-' + $index" formControlName="speedKt" type="number" />
-          @if (level.controls.speedKt.invalid && level.controls.speedKt.touched) {
-            <div class="err">{{ level.controls.speedKt.errors | fieldError }}</div>
-          }
-        </div>
-        <div class="field">
-          <label [attr.for]="'fp-wl-temp-' + $index">°C</label>
-          <input [attr.data-testid]="'wind-level-temp-' + $index" [id]="'fp-wl-temp-' + $index" formControlName="temperatureC" type="number" />
-        </div>
-        <button (click)="removeWindLevel($index)" [attr.data-testid]="'remove-wind-level-' + $index" class="btn danger" type="button">
-          <i aria-hidden="true" class="ti ti-trash"></i>
-        </button>
       </div>
     }
   </div>
