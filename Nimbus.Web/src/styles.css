@@ -5,6 +5,9 @@
     --mono: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
     --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     --mobile-bottom-nav-height: 68px;
+    /* Shared content column width: stays narrow on mobile/small desktops, grows on large
+       desktop viewports so pages don't look cramped into a fixed ~780px column. */
+    --page-max-width: clamp(780px, 65vw, 1100px);
 }
 
 * {
