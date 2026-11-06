@@ -1,8 +1,9 @@
 import { Component, ChangeDetectionStrategy } from '@angular/core';
+import { RouterLink } from '@angular/router';
 
 @Component({
   selector: 'Nimbus-flight-overview',
-  imports: [],
+  imports: [RouterLink],
   templateUrl: './flight-overview.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrl: './flight-overview.css',
