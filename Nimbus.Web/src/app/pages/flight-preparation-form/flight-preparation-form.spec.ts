@@ -34,7 +34,13 @@ describe('FlightPreparationFormPage', () => {
     email = 'pilot.a@example.com';
   });
 
-  async function createComponent(routeId: string | null = null) {
+  const balloon = {
+    id: 'b1', registration: 'OO-ABC', type: 'X', envelopeVolumeM3: 3000, maxEnvelopeTemperatureC: 120,
+    envelopeWeightKg: 118, basketWeightKg: 90, burnerWeightKg: 25, cylindersWeightKg: 60, emptyWeightKg: 293,
+  };
+  const location = { id: 'l1', name: 'Weelde', icaoCode: null, latitude: 51.4, longitude: 4.9, elevationM: null, airspaceNotes: null };
+
+  async function createComponent(routeId: string | null = null, balloons: unknown[] = [], locations: unknown[] = []) {
     navigate = vi.fn();
 
     await TestBed.configureTestingModule({
@@ -43,9 +49,9 @@ describe('FlightPreparationFormPage', () => {
         provideRouter([]),
         { provide: AuthStore, useValue: { email: () => email } },
         { provide: LOCAL_STORAGE, useValue: mockStorage },
-        { provide: BalloonsService, useValue: { getApiBalloons: () => of([]) } },
+        { provide: BalloonsService, useValue: { getApiBalloons: () => of(balloons) } },
         { provide: PilotsService, useValue: { getApiPilots: () => of([]) } },
-        { provide: LaunchLocationsService, useValue: { getApiLaunchLocations: () => of([]) } },
+        { provide: LaunchLocationsService, useValue: { getApiLaunchLocations: () => of(locations) } },
         {
           provide: ActivatedRoute,
           useValue: {
@@ -113,6 +119,52 @@ describe('FlightPreparationFormPage', () => {
     const segments = q('progress-segments')!.querySelectorAll('.segment');
     expect(segments.length).toBe(9);
     expect(q('progress-count')?.textContent).toContain('/9 complete');
+  });
+
+  it('defaults a new flight to the next sensible date and time instead of empty', async () => {
+    const { q } = await createComponent();
+
+    expect(q<HTMLInputElement>('flight-date')?.value).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    expect(q<HTMLInputElement>('flight-time')?.value).toMatch(/^(07|19):00$/);
+  });
+
+  it('snapshots the picked balloon weights onto a new flight', async () => {
+    const { fixture, q } = await createComponent(null, [balloon]);
+    const select = q<HTMLSelectElement>('balloon')!;
+    select.value = 'b1';
+    select.dispatchEvent(new Event('change'));
+    fixture.detectChanges();
+
+    const load = fixture.componentInstance['form']().controls.loadCalculation.getRawValue();
+    expect(load.envelopeWeightKg).toBe(118);
+    expect(load.basketWeightKg).toBe(90);
+    expect(load.burnerWeightKg).toBe(25);
+    expect(load.cylindersWeightKg).toBe(60);
+  });
+
+  it('does not overwrite the snapshot of an already saved flight when its balloon changes', async () => {
+    seedSavedFlight('flight-1');
+    const { fixture, q } = await createComponent('flight-1', [balloon]);
+    const select = q<HTMLSelectElement>('balloon')!;
+    select.value = 'b1';
+    select.dispatchEvent(new Event('change'));
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance['form']().controls.loadCalculation.getRawValue().basketWeightKg).toBe(0);
+  });
+
+  it('exposes the selected launch location coordinates and offers a landing location', async () => {
+    const { fixture, q } = await createComponent(null, [], [location]);
+    expect(q('launch-coordinates')).toBeNull();
+    expect(q('landing-location')).not.toBeNull();
+
+    const select = q<HTMLSelectElement>('launch-location')!;
+    select.value = 'l1';
+    select.dispatchEvent(new Event('change'));
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.launchCoordinates()).toEqual({ latitude: 51.4, longitude: 4.9 });
+    expect(q('launch-coordinates')?.textContent).toContain('51.4');
   });
 
   it('shows a save-error banner naming the invalid sections and expands the first one when saving an empty form', async () => {

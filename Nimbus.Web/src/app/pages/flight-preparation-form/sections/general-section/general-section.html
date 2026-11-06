@@ -55,6 +55,18 @@
     @if (group().controls.launchLocationId.invalid && group().controls.launchLocationId.touched) {
       <div class="err" data-testid="launch-location-error">{{ group().controls.launchLocationId.errors | fieldError }}</div>
     }
+    @if (coordinates(); as c) {
+      <div class="hint" data-testid="launch-coordinates">{{ c.latitude }}, {{ c.longitude }}</div>
+    }
+  </div>
+  <div class="field" style="grid-column: span 2;">
+    <label for="fp-landing-location">LANDING LOCATION</label>
+    <select id="fp-landing-location" data-testid="landing-location" formControlName="landingLocationId">
+      <option value="">Not known yet</option>
+      @for (l of locations(); track l.id) {
+        <option [value]="l.id">{{ l.name }}</option>
+      }
+    </select>
   </div>
   <div class="field">
     <label for="fp-sunrise">SUNRISE</label>
