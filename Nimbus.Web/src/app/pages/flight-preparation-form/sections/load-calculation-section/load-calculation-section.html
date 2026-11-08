@@ -8,7 +8,7 @@
       }
     </div>
     <div class="field" [class.bad]="group().controls.maxAltitudeFt.invalid && group().controls.maxAltitudeFt.touched">
-      <label for="fp-max-altitude">MAX ALTITUDE FT *</label>
+      <label for="fp-max-altitude">MAX ALTITUDE FT AMSL *</label>
       <input id="fp-max-altitude" data-testid="max-altitude" formControlName="maxAltitudeFt" type="number" />
       @if (group().controls.maxAltitudeFt.invalid && group().controls.maxAltitudeFt.touched) {
         <div class="err" data-testid="max-altitude-error">{{ group().controls.maxAltitudeFt.errors | fieldError }}</div>
@@ -21,6 +21,14 @@
     <div class="field" [class.bad]="group().controls.totalLiftKg.invalid">
       <label for="fp-total-lift">TOTAL LIFT KG</label>
       <input id="fp-total-lift" data-testid="total-lift" formControlName="totalLiftKg" type="number" />
+      <button (click)="calculateLift()" [disabled]="!canCalculateLift() || calculatingLift()" class="btn" data-testid="calculate-lift" type="button">
+        <i aria-hidden="true" class="ti ti-calculator"></i> Calculate from conditions
+      </button>
+      @if (liftError()) {
+        <div class="err" data-testid="calculate-lift-error">{{ liftError() }}</div>
+      } @else if (!canCalculateLift()) {
+        <div class="hint" data-testid="calculate-lift-hint">Pick a balloon in section 01 (its volume and max envelope temperature are used) to calculate lift. You can also type the total lift yourself.</div>
+      }
     </div>
   </div>
 

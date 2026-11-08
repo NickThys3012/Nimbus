@@ -36,6 +36,7 @@ export type { RegisterRequestDto } from './models/RegisterRequestDto';
 export type { ResendVerificationEmailCommandDto } from './models/ResendVerificationEmailCommandDto';
 export type { ResetPasswordRequestDto } from './models/ResetPasswordRequestDto';
 export type { SetUserRoleRequestDto } from './models/SetUserRoleRequestDto';
+export type { TotalLiftDto } from './models/TotalLiftDto';
 export type { UnblockVerificationEmailRequestDto } from './models/UnblockVerificationEmailRequestDto';
 export type { UserDto } from './models/UserDto';
 
@@ -44,6 +45,7 @@ export { AuthenticationService } from './services/AuthenticationService';
 export { BalloonsService } from './services/BalloonsService';
 export { GoNoGoThresholdsService } from './services/GoNoGoThresholdsService';
 export { LaunchLocationsService } from './services/LaunchLocationsService';
+export { LiftCalculationService } from './services/LiftCalculationService';
 export { OfpSettingsService } from './services/OfpSettingsService';
 export { PilotsService } from './services/PilotsService';
 export { ProfileService } from './services/ProfileService';
