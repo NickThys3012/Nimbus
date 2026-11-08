@@ -14,6 +14,7 @@ public class Passenger : BaseEntity
     public decimal WeightKg { get; set; }
     public bool NeedsAssistance { get; set; }
     public bool IsChild { get; set; }
+    public bool NeedsTransport { get; set; }
 
     /// <summary>Display order within the flight preparation; part of the <c>(FlightPreparationId, Order)</c> index.</summary>
     public int Order { get; set; }

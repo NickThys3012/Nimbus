@@ -83,6 +83,11 @@ public class FlightPreparation : OwnedEntity
     // ----- Section 05 — load calculation -----
     public decimal? EnvelopeWeightKg { get; set; }
     public int? MaxAltitudeFt { get; set; }
+
+    /// <summary>Number of lift units entered by the pilot. Total weight and the lift-vs-weight verdict are derived, never stored.</summary>
+    public decimal? LiftUnits { get; set; }
+
+    public decimal? TotalLiftKg { get; set; }
     public string? LoadRemarks { get; set; }
 
     // ----- Section 06 — route & trajectory -----

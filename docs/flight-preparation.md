@@ -39,7 +39,7 @@ Covers all nine pre-flight sections as flat columns, grouped and commented in th
 | 02 | Meteo | `WindSpeedKt`, `WindDirectionDeg`, `VisibilityKm`, `CapeJPerKg`, `Metar`, `Taf`, … |
 | 03 | Airspace & NOTAMs | `NotamsChecked`, `AirspaceStructureNotes`, `AirspaceRestrictions`, `Obstacles` |
 | 04 | Checklists | safety: `FirstAidAndExtinguisher`, `PassengerListFilled`, `FlightPlanFiled` (`ChecklistAnswer`); technical: `BurnerTested`, `GasCylindersChecked`, `BalloonVisualInspectionDone`, `MooringsChecked`, `InstrumentsChecked` |
-| 05 | Load calculation | `EnvelopeWeightKg`, `MaxAltitudeFt`, `LoadRemarks` (passengers are a child collection, see below) |
+| 05 | Load calculation | `EnvelopeWeightKg`, `MaxAltitudeFt`, `LiftUnits`, `TotalLiftKg`, `LoadRemarks` (total weight and the lift-vs-weight verdict are derived in the UI, never stored; passengers are a child collection, see below) |
 | 06 | Route & trajectory | `RouteDescription`, `ClimbRateMetersPerSecond`, `DescentRateMetersPerSecond`, `CruiseAltitudesFtCsv` |
 | 07 | Balloon bulletin | `BulletinText` |
 | 08 | OFP | `OfpOperatorName`, `OfpPicWeightKg`, `OfpFuelAvailableMinutes`, `OfpFuelRequiredMinutes`, `OfpLandingLocation` |
@@ -65,7 +65,7 @@ through the parent `FlightPreparation.OwnerId`).
 
 | Entity | Table | Purpose | Composite index |
 |---|---|---|---|
-| `Passenger` | `Passengers` | Section 05 load-calculation passenger list | `(FlightPreparationId, Order)` |
+| `Passenger` | `Passengers` | Section 05 load-calculation passenger list (`Name`, `WeightKg`, `IsChild`, `NeedsAssistance`, `NeedsTransport`; `Order` preserves the pilot's ordering) | `(FlightPreparationId, Order)` |
 | `FlightPreparationImage` | `FlightPreparationImages` | Image attached to one section | `(FlightPreparationId, Section, Order)` |
 | `WindLevel` | `WindLevels` | Section 02 wind-on-altitude table row | `(FlightPreparationId, Order)` |
 | `FlightPreparationShare` | `FlightPreparationShares` | Grants another user read access (issues #65/#66) | `(FlightPreparationId, SharedWithUserId)` unique, filtered on `IsDeleted = 0` |

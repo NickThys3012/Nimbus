@@ -172,6 +172,8 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
             e.Property(f => f.FlightPlanFiled).HasConversion<string>().HasMaxLength(20);
 
             e.Property(f => f.EnvelopeWeightKg).HasPrecision(7, 2);
+            e.Property(f => f.LiftUnits).HasPrecision(7, 2);
+            e.Property(f => f.TotalLiftKg).HasPrecision(7, 2);
             e.Property(f => f.LoadRemarks).HasMaxLength(2000);
 
             e.Property(f => f.RouteDescription).HasMaxLength(2000);

@@ -69,6 +69,10 @@ export function createFlightPreparationForm(fb: NonNullableFormBuilder) {
       burnerWeightKg: [0, [Validators.min(0)]],
       cylindersWeightKg: [0, [Validators.min(0)]],
       maxAltitudeFt: [0, [Validators.required, Validators.min(0)]],
+      /** Number of lift units and the resulting total lift (kg) as entered by the pilot. The total
+       *  weight and the lift-vs-weight verdict are derived (see `calculateLoad`), never stored. */
+      liftUnits: [0, [Validators.min(0)]],
+      totalLiftKg: [0, [Validators.min(0)]],
       loadRemarks: [''],
       passengers: fb.array<ReturnType<typeof createPassengerGroup>>([]),
     }),
@@ -135,6 +139,7 @@ export function createPassengerGroup(fb: NonNullableFormBuilder) {
     weightKg: [0, [Validators.required, Validators.min(1)]],
     needsAssistance: [false],
     isChild: [false],
+    needsTransport: [false],
   });
 }
 
@@ -168,6 +173,14 @@ export type RouteFormGroup = FlightPreparationForm['controls']['route'];
 export type BulletinFormGroup = FlightPreparationForm['controls']['bulletin'];
 export type OfpFormGroup = FlightPreparationForm['controls']['ofp'];
 export type PaxBriefingFormGroup = FlightPreparationForm['controls']['paxBriefing'];
+
+/** Moves a passenger within the list (the array order is the persisted passenger order). */
+export function movePassenger(array: FormArray, from: number, to: number): void {
+  if (from === to || from < 0 || to < 0 || from >= array.length || to >= array.length) return;
+  const control = array.at(from);
+  array.removeAt(from, { emitEvent: false });
+  array.insert(to, control);
+}
 
 /**
  * Rebuilds a freshly-constructed form's dynamic `FormArray`s (wind levels, passengers) to match a loaded draft's shape, then patches in every value. Needed because
