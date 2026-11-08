@@ -203,6 +203,7 @@ export default class FlightPreparationFormPage implements CanComponentDeactivate
     const location = this.locationsStore.list().find((l) => l.id === general.launchLocationId);
     return {
       envelopeVolumeM3: balloon ? Number(balloon.envelopeVolumeM3) : null,
+      internalTemperatureC: balloon ? Number(balloon.maxEnvelopeTemperatureC) : null,
       siteElevationM: Number(location?.elevationM ?? 0),
       ambientTemperatureC: Number(form.controls.meteo.controls.temperatureC.value),
     };

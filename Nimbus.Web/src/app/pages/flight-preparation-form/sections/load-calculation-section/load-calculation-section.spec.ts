@@ -122,11 +122,16 @@ describe('LoadCalculationSection', () => {
       expect(el('calculate-lift-hint')).not.toBeNull();
     });
 
+    it('stays disabled when the balloon provides no temperature', () => {
+      fixture.componentRef.setInput('liftContext', { envelopeVolumeM3: 3000, internalTemperatureC: null, siteElevationM: 0, ambientTemperatureC: 15 });
+      fixture.detectChanges();
+      expect((el('calculate-lift') as HTMLButtonElement).disabled).toBe(true);
+    });
+
     it('sends the manual formula inputs (altitude converted to metres) and prefills an editable total lift', async () => {
-      fixture.componentRef.setInput('liftContext', { envelopeVolumeM3: 3000, siteElevationM: 50, ambientTemperatureC: 15 });
+      fixture.componentRef.setInput('liftContext', { envelopeVolumeM3: 3000, internalTemperatureC: 95, siteElevationM: 50, ambientTemperatureC: 15 });
       fixture.detectChanges();
       type('max-altitude', '3280.84');
-      type('internal-temperature', '95');
       el('calculate-lift').click();
       await settle();
       expect(liftApi.getApiLiftCalculationTotalLift).toHaveBeenCalledWith({
@@ -143,7 +148,7 @@ describe('LoadCalculationSection', () => {
 
     it('shows an error and keeps the typed value when the calculation fails', async () => {
       liftApi.getApiLiftCalculationTotalLift.mockReturnValue(throwError(() => new Error('boom')));
-      fixture.componentRef.setInput('liftContext', { envelopeVolumeM3: 3000, siteElevationM: 0, ambientTemperatureC: 15 });
+      fixture.componentRef.setInput('liftContext', { envelopeVolumeM3: 3000, internalTemperatureC: 95, siteElevationM: 0, ambientTemperatureC: 15 });
       fixture.detectChanges();
       type('total-lift', '500');
       el('calculate-lift').click();

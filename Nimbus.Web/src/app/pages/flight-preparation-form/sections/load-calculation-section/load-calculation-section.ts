@@ -18,6 +18,8 @@ import { FieldErrorPipe } from '../field-error.pipe';
 export interface LiftContext {
   /** The picked balloon's envelope volume; `null` while no balloon is picked. */
   envelopeVolumeM3: number | null;
+  /** The picked balloon's max envelope temperature (the calculator clamps it to 0-100 C); `null` without a balloon. */
+  internalTemperatureC: number | null;
   siteElevationM: number;
   ambientTemperatureC: number;
 }
@@ -38,12 +40,12 @@ export class LoadCalculationSection {
   pilotId = input<string>('');
 
   /** Site elevation, balloon volume and take-off temperature for the total-lift calculation. */
-  liftContext = input<LiftContext>({ envelopeVolumeM3: null, siteElevationM: 0, ambientTemperatureC: 0 });
+  liftContext = input<LiftContext>({ envelopeVolumeM3: null, internalTemperatureC: null, siteElevationM: 0, ambientTemperatureC: 0 });
 
   private readonly liftApi = inject(LiftCalculationService);
   protected readonly calculatingLift = signal(false);
   protected readonly liftError = signal<string | null>(null);
-  protected readonly canCalculateLift = computed(() => this.liftContext().envelopeVolumeM3 !== null);
+  protected readonly canCalculateLift = computed(() => this.liftContext().envelopeVolumeM3 !== null && this.liftContext().internalTemperatureC !== null);
 
   private readonly fb = inject(NonNullableFormBuilder);
   private readonly pilotsStore = inject(PilotsStore);
@@ -86,12 +88,12 @@ export class LoadCalculationSection {
   }
 
   /**
-   * Prefills the total lift from the Cameron manual formula (server side). The result lands in the
+   * Prefills the total lift (max altitude is AMSL) from the Cameron manual formula (server side). The result lands in the
    * normal, still editable `totalLiftKg` control; nothing else is stored.
    */
   protected async calculateLift(): Promise<void> {
     const ctx = this.liftContext();
-    if (ctx.envelopeVolumeM3 === null || this.calculatingLift()) return;
+    if (ctx.envelopeVolumeM3 === null || ctx.internalTemperatureC === null || this.calculatingLift()) return;
     const v = this.group().getRawValue();
     this.calculatingLift.set(true);
     this.liftError.set(null);
@@ -101,7 +103,7 @@ export class LoadCalculationSection {
           maxAltitudeMeters: Math.round(Number(v.maxAltitudeFt) * FEET_TO_METERS * 10) / 10,
           siteElevationMeters: ctx.siteElevationM,
           ambientTemperatureC: ctx.ambientTemperatureC,
-          internalTemperatureC: Number(v.internalTemperatureC),
+          internalTemperatureC: ctx.internalTemperatureC,
           envelopeVolumeM3: ctx.envelopeVolumeM3,
         }),
       );
