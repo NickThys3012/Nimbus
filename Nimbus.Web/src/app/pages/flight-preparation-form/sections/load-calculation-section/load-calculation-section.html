@@ -14,6 +14,14 @@
         <div class="err" data-testid="max-altitude-error">{{ group().controls.maxAltitudeFt.errors | fieldError }}</div>
       }
     </div>
+    <div class="field" [class.bad]="group().controls.liftUnits.invalid">
+      <label for="fp-lift-units">LIFT UNITS</label>
+      <input id="fp-lift-units" data-testid="lift-units" formControlName="liftUnits" type="number" />
+    </div>
+    <div class="field" [class.bad]="group().controls.totalLiftKg.invalid">
+      <label for="fp-total-lift">TOTAL LIFT KG</label>
+      <input id="fp-total-lift" data-testid="total-lift" formControlName="totalLiftKg" type="number" />
+    </div>
   </div>
 
   <div class="rows" formArrayName="passengers">
@@ -22,6 +30,27 @@
       <div [formGroupName]="$index" class="row-card">
         <div class="row-card-head">
           <span class="row-card-title">PASSENGER {{ $index + 1 }}</span>
+          <span class="row-card-actions">
+            <button
+              (click)="movePassenger($index, -1)"
+              [attr.data-testid]="'move-up-passenger-' + $index"
+              [disabled]="$first"
+              aria-label="Move passenger up"
+              class="row-card-remove move"
+              type="button"
+            >
+              <i aria-hidden="true" class="ti ti-arrow-up"></i>
+            </button>
+            <button
+              (click)="movePassenger($index, 1)"
+              [attr.data-testid]="'move-down-passenger-' + $index"
+              [disabled]="$last"
+              aria-label="Move passenger down"
+              class="row-card-remove move"
+              type="button"
+            >
+              <i aria-hidden="true" class="ti ti-arrow-down"></i>
+            </button>
           <button
             (click)="removePassenger($index)"
             [attr.data-testid]="'remove-passenger-' + $index"
@@ -31,6 +60,7 @@
           >
             <i aria-hidden="true" class="ti ti-trash"></i>
           </button>
+          </span>
         </div>
         <div class="row-card-fields">
           <div class="field" [class.bad]="passenger.controls.name.invalid && passenger.controls.name.touched">
@@ -53,6 +83,9 @@
           <label class="check-row" style="padding: 0;">
             <input formControlName="isChild" type="checkbox" /> Child
           </label>
+          <label class="check-row" style="padding: 0;">
+            <input [attr.data-testid]="'passenger-transport-' + $index" formControlName="needsTransport" type="checkbox" /> Transport
+          </label>
         </div>
       </div>
     }
@@ -60,10 +93,19 @@
   <button (click)="addPassenger()" class="btn" data-testid="add-passenger" type="button">
     <i aria-hidden="true" class="ti ti-plus"></i> Passenger
   </button>
-  <div class="field" style="margin-top: 12px;" data-testid="total-passenger-weight">
-    <span class="label-like">TOTAL PASSENGER WEIGHT</span>
-    <output>{{ totalWeightKg() }} kg</output>
+  <div class="load-summary" data-testid="load-summary">
+    <div><span class="label-like">PILOT</span><output data-testid="pilot-weight">{{ pilotWeightKg() }} kg</output></div>
+    <div><span class="label-like">PASSENGERS</span><output data-testid="total-passenger-weight">{{ load().passengersKg }} kg</output></div>
+    <div><span class="label-like">TOTAL WEIGHT</span><output data-testid="total-weight">{{ load().totalWeightKg }} kg</output></div>
+    <div><span class="label-like">LIFT</span><output data-testid="lift-value">{{ group().controls.totalLiftKg.value }} kg</output></div>
   </div>
+  @if (load().liftExceedsWeight === null) {
+    <div class="load-verdict" data-testid="load-verdict" data-state="unknown" role="status">Enter total lift to compare it with the total weight.</div>
+  } @else if (load().liftExceedsWeight) {
+    <div class="load-verdict ok" data-testid="load-verdict" data-state="ok" role="status">Lift exceeds weight: margin +{{ load().marginKg }} kg</div>
+  } @else {
+    <div class="load-verdict bad" data-testid="load-verdict" data-state="over" role="status">Overloaded: lift is {{ -load().marginKg }} kg short</div>
+  }
   <div class="field">
     <label for="fp-load-remarks">REMARKS</label>
     <textarea id="fp-load-remarks" data-testid="load-remarks" formControlName="loadRemarks"></textarea>

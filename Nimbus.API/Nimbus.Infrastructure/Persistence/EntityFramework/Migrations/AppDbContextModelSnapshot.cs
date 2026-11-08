@@ -331,6 +331,10 @@ namespace Nimbus.Infrastructure.Persistence.EntityFramework.Migrations
                     b.Property<Guid?>("LaunchLocationId")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<decimal?>("LiftUnits")
+                        .HasPrecision(7, 2)
+                        .HasColumnType("decimal(7,2)");
+
                     b.Property<string>("LoadRemarks")
                         .HasMaxLength(2000)
                         .HasColumnType("nvarchar(2000)");
@@ -442,6 +446,10 @@ namespace Nimbus.Infrastructure.Persistence.EntityFramework.Migrations
                         .IsRequired()
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
+
+                    b.Property<decimal?>("TotalLiftKg")
+                        .HasPrecision(7, 2)
+                        .HasColumnType("decimal(7,2)");
 
                     b.Property<DateTime?>("UpdatedDate")
                         .HasColumnType("datetime2");
@@ -728,6 +736,9 @@ namespace Nimbus.Infrastructure.Persistence.EntityFramework.Migrations
                         .HasColumnType("nvarchar(200)");
 
                     b.Property<bool>("NeedsAssistance")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("NeedsTransport")
                         .HasColumnType("bit");
 
                     b.Property<int>("Order")

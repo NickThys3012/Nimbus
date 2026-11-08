@@ -102,6 +102,11 @@ export default class FlightPreparationFormPage implements CanComponentDeactivate
   /** Bumped on every (non-debounced) form change so computed signals re-read `.invalid`/`.touched`
    *  — those aren't signals themselves, following the same pattern as `InputField.controlStateVersion`. */
   private readonly formVersion = signal(0);
+  /** The pilot picked in section 01 — feeds the load calculation's total weight. */
+  protected readonly pilotId = computed(() => {
+    this.formVersion();
+    return this.form().controls.general.controls.pilotId.value;
+  });
   protected readonly expandedIds = signal<ReadonlySet<FlightPreparationSectionId>>(new Set(['General']));
   protected readonly savedAt = signal<string | null>(null);
 
