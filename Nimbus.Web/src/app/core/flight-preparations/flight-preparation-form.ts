@@ -69,6 +69,8 @@ export function createFlightPreparationForm(fb: NonNullableFormBuilder) {
       burnerWeightKg: [0, [Validators.min(0)]],
       cylindersWeightKg: [0, [Validators.min(0)]],
       maxAltitudeFt: [0, [Validators.required, Validators.min(0)]],
+      /** Average internal envelope temperature (C) used by the total-lift calculation; the manual caps it at 100. */
+      internalTemperatureC: [100, [Validators.min(0), Validators.max(100)]],
       /** Number of lift units and the resulting total lift (kg) as entered by the pilot. The total
        *  weight and the lift-vs-weight verdict are derived (see `calculateLoad`), never stored. */
       liftUnits: [0, [Validators.min(0)]],

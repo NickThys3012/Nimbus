@@ -194,6 +194,20 @@ export default class FlightPreparationFormPage implements CanComponentDeactivate
     return location ? { latitude: Number(location.latitude), longitude: Number(location.longitude) } : null;
   });
 
+  /** Site elevation, envelope volume and take-off temperature that feed the total-lift calculation in section 05. */
+  protected readonly liftContext = computed(() => {
+    this.formVersion();
+    const form = this.form();
+    const general = form.controls.general.getRawValue();
+    const balloon = this.balloonsStore.list().find((b) => b.id === general.balloonId);
+    const location = this.locationsStore.list().find((l) => l.id === general.launchLocationId);
+    return {
+      envelopeVolumeM3: balloon ? Number(balloon.envelopeVolumeM3) : null,
+      siteElevationM: Number(location?.elevationM ?? 0),
+      ambientTemperatureC: Number(form.controls.meteo.controls.temperatureC.value),
+    };
+  });
+
   constructor() {
     this.hydrate(this.initialRouteId);
     // Route param changes (including the id this component assigns to itself on first autosave,
