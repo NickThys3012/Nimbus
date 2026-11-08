@@ -11,11 +11,11 @@ public static class LiftCalculator
     /// <summary>Highest accepted average internal envelope temperature, in degrees Celsius.</summary>
     public const double MaxInternalTemperatureCelsius = 100;
 
-    private const double SeaLevelPressurePa = 101_325.0;
+    private const double SeaLevelPressureHpa = 1013.25;
     private const double SeaLevelTemperatureK = 288.15;
     private const double LapseRateKPerM = 0.0065;
-    private const double SpecificGasConstantDryAir = 287.05; // J/(kg*K)
-    private const double BarometricExponent = 5.255877; // g / (R * L)
+    private const double BarometricExponent = 5.256;
+    private const double LiftConstant = 0.3484;
     private const double CelsiusToKelvin = 273.15;
 
     /// <summary>
@@ -23,17 +23,18 @@ public static class LiftCalculator
     /// </summary>
     /// <remarks>
     ///     <para>
-    ///         Source: Cameron Hot Air Balloon Flight Manual, Amendment 18, Appendix A2-1 (ISA-based total lift).
-    ///         The manual's tables were not available when this was written; the implementation follows the ISA
-    ///         physics the appendix is based on and is NOT yet verified against the manual's published figures.
+    ///         Source: the formula is taken as published in the Cameron manual (see issue #10) and implemented exactly:
     ///     </para>
+    ///     <code>
+    ///         Ta = Tg - 0.0065 * (A - Eg)
+    ///         P  = 1013.25 * (1 - (0.0065 * A) / 288.15)^5.256          (hPa)
+    ///         L  = 0.3484 * V * P * (1 / (Ta + 273.15) - 1 / (Ti + 273.15))
+    ///     </code>
     ///     <para>
-    ///         Model: lift = V * (rho_ambient - rho_internal), with rho = p / (R * T) for dry air. The envelope mouth is
-    ///         open, so internal and ambient pressure are equal. Pressure at the max altitude comes from the ISA
-    ///         barometric formula p = 101325 * (1 - 0.0065 * h / 288.15)^5.255877 (h = altitude AMSL).
-    ///         Ambient temperature at altitude is the take-off temperature reduced by the ISA lapse rate
-    ///         (6.5 K per 1000 m) over the climb from site elevation to max altitude. The internal temperature is
-    ///         the average absolute envelope air temperature and is clamped to 0-100 C.
+    ///         A = maximum planned altitude (m), Eg = take-off site elevation (m), L = lift (kg), P in hPa,
+    ///         Ta = ambient temperature at altitude (C), Tg = ambient temperature at the take-off site (C),
+    ///         Ti = average internal envelope temperature (C, at most 100), V = envelope volume (m3).
+    ///         The ISA lapse rate is assumed. The internal temperature is clamped to 0-100 C.
     ///     </para>
     ///     <para>
     ///         The result is not clamped: it is negative when the clamped internal temperature is below the ambient
@@ -63,12 +64,12 @@ public static class LiftCalculator
 
         if (envelopeVolumeCubicMeters == 0) return 0;
 
-        var internalK = Math.Clamp(internalTemperatureCelsius, MinInternalTemperatureCelsius, MaxInternalTemperatureCelsius) + CelsiusToKelvin;
-        var ambientK = ambientTemperatureCelsius - LapseRateKPerM * (maxAltitudeAmslMeters - siteElevationMeters) + CelsiusToKelvin;
-        var pressurePa = SeaLevelPressurePa * Math.Pow(1 - LapseRateKPerM * maxAltitudeAmslMeters / SeaLevelTemperatureK, BarometricExponent);
+        var ti = Math.Clamp(internalTemperatureCelsius, MinInternalTemperatureCelsius, MaxInternalTemperatureCelsius);
+        var ta = ambientTemperatureCelsius - LapseRateKPerM * (maxAltitudeAmslMeters - siteElevationMeters);
+        var pressureHpa = SeaLevelPressureHpa * Math.Pow(1 - LapseRateKPerM * maxAltitudeAmslMeters / SeaLevelTemperatureK, BarometricExponent);
 
-        var densityDifference = pressurePa / SpecificGasConstantDryAir * (1 / ambientK - 1 / internalK);
-        return envelopeVolumeCubicMeters * densityDifference;
+        return LiftConstant * envelopeVolumeCubicMeters * pressureHpa
+               * (1 / (ta + CelsiusToKelvin) - 1 / (ti + CelsiusToKelvin));
     }
 
     private static void RequireFinite(double value, string name)
