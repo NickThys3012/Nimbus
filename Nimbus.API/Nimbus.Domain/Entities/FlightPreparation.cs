@@ -100,6 +100,13 @@ public class FlightPreparation : OwnedEntity
     /// <summary>Up to five planned cruise altitudes (ft), comma-separated, in display order.</summary>
     public string? CruiseAltitudesFtCsv { get; set; }
 
+    /// <summary>
+    ///     The simulated trajectory as a JSON document (high-frequency autosave target). Written only
+    ///     by <c>IFlightPreparationRepository.SetTrajectoryJsonAsync</c>; the full dossier save never
+    ///     touches it (see docs/flight-preparation.md, "Saving").
+    /// </summary>
+    public string? TrajectoryJson { get; set; }
+
     // ----- Section 07 — balloon bulletin -----
     public string? BulletinText { get; set; }
 
