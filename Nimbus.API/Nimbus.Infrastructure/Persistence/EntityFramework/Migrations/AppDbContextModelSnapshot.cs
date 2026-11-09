@@ -550,6 +550,9 @@ namespace Nimbus.Infrastructure.Persistence.EntityFramework.Migrations
                     b.HasIndex("IsDeleted")
                         .HasFilter("IsDeleted = 0");
 
+                    b.HasIndex("SharedWithUserId")
+                        .HasFilter("[IsDeleted] = 0");
+
                     b.HasIndex("FlightPreparationId", "SharedWithUserId")
                         .IsUnique()
                         .HasFilter("[IsDeleted] = 0");

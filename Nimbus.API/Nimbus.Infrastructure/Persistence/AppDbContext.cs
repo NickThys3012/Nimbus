@@ -248,6 +248,10 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
             e.HasIndex(s => new { s.FlightPreparationId, s.SharedWithUserId })
                 .IsUnique()
                 .HasFilter("[IsDeleted] = 0");
+
+            // "Shared with me" in the flight list (issue #40) looks shares up by recipient.
+            e.HasIndex(s => s.SharedWithUserId)
+                .HasFilter("[IsDeleted] = 0");
         });
     }
     // datetime2 comes back as DateTimeKind.Unspecified; mark it UTC so JSON serialises with a "Z"
