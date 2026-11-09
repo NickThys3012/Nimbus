@@ -23,7 +23,8 @@ vi.mock('leaflet', () => {
     getContainer: () => container.current,
   };
   const layer = { addTo: () => layer };
-  return {
+  // Leaflet is UMD-only: a production bundle exposes its API as the default export (no named exports).
+  const api = {
     map: (el: unknown, opts: unknown) => {
       container.current = el;
       calls.map(el, opts);
@@ -36,6 +37,7 @@ vi.mock('leaflet', () => {
       return { addTo: () => ({ setLatLng: calls.setLatLng }), setLatLng: calls.setLatLng };
     },
   };
+  return { default: api };
 });
 
 @Component({

@@ -59,7 +59,9 @@ export class LocationMap {
     });
 
     afterNextRender(async () => {
-      this.leaflet = await import('leaflet');
+      const mod = await import('leaflet');
+      // Leaflet ships UMD only: the production bundle exposes its API as the default export, the dev server as named exports.
+      this.leaflet = (mod as { default?: typeof import('leaflet') }).default ?? mod;
       this.ready = true;
       this.render();
     });

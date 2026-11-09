@@ -8,7 +8,8 @@ import { ApiError, type LaunchLocationDto, LaunchLocationsService } from '../../
 vi.mock('leaflet', () => {
   const map = { setView: () => map, remove: () => undefined, getContainer: () => null };
   const layer = { addTo: () => layer };
-  return { map: () => map, tileLayer: () => layer, divIcon: () => ({}), marker: () => ({ addTo: () => layer, setLatLng: () => undefined }) };
+  // Leaflet is UMD-only: a production bundle exposes its API as the default export.
+  return { default: { map: () => map, tileLayer: () => layer, divIcon: () => ({}), marker: () => ({ addTo: () => layer, setLatLng: () => undefined }) } };
 });
 
 const dender: LaunchLocationDto = { id: 'l1', name: 'Dendermonde', icaoCode: 'EBDM', latitude: 51.02, longitude: 4.1, elevationM: 8, airspaceNotes: 'Class G' };
