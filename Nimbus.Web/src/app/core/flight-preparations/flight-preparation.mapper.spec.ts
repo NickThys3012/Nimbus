@@ -15,6 +15,9 @@ describe('flight preparation mapper', () => {
     value.loadCalculation = {
       ...value.loadCalculation,
       envelopeWeightKg: 200,
+      basketWeightKg: 90,
+      burnerWeightKg: 20,
+      cylindersWeightKg: 40,
       passengers: [{ name: 'Alice', weightKg: 62, needsAssistance: false, isChild: false, needsTransport: true }],
     };
     return value;
@@ -30,10 +33,14 @@ describe('flight preparation mapper', () => {
     expect(request.title).toBe('Title');
   });
 
-  it('leaves out what the API does not store', () => {
+  it('leaves out the landing-site pick, which has no column', () => {
     const request = toRequestDto(sampleValue(), 'T') as Record<string, unknown>;
-    expect(request['basketWeightKg']).toBeUndefined();
     expect(request['landingLocationId']).toBeUndefined();
+  });
+
+  it('sends the balloon-weight snapshot with the flight', () => {
+    const request = toRequestDto(sampleValue(), 'T');
+    expect([request.basketWeightKg, request.burnerWeightKg, request.cylindersWeightKg]).toEqual([90, 20, 40]);
   });
 
   it('round-trips the form value through the API shape', () => {
@@ -44,7 +51,7 @@ describe('flight preparation mapper', () => {
       updatedDate: null,
       details: { ...toRequestDto(original, 'T'), flightTime: '18:45:00', sunsetTime: '21:03:00' },
     };
-    const back = fromDto(dto, { basketWeightKg: 90, burnerWeightKg: 20, cylindersWeightKg: 40 });
+    const back = fromDto(dto);
     expect(back.general).toEqual(original.general);
     expect(back.meteo).toEqual(original.meteo);
     expect(back.checklists).toEqual(original.checklists);
@@ -52,10 +59,11 @@ describe('flight preparation mapper', () => {
     expect(back.loadCalculation.envelopeWeightKg).toBe(200);
   });
 
-  it('takes the basket, burner and cylinder weights from the balloon, and zero when it is unknown', () => {
+  it('restores the stored weight snapshot, and zero where a flight predates it', () => {
     const dto: FlightPreparationDto = { id: 'x', status: 'Planned', updatedDate: null, details: toRequestDto(sampleValue(), 'T') };
-    expect(fromDto(dto, { basketWeightKg: 90, burnerWeightKg: 20, cylindersWeightKg: 40 }).loadCalculation).toMatchObject({ basketWeightKg: 90, burnerWeightKg: 20, cylindersWeightKg: 40 });
-    expect(fromDto(dto, null).loadCalculation).toMatchObject({ basketWeightKg: 0, burnerWeightKg: 0, cylindersWeightKg: 0 });
+    expect(fromDto(dto).loadCalculation).toMatchObject({ basketWeightKg: 90, burnerWeightKg: 20, cylindersWeightKg: 40 });
+    const legacy = { ...dto, details: { ...dto.details, basketWeightKg: null, burnerWeightKg: undefined, cylindersWeightKg: null } };
+    expect(fromDto(legacy).loadCalculation).toMatchObject({ basketWeightKg: 0, burnerWeightKg: 0, cylindersWeightKg: 0 });
   });
 
   it('builds a list title from the location and date', () => {

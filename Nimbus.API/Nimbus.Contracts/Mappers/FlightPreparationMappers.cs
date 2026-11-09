@@ -49,6 +49,9 @@ public static class FlightPreparationMappers
         f.InstrumentsChecked = r.InstrumentsChecked;
 
         f.EnvelopeWeightKg = r.EnvelopeWeightKg;
+        f.BasketWeightKg = r.BasketWeightKg;
+        f.BurnerWeightKg = r.BurnerWeightKg;
+        f.CylindersWeightKg = r.CylindersWeightKg;
         f.MaxAltitudeFt = r.MaxAltitudeFt;
         f.LiftUnits = r.LiftUnits;
         f.TotalLiftKg = r.TotalLiftKg;
@@ -117,6 +120,9 @@ public static class FlightPreparationMappers
         MooringsChecked = f.MooringsChecked,
         InstrumentsChecked = f.InstrumentsChecked,
         EnvelopeWeightKg = f.EnvelopeWeightKg,
+        BasketWeightKg = f.BasketWeightKg,
+        BurnerWeightKg = f.BurnerWeightKg,
+        CylindersWeightKg = f.CylindersWeightKg,
         MaxAltitudeFt = f.MaxAltitudeFt,
         LiftUnits = f.LiftUnits,
         TotalLiftKg = f.TotalLiftKg,

@@ -50,8 +50,11 @@ public record FlightPreparationRequestDto
     public bool MooringsChecked { get; init; }
     public bool InstrumentsChecked { get; init; }
 
-    // Section 5 — load calculation (basket, burner and cylinder weights come from the balloon, never from the flight)
+    // Section 5 — load calculation (the weights are a snapshot of the balloon's, taken when the flight is prepared)
     public decimal? EnvelopeWeightKg { get; init; }
+    public decimal? BasketWeightKg { get; init; }
+    public decimal? BurnerWeightKg { get; init; }
+    public decimal? CylindersWeightKg { get; init; }
     public int? MaxAltitudeFt { get; init; }
     public decimal? LiftUnits { get; init; }
     public decimal? TotalLiftKg { get; init; }

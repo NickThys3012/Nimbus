@@ -19,15 +19,16 @@ public sealed record FlightAssessmentInput(
     decimal? CapeJPerKg)
 {
     /// <summary>
-    ///     Maps a persisted flight. Basket, burner and cylinder weights are not stored on the flight (they are
-    ///     snapshotted from the balloon in the form), so the caller supplies them.
+    ///     Maps a persisted flight. Basket, burner and cylinder weights come from the flight's own snapshot; the
+    ///     arguments are only the fallback for rows saved before the snapshot existed.
     /// </summary>
     public static FlightAssessmentInput From(
         FlightPreparation flight, decimal pilotWeightKg, decimal basketWeightKg = 0, decimal burnerWeightKg = 0, decimal cylindersWeightKg = 0)
     {
         ArgumentNullException.ThrowIfNull(flight);
         return new FlightAssessmentInput(
-            flight.EnvelopeWeightKg ?? 0, basketWeightKg, burnerWeightKg, cylindersWeightKg, pilotWeightKg,
+            flight.EnvelopeWeightKg ?? 0, flight.BasketWeightKg ?? basketWeightKg, flight.BurnerWeightKg ?? burnerWeightKg,
+            flight.CylindersWeightKg ?? cylindersWeightKg, pilotWeightKg,
             flight.Passengers.OrderBy(p => p.Order).Select(p => p.WeightKg).ToList(),
             flight.TotalLiftKg ?? 0, flight.WindSpeedKt, flight.VisibilityKm, flight.CapeJPerKg);
     }

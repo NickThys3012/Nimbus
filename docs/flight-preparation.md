@@ -170,10 +170,14 @@ behaves like a missing one (`null`/`false`).
   (read-only), applies the request onto it and hands it to `UpdateAsync`, so the columns the form
   does not own (status, flight outcome, simulation settings, precipitation, trajectory, KML) keep
   their stored values. Never build a fresh entity for an update: `UpdateAsync` writes every column.
-- **Not stored with a flight.** The basket, burner and cylinder weights come from the balloon
-  (the flight list and the assessment already read them there); the form fills them in from the
-  balloon list after loading. The landing-site pick on the form (`landingLocationId`) has no
-  column and lives only in the local draft; `OfpLandingLocation` (free text) is stored.
+- **Balloon-weight snapshot.** `BasketWeightKg`, `BurnerWeightKg` and `CylindersWeightKg` are copied
+  from the balloon by the form when the balloon is picked on a new flight, and stored with the flight,
+  so later edits to the balloon never change what a saved flight was assessed with. A saved flight
+  keeps its snapshot even if its balloon is changed. The columns are nullable: rows saved without a
+  snapshot fall back to the balloon's current weights in the flight list and in
+  `FlightAssessmentInput.From`.
+- **Not stored.** The landing-site pick on the form (`landingLocationId`) has no column and lives only
+  in the local draft; `OfpLandingLocation` (free text) is stored.
 - **Title.** The form sends `"<launch location> · <date>"`; a blank title falls back to
   `"Flight <date>"`.
 - **Client.** Saving never throws away work: a failed request keeps the form dirty and the local

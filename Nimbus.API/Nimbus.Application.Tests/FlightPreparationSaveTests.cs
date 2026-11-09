@@ -23,6 +23,9 @@ public class FlightPreparationSaveTests
         FlightDate = new DateOnly(2026, 8, 8),
         FlightTime = new TimeOnly(18, 45),
         WindSpeedKt = 6.5m,
+        BasketWeightKg = 90m,
+        BurnerWeightKg = 25m,
+        CylindersWeightKg = 60m,
         WindDirectionDeg = 270,
         Metar = "  EBBR 081650Z  ",
         Taf = "   ",
@@ -56,6 +59,7 @@ public class FlightPreparationSaveTests
         var back = request.ApplyTo(new FlightPreparation()).MapToRequestDto();
         Assert.That(back.BalloonId, Is.EqualTo(request.BalloonId));
         Assert.That(back.WindSpeedKt, Is.EqualTo(6.5m));
+        Assert.That((back.BasketWeightKg, back.BurnerWeightKg, back.CylindersWeightKg), Is.EqualTo((90m, 25m, 60m)));
         Assert.That(back.FirstAidAndExtinguisher, Is.EqualTo(ChecklistAnswer.Yes));
         Assert.That(back.Passengers.Select(p => p.Name), Is.EqualTo(new[] { "Alice", "Bob" }));
         Assert.That(back.Passengers[0].NeedsTransport, Is.True);

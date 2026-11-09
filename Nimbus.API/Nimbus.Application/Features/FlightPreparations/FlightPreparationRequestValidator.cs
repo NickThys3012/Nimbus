@@ -39,6 +39,9 @@ public sealed class FlightPreparationRequestValidator : AbstractValidator<Flight
         RuleFor(r => r.FlightPlanFiled).IsInEnum();
 
         RuleFor(r => r.EnvelopeWeightKg).InclusiveBetween(0m, 10000m);
+        RuleFor(r => r.BasketWeightKg).InclusiveBetween(0m, 10000m);
+        RuleFor(r => r.BurnerWeightKg).InclusiveBetween(0m, 10000m);
+        RuleFor(r => r.CylindersWeightKg).InclusiveBetween(0m, 10000m);
         RuleFor(r => r.MaxAltitudeFt).InclusiveBetween(0, 40000);
         RuleFor(r => r.LiftUnits).InclusiveBetween(0m, 10000m);
         RuleFor(r => r.TotalLiftKg).InclusiveBetween(0m, 10000m);

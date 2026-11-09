@@ -2,12 +2,10 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
-  effect,
   ElementRef,
   inject,
   OnDestroy,
   signal,
-  untracked,
 } from '@angular/core';
 import { NonNullableFormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -235,14 +233,6 @@ export default class FlightPreparationFormPage implements CanComponentDeactivate
 
   constructor() {
     this.hydrate(this.initialRouteId);
-    // A saved flight keeps no basket/burner/cylinder weights of its own (they belong to the balloon),
-    // so they are filled in whenever the balloon list is, or becomes, available.
-    effect(() => {
-      this.balloonsStore.list();
-      untracked(() => {
-        if (this.isExistingFlight()) this.applyBalloonWeights(this.form());
-      });
-    });
     // Route param changes (including the id this component assigns to itself on first autosave,
     // guarded against by `lastKnownId`) rebuild the form for that flight's draft.
     this.route.paramMap
@@ -488,7 +478,7 @@ export default class FlightPreparationFormPage implements CanComponentDeactivate
       .getApiFlightPreparations1({ id })
       .pipe(
         map((stored) => ({
-          value: fromDto(stored, this.balloonWeights(stored.details.balloonId)),
+          value: fromDto(stored),
           // A flight never edited since creation has no update stamp; any autosave counts as newer.
           updatedAt: stored.updatedDate ?? new Date(0).toISOString(),
         })),
@@ -559,33 +549,15 @@ export default class FlightPreparationFormPage implements CanComponentDeactivate
     });
   }
 
-  /** The balloon's basket, burner and cylinder weights, or null while it is not (yet) in the list. */
-  private balloonWeights(balloonId: string): { basketWeightKg: number; burnerWeightKg: number; cylindersWeightKg: number } | null {
-    const balloon = this.balloonsStore.list().find((b) => b.id === balloonId);
-    if (!balloon) return null;
-    return {
-      basketWeightKg: Number(balloon.basketWeightKg),
-      burnerWeightKg: Number(balloon.burnerWeightKg),
-      cylindersWeightKg: Number(balloon.cylindersWeightKg),
-    };
-  }
-
-  /** Fills the three derived weights from the form's balloon. They are never stored with the flight,
-   *  so this does not make the form dirty (no `emitEvent`, and nothing here is a user edit). */
-  private applyBalloonWeights(form: FlightPreparationForm): void {
-    const weights = this.balloonWeights(form.controls.general.controls.balloonId.value);
-    if (weights) form.controls.loadCalculation.patchValue(weights, { emitEvent: false });
-  }
-
-  /** Copies the picked balloon's reference weights onto the form. A new flight also takes the
-   *  envelope weight as its own snapshot, so later edits to the balloon never change what this flight
-   *  was prepared with; a saved flight keeps its stored envelope weight and only follows the balloon
-   *  for the weights that are not stored with it. */
+  /** Copies the picked balloon's reference weights onto a flight that has not been saved yet, so
+   *  later edits to the balloon never change the weights this flight was prepared with. Saved
+   *  flights keep their snapshot. */
   private snapshotBalloonWeights(form: FlightPreparationForm, balloonId: string): void {
+    if (this.isExistingFlight()) return;
     const balloon = this.balloonsStore.list().find((b) => b.id === balloonId);
     if (!balloon) return;
     form.controls.loadCalculation.patchValue({
-      ...(this.isExistingFlight() ? {} : { envelopeWeightKg: Number(balloon.envelopeWeightKg) }),
+      envelopeWeightKg: Number(balloon.envelopeWeightKg),
       basketWeightKg: Number(balloon.basketWeightKg),
       burnerWeightKg: Number(balloon.burnerWeightKg),
       cylindersWeightKg: Number(balloon.cylindersWeightKg),

@@ -5,11 +5,6 @@
 import type { ChecklistAnswer } from './ChecklistAnswer';
 import type { PassengerDto } from './PassengerDto';
 import type { WindLevelDto } from './WindLevelDto';
-/**
- * The columns the dossier form owns (sections 1-9). Anything the form does not own (flight outcome, simulation
- * settings, trajectory, KML, shares, images) is never part of this request and survives a save untouched.
- * The owner is never part of a request.
- */
 export type FlightPreparationRequestDto = {
     title?: string | null;
     balloonId: string;
@@ -21,7 +16,7 @@ export type FlightPreparationRequestDto = {
     sunsetTime?: string | null;
     fieldOwnerNotified?: boolean;
     windSpeedKt?: number | string | null;
-    windDirectionDeg?: number | null;
+    windDirectionDeg?: number | string | null;
     visibilityKm?: number | string | null;
     capeJPerKg?: number | string | null;
     temperatureC?: number | string | null;
@@ -43,7 +38,10 @@ export type FlightPreparationRequestDto = {
     mooringsChecked?: boolean;
     instrumentsChecked?: boolean;
     envelopeWeightKg?: number | string | null;
-    maxAltitudeFt?: number | null;
+    basketWeightKg?: number | string | null;
+    burnerWeightKg?: number | string | null;
+    cylindersWeightKg?: number | string | null;
+    maxAltitudeFt?: number | string | null;
     liftUnits?: number | string | null;
     totalLiftKg?: number | string | null;
     loadRemarks?: string | null;
@@ -55,10 +53,11 @@ export type FlightPreparationRequestDto = {
     bulletinText?: string | null;
     ofpOperatorName?: string | null;
     ofpPicWeightKg?: number | string | null;
-    ofpFuelAvailableMinutes?: number | null;
-    ofpFuelRequiredMinutes?: number | null;
+    ofpFuelAvailableMinutes?: number | string | null;
+    ofpFuelRequiredMinutes?: number | string | null;
     ofpLandingLocation?: string | null;
     paxBriefingText?: string | null;
     paxBriefingVersion?: string | null;
     paxBriefingIsCustom?: boolean;
 };
+

@@ -9,3 +9,4 @@ export type PassengerDto = {
     isChild: boolean;
     needsTransport: boolean;
 };
+

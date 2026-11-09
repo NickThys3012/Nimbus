@@ -179,25 +179,25 @@ describe('FlightPreparationFormPage', () => {
     expect(load.cylindersWeightKg).toBe(60);
   });
 
-  it('keeps the stored envelope weight of a saved flight when its balloon changes, but follows the balloon for the derived weights', async () => {
-    seedSavedFlight('flight-1', { loadCalculation: { envelopeWeightKg: 100, basketWeightKg: 0, burnerWeightKg: 0, cylindersWeightKg: 0, maxAltitudeFt: 4500, liftUnits: 0, totalLiftKg: 0, loadRemarks: '', passengers: [] } });
+  it('does not overwrite the weight snapshot of an already saved flight when its balloon changes', async () => {
+    seedSavedFlight('flight-1', { loadCalculation: { envelopeWeightKg: 100, basketWeightKg: 11, burnerWeightKg: 12, cylindersWeightKg: 13, maxAltitudeFt: 4500, liftUnits: 0, totalLiftKg: 0, loadRemarks: '', passengers: [] } });
     const { fixture, q } = await createComponent('flight-1', [balloon]);
     const select = q<HTMLSelectElement>('balloon')!;
     select.value = 'b1';
     select.dispatchEvent(new Event('change'));
     fixture.detectChanges();
 
-    const load = fixture.componentInstance['form']().controls.loadCalculation.getRawValue();
-    expect(load.envelopeWeightKg).toBe(100);
-    expect(load.basketWeightKg).toBe(90);
+    expect(fixture.componentInstance['form']().controls.loadCalculation.getRawValue()).toMatchObject({
+      envelopeWeightKg: 100, basketWeightKg: 11, burnerWeightKg: 12, cylindersWeightKg: 13,
+    });
   });
 
-  it('fills a saved flight\'s basket, burner and cylinder weights from its balloon without making the form dirty', async () => {
-    seedSavedFlight('flight-1');
+  it('loads a saved flight\'s weight snapshot as stored, without making the form dirty', async () => {
+    seedSavedFlight('flight-1', { loadCalculation: { envelopeWeightKg: 100, basketWeightKg: 11, burnerWeightKg: 12, cylindersWeightKg: 13, maxAltitudeFt: 4500, liftUnits: 0, totalLiftKg: 0, loadRemarks: '', passengers: [] } });
     const { fixture } = await createComponent('flight-1', [balloon]);
 
     const form = fixture.componentInstance['form']();
-    expect(form.controls.loadCalculation.getRawValue()).toMatchObject({ basketWeightKg: 90, burnerWeightKg: 25, cylindersWeightKg: 60, envelopeWeightKg: 118 });
+    expect(form.controls.loadCalculation.getRawValue()).toMatchObject({ basketWeightKg: 11, burnerWeightKg: 12, cylindersWeightKg: 13 });
     expect(form.dirty).toBe(false);
   });
 

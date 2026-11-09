@@ -3,8 +3,9 @@
 /* tslint:disable */
 /* eslint-disable */
 export type WindLevelDto = {
-    altitudeM: number;
-    directionDeg: number;
+    altitudeM: number | string;
+    directionDeg: number | string;
     speedKt: number | string;
     temperatureC: number | string;
 };
+

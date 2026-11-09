@@ -28,9 +28,8 @@ export function flightTitle(locationName: string | null | undefined, flightDate:
 }
 
 /**
- * Reshapes the form's value into the API request. Fields the API does not store are left out:
- * the basket, burner and cylinder weights come from the balloon (never from the flight) and the
- * landing-site pick lives only in the local draft.
+ * Reshapes the form's value into the API request. The landing-site pick has no column and lives
+ * only in the local draft, so it is left out.
  */
 export function toRequestDto(value: FlightPreparationFormValue, title: string): FlightPreparationRequestDto {
   const { general, meteo, airspace, checklists, loadCalculation: load, route, bulletin, ofp, paxBriefing } = value;
@@ -67,6 +66,9 @@ export function toRequestDto(value: FlightPreparationFormValue, title: string): 
     mooringsChecked: checklists.mooringsChecked,
     instrumentsChecked: checklists.instrumentsChecked,
     envelopeWeightKg: load.envelopeWeightKg,
+    basketWeightKg: load.basketWeightKg,
+    burnerWeightKg: load.burnerWeightKg,
+    cylindersWeightKg: load.cylindersWeightKg,
     maxAltitudeFt: load.maxAltitudeFt,
     liftUnits: load.liftUnits,
     totalLiftKg: load.totalLiftKg,
@@ -88,14 +90,8 @@ export function toRequestDto(value: FlightPreparationFormValue, title: string): 
   };
 }
 
-/**
- * Reshapes a stored flight into the form's value. `balloonWeights` supplies the basket, burner and
- * cylinder weights from the balloon's reference data (zeros until the balloon list has loaded).
- */
-export function fromDto(
-  dto: FlightPreparationDto,
-  balloonWeights: { basketWeightKg: number; burnerWeightKg: number; cylindersWeightKg: number } | null,
-): FlightPreparationFormValue {
+/** Reshapes a stored flight into the form's value. */
+export function fromDto(dto: FlightPreparationDto): FlightPreparationFormValue {
   const d = dto.details;
   return {
     general: {
@@ -120,8 +116,8 @@ export function fromDto(
       metar: d.metar ?? '',
       taf: d.taf ?? '',
       windLevels: (d.windLevels ?? []).map((w) => ({
-        altitudeM: w.altitudeM,
-        directionDeg: w.directionDeg,
+        altitudeM: num(w.altitudeM),
+        directionDeg: num(w.directionDeg),
         speedKt: num(w.speedKt),
         temperatureC: num(w.temperatureC),
       })),
@@ -144,9 +140,9 @@ export function fromDto(
     },
     loadCalculation: {
       envelopeWeightKg: num(d.envelopeWeightKg),
-      basketWeightKg: balloonWeights?.basketWeightKg ?? 0,
-      burnerWeightKg: balloonWeights?.burnerWeightKg ?? 0,
-      cylindersWeightKg: balloonWeights?.cylindersWeightKg ?? 0,
+      basketWeightKg: num(d.basketWeightKg),
+      burnerWeightKg: num(d.burnerWeightKg),
+      cylindersWeightKg: num(d.cylindersWeightKg),
       maxAltitudeFt: num(d.maxAltitudeFt),
       liftUnits: num(d.liftUnits),
       totalLiftKg: num(d.totalLiftKg),
