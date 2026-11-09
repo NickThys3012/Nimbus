@@ -26,6 +26,8 @@ public class CurrentUserService : ICurrentUserService
         }
     }
 
+    public bool IsAdmin => _http.HttpContext?.User.IsInRole(nameof(Nimbus.Domain.Enums.UserRole.Admin)) ?? false;
+
     public async Task<User?> GetCurrentUserAsync()
     {
         return await _users.GetByIdAsync(UserId);

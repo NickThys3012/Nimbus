@@ -155,3 +155,27 @@ behaves like a missing one (`null`/`false`).
   `SetKmlTrackAsync` (`KmlTrackObjectKey` + `KmlTrackContentType`) use `ExecuteUpdate` filtered on
   id and owner: a single statement, no row load, no change tracking. Each also bumps `UpdatedDate`
   in that same statement, since `ExecuteUpdate` bypasses the `SaveChanges` audit stamping.
+
+## Flight list (issue #40)
+
+`GET /api/flight-preparations?filter=&sort=&descending=&page=&pageSize=` feeds the Flights overview
+(`pages/flight-overview`, state in `FlightListStore`).
+
+- **Visibility.** The caller's own flights plus flights with an active (non-revoked) share to the caller;
+  an admin sees every flight. The user id and admin flag come from the auth context
+  (`ICurrentUserService`), never from query parameters.
+- **Filters** (`FlightListFilter`): `All`, `Flown`, `NotFlown`, `SharedWithMe` (flights owned by someone else).
+  **Sort** (`FlightListSort`): `Date` (default, newest first), `Balloon`, `Location`, `Status`, with
+  `descending`. `pageSize` is 1-100 (validated), default 20.
+- **SQL only.** `FlightListReader` (Infrastructure) runs one `COUNT`, one paged projection (balloon
+  registration/weights, location name and pilot weight resolved by correlated sub-selects) and one query for
+  the page's passenger weights: three commands regardless of row count, no `FlightPreparation` entities and no
+  child collections materialised (`FlightListReaderTests` seeds 300+ flights and asserts the command count,
+  that nothing is tracked and that wide columns are not selected). Soft-deleted balloons/locations/pilots still
+  resolve, as for the detail view.
+- **Verdict.** Each row's `goNoGoVerdict` comes from one `IFlightAssessmentService.AssessManyAsync` call for
+  the page (limits resolved once, the viewer's own thresholds); the list never recomputes it.
+- **Owner names.** `IUserDirectory.GetDisplayNamesAsync` resolves all foreign owners on the page in one
+  `WHERE Id IN (...)` query; own flights carry no owner name.
+- **Index.** Migration `FlightListSharedWithUserIndex` adds a filtered index on
+  `FlightPreparationShares.SharedWithUserId` for the share lookup.
