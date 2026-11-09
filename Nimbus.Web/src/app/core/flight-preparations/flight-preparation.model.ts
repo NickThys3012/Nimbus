@@ -1,7 +1,6 @@
 /**
  * The nine pre-flight dossier sections, in the same order and with the same ids as the backend's
- * `FlightPreparationSection` enum (see `docs/flight-preparation.md`) — kept 1:1 so wiring the real
- * save/load endpoints (issues #40/#51-style) later is a seam, not a rename.
+ * `FlightPreparationSection` enum (see `docs/flight-preparation.md`).
  */
 export const FLIGHT_PREPARATION_SECTION_IDS = [
   'General',

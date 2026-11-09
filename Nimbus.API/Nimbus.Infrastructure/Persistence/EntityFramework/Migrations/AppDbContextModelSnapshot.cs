@@ -244,12 +244,20 @@ namespace Nimbus.Infrastructure.Persistence.EntityFramework.Migrations
                     b.Property<bool>("BalloonVisualInspectionDone")
                         .HasColumnType("bit");
 
+                    b.Property<decimal?>("BasketWeightKg")
+                        .HasPrecision(7, 2)
+                        .HasColumnType("decimal(7,2)");
+
                     b.Property<string>("BulletinText")
                         .HasMaxLength(4000)
                         .HasColumnType("nvarchar(4000)");
 
                     b.Property<bool>("BurnerTested")
                         .HasColumnType("bit");
+
+                    b.Property<decimal?>("BurnerWeightKg")
+                        .HasPrecision(7, 2)
+                        .HasColumnType("decimal(7,2)");
 
                     b.Property<decimal?>("CapeJPerKg")
                         .HasPrecision(7, 2)
@@ -265,6 +273,10 @@ namespace Nimbus.Infrastructure.Persistence.EntityFramework.Migrations
                     b.Property<string>("CruiseAltitudesFtCsv")
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
+
+                    b.Property<decimal?>("CylindersWeightKg")
+                        .HasPrecision(7, 2)
+                        .HasColumnType("decimal(7,2)");
 
                     b.Property<string>("DefectsDescription")
                         .HasMaxLength(2000)

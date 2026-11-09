@@ -82,6 +82,16 @@ public class FlightPreparation : OwnedEntity
 
     // ----- Section 05 — load calculation -----
     public decimal? EnvelopeWeightKg { get; set; }
+
+    /// <summary>
+    ///     Basket, burner and cylinder weights copied from the balloon when the flight is prepared, so later edits to the
+    ///     balloon never change what this flight was assessed with. Null on rows saved before the snapshot existed; readers
+    ///     then fall back to the balloon's current weights.
+    /// </summary>
+    public decimal? BasketWeightKg { get; set; }
+
+    public decimal? BurnerWeightKg { get; set; }
+    public decimal? CylindersWeightKg { get; set; }
     public int? MaxAltitudeFt { get; set; }
 
     /// <summary>Number of lift units entered by the pilot. Total weight and the lift-vs-weight verdict are derived, never stored.</summary>

@@ -7,6 +7,8 @@ import type { Observable } from 'rxjs';
 import type { FlightListFilter } from '../models/FlightListFilter';
 import type { FlightListPageDto } from '../models/FlightListPageDto';
 import type { FlightListSort } from '../models/FlightListSort';
+import type { FlightPreparationDto } from '../models/FlightPreparationDto';
+import type { FlightPreparationRequestDto } from '../models/FlightPreparationRequestDto';
 import { BaseHttpRequest } from '../core/BaseHttpRequest';
 @Injectable({
     providedIn: 'root',
@@ -40,6 +42,60 @@ export class FlightPreparationsService {
                 'page': page,
                 'pageSize': pageSize,
             },
+        });
+    }
+    /**
+     * @returns FlightPreparationDto OK
+     * @throws ApiError
+     */
+    public postApiFlightPreparations({
+        requestBody,
+    }: {
+        requestBody: FlightPreparationRequestDto,
+    }): Observable<FlightPreparationDto> {
+        return this.httpRequest.request({
+            method: 'POST',
+            url: '/api/flight-preparations',
+            body: requestBody,
+            mediaType: 'application/json',
+        });
+    }
+    /**
+     * @returns FlightPreparationDto OK
+     * @throws ApiError
+     */
+    public getApiFlightPreparations1({
+        id,
+    }: {
+        id: string,
+    }): Observable<FlightPreparationDto> {
+        return this.httpRequest.request({
+            method: 'GET',
+            url: '/api/flight-preparations/{id}',
+            path: {
+                'id': id,
+            },
+        });
+    }
+    /**
+     * @returns FlightPreparationDto OK
+     * @throws ApiError
+     */
+    public putApiFlightPreparations({
+        id,
+        requestBody,
+    }: {
+        id: string,
+        requestBody: FlightPreparationRequestDto,
+    }): Observable<FlightPreparationDto> {
+        return this.httpRequest.request({
+            method: 'PUT',
+            url: '/api/flight-preparations/{id}',
+            path: {
+                'id': id,
+            },
+            body: requestBody,
+            mediaType: 'application/json',
         });
     }
 }

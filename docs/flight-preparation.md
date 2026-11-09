@@ -156,6 +156,34 @@ behaves like a missing one (`null`/`false`).
   id and owner: a single statement, no row load, no change tracking. Each also bumps `UpdatedDate`
   in that same statement, since `ExecuteUpdate` bypasses the `SaveChanges` audit stamping.
 
+## Saving and loading through the API
+
+| Method | Route | Purpose |
+|---|---|---|
+| `GET` | `/api/flight-preparations/{id}` | Load a stored dossier (`FlightPreparationDto`: id, status, update stamp, `details`). |
+| `POST` | `/api/flight-preparations` | Create. The caller becomes the owner and the flight starts as `Planned`. |
+| `PUT` | `/api/flight-preparations/{id}` | Replace the form-owned fields, passengers and wind levels. |
+
+- **Owner only.** Another user's flight answers 404, same as a missing one. Opening a flight
+  that is shared with you is not supported yet; the list shows shared flights but `GET` does not.
+- **`FlightPreparationRequestDto` is exactly what the form owns.** An update loads the stored row
+  (read-only), applies the request onto it and hands it to `UpdateAsync`, so the columns the form
+  does not own (status, flight outcome, simulation settings, precipitation, trajectory, KML) keep
+  their stored values. Never build a fresh entity for an update: `UpdateAsync` writes every column.
+- **Balloon-weight snapshot.** `BasketWeightKg`, `BurnerWeightKg` and `CylindersWeightKg` are copied
+  from the balloon by the form when the balloon is picked on a new flight, and stored with the flight,
+  so later edits to the balloon never change what a saved flight was assessed with. A saved flight
+  keeps its snapshot even if its balloon is changed. The columns are nullable: rows saved without a
+  snapshot fall back to the balloon's current weights in the flight list and in
+  `FlightAssessmentInput.From`.
+- **Not stored.** The landing-site pick on the form (`landingLocationId`) has no column and lives only
+  in the local draft; `OfpLandingLocation` (free text) is stored.
+- **Title.** The form sends `"<launch location> · <date>"`; a blank title falls back to
+  `"Flight <date>"`.
+- **Client.** Saving never throws away work: a failed request keeps the form dirty and the local
+  autosave; a successful one removes the autosave and refreshes the flight list. A flight id the
+  server does not know (404) is treated as an unsaved draft; any other load error blocks saving.
+
 ## Flight list (issue #40)
 
 `GET /api/flight-preparations?filter=&sort=&descending=&page=&pageSize=` feeds the Flights overview

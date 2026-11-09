@@ -30,6 +30,19 @@ public class FlightAssessmentTests
         i.PassengerWeightsKg.ToList(), i.TotalLiftKg, i.WindSpeedKt, i.VisibilityKm, i.CapeJPerKg);
 
     [Test]
+    public void From_PrefersTheFlightsOwnWeightSnapshot_OverTheFallbackArguments()
+    {
+        var flight = Flight();
+        (flight.BasketWeightKg, flight.BurnerWeightKg, flight.CylindersWeightKg) = (60m, 25m, 35m);
+
+        var input = FlightAssessmentInput.From(flight, pilotWeightKg: 80m, basketWeightKg: 50m, burnerWeightKg: 20m, cylindersWeightKg: 30m);
+
+        Assert.That((input.BasketWeightKg, input.BurnerWeightKg, input.CylindersWeightKg), Is.EqualTo((60m, 25m, 35m)));
+        flight.BasketWeightKg = null;
+        Assert.That(FlightAssessmentInput.From(flight, 80m, basketWeightKg: 50m).BasketWeightKg, Is.EqualTo(50m));
+    }
+
+    [Test]
     public async Task SameFlight_YieldsIdenticalAssessment_ThroughEveryConsumer()
     {
         var me = Guid.NewGuid();

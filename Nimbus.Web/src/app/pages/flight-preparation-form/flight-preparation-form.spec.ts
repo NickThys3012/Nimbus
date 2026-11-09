@@ -1,11 +1,21 @@
 import { TestBed } from '@angular/core/testing';
 import { ActivatedRoute, convertToParamMap, provideRouter, Router } from '@angular/router';
-import { of } from 'rxjs';
+import { of, throwError } from 'rxjs';
 import { vi } from 'vitest';
 
 import FlightPreparationFormPage from './flight-preparation-form';
 import { AuthStore } from '../../core/auth/auth.store';
-import { BalloonsService, FlightAssessmentService, LaunchLocationsService, LiftCalculationService, PilotsService } from '../../core/api-client';
+import {
+  ApiError,
+  BalloonsService,
+  FlightAssessmentService,
+  type FlightPreparationDto,
+  FlightPreparationsService,
+  LaunchLocationsService,
+  LiftCalculationService,
+  PilotsService,
+} from '../../core/api-client';
+import { toRequestDto } from '../../core/flight-preparations/flight-preparation.mapper';
 import { LOCAL_STORAGE } from '../../services/theme-service';
 
 /**
@@ -20,6 +30,12 @@ describe('FlightPreparationFormPage', () => {
   let mockStore: Record<string, string>;
   let mockStorage: Storage;
   let navigate: ReturnType<typeof vi.fn>;
+  /** The flights "stored on the server" for this test, by id. */
+  let server: Record<string, FlightPreparationDto>;
+  let flightsApi: Record<string, ReturnType<typeof vi.fn>>;
+
+  const httpError = (status: number) =>
+    new ApiError({ method: 'GET', url: '/api/flight-preparations' } as never, { url: '', ok: false, status, statusText: '', body: null }, `HTTP ${status}`);
 
   beforeEach(() => {
     mockStore = {};
@@ -32,6 +48,15 @@ describe('FlightPreparationFormPage', () => {
       get length() { return Object.keys(mockStore).length; },
     } as Storage;
     email = 'pilot.a@example.com';
+    server = {};
+    flightsApi = {
+      getApiFlightPreparations: vi.fn().mockReturnValue(of({ items: [], totalCount: 0, page: 1, pageSize: 20 })),
+      getApiFlightPreparations1: vi.fn(({ id }: { id: string }) => (server[id] ? of(server[id]) : throwError(() => httpError(404)))),
+      postApiFlightPreparations: vi.fn(({ requestBody }: { requestBody: never }) =>
+        of({ id: 'server-1', status: 'Planned', updatedDate: '2026-08-09T09:00:00Z', details: requestBody })),
+      putApiFlightPreparations: vi.fn(({ id, requestBody }: { id: string; requestBody: never }) =>
+        of({ id, status: 'Planned', updatedDate: '2026-08-09T09:00:00Z', details: requestBody })),
+    };
   });
 
   const balloon = {
@@ -41,7 +66,7 @@ describe('FlightPreparationFormPage', () => {
   const location = { id: 'l1', name: 'Weelde', icaoCode: null, latitude: 51.4, longitude: 4.9, elevationM: null, airspaceNotes: null };
 
   async function createComponent(routeId: string | null = null, balloons: unknown[] = [], locations: unknown[] = []) {
-    navigate = vi.fn();
+    navigate = vi.fn().mockResolvedValue(true);
 
     await TestBed.configureTestingModule({
       imports: [FlightPreparationFormPage],
@@ -59,6 +84,7 @@ describe('FlightPreparationFormPage', () => {
               of({ totalWeightKg: 0, passengersWeightKg: 0, marginKg: 0, liftSufficient: null, goNoGoVerdict: 'unknown' }),
           },
         },
+        { provide: FlightPreparationsService, useValue: flightsApi },
         { provide: LaunchLocationsService, useValue: { getApiLaunchLocations: () => of(locations) } },
         {
           provide: ActivatedRoute,
@@ -99,7 +125,7 @@ describe('FlightPreparationFormPage', () => {
     const baseline = {
       general: {
         flightDate: '2026-08-08', flightTime: '18:45', balloonId: 'b1', pilotId: 'p1',
-        launchLocationId: 'l1', sunriseTime: '', sunsetTime: '', fieldOwnerNotified: false,
+        launchLocationId: 'l1', landingLocationId: '', sunriseTime: '', sunsetTime: '', fieldOwnerNotified: false,
       },
       meteo: {
         windSpeedKt: 8, windDirectionDeg: 240, visibilityKm: 10, capeJPerKg: 0, temperatureC: 0,
@@ -110,17 +136,17 @@ describe('FlightPreparationFormPage', () => {
         firstAidAndExtinguisher: 'No', passengerListFilled: 'No', flightPlanFiled: 'No', burnerTested: false,
         gasCylindersChecked: false, balloonVisualInspectionDone: false, mooringsChecked: false, instrumentsChecked: false,
       },
-      loadCalculation: { envelopeWeightKg: 118, maxAltitudeFt: 4500, loadRemarks: '', passengers: [] },
+      loadCalculation: {
+        envelopeWeightKg: 118, basketWeightKg: 0, burnerWeightKg: 0, cylindersWeightKg: 0, maxAltitudeFt: 4500,
+        liftUnits: 0, totalLiftKg: 0, loadRemarks: '', passengers: [],
+      },
       route: { routeDescription: '', climbRateMetersPerSecond: 0, descentRateMetersPerSecond: 0, cruiseAltitudesFtCsv: '' },
       bulletin: { bulletinText: '' },
       ofp: { ofpOperatorName: 'Nimbus Balloons', ofpPicWeightKg: 82, ofpFuelAvailableMinutes: 0, ofpFuelRequiredMinutes: 0, ofpLandingLocation: '' },
       paxBriefing: { paxBriefingText: '', paxBriefingVersion: '', paxBriefingIsCustom: false },
       ...overrides,
     };
-    mockStore[`nimbus.flight-prep.pilot.a@example.com.${id}`] = JSON.stringify({
-      value: baseline,
-      updatedAt: '2026-08-08T17:42:00.000Z',
-    });
+    server[id] = { id, status: 'Planned', updatedDate: '2026-08-08T17:42:00.000Z', details: toRequestDto(baseline as never, 'Weelde · 2026-08-08') };
     return baseline;
   }
 
@@ -153,15 +179,26 @@ describe('FlightPreparationFormPage', () => {
     expect(load.cylindersWeightKg).toBe(60);
   });
 
-  it('does not overwrite the snapshot of an already saved flight when its balloon changes', async () => {
-    seedSavedFlight('flight-1');
+  it('does not overwrite the weight snapshot of an already saved flight when its balloon changes', async () => {
+    seedSavedFlight('flight-1', { loadCalculation: { envelopeWeightKg: 100, basketWeightKg: 11, burnerWeightKg: 12, cylindersWeightKg: 13, maxAltitudeFt: 4500, liftUnits: 0, totalLiftKg: 0, loadRemarks: '', passengers: [] } });
     const { fixture, q } = await createComponent('flight-1', [balloon]);
     const select = q<HTMLSelectElement>('balloon')!;
     select.value = 'b1';
     select.dispatchEvent(new Event('change'));
     fixture.detectChanges();
 
-    expect(fixture.componentInstance['form']().controls.loadCalculation.getRawValue().basketWeightKg).toBe(0);
+    expect(fixture.componentInstance['form']().controls.loadCalculation.getRawValue()).toMatchObject({
+      envelopeWeightKg: 100, basketWeightKg: 11, burnerWeightKg: 12, cylindersWeightKg: 13,
+    });
+  });
+
+  it('loads a saved flight\'s weight snapshot as stored, without making the form dirty', async () => {
+    seedSavedFlight('flight-1', { loadCalculation: { envelopeWeightKg: 100, basketWeightKg: 11, burnerWeightKg: 12, cylindersWeightKg: 13, maxAltitudeFt: 4500, liftUnits: 0, totalLiftKg: 0, loadRemarks: '', passengers: [] } });
+    const { fixture } = await createComponent('flight-1', [balloon]);
+
+    const form = fixture.componentInstance['form']();
+    expect(form.controls.loadCalculation.getRawValue()).toMatchObject({ basketWeightKg: 11, burnerWeightKg: 12, cylindersWeightKg: 13 });
+    expect(form.dirty).toBe(false);
   });
 
   it('exposes the selected launch location coordinates and offers a landing location', async () => {
@@ -227,6 +264,100 @@ describe('FlightPreparationFormPage', () => {
     expect(q('section-badge')).toBeNull();
   });
 
+  describe('saving through the API', () => {
+    /** Fills the minimum that makes every section valid, as a pilot would. */
+    function fillValid(fixture: { componentInstance: FlightPreparationFormPage }) {
+      const form = fixture.componentInstance['form']();
+      form.controls.general.patchValue({ flightDate: '2026-08-08', flightTime: '18:45', balloonId: 'b1', pilotId: 'p1', launchLocationId: 'l1' });
+      form.controls.airspace.patchValue({ notamsChecked: true });
+      form.controls.ofp.patchValue({ ofpOperatorName: 'Nimbus Balloons' });
+      form.markAsDirty();
+    }
+
+    it('creates a new flight on the server, titled by place and date, then moves to its real id and refreshes the list', async () => {
+      const { fixture, q, click } = await createComponent(null, [balloon], [location]);
+      fillValid(fixture);
+
+      await click('save-flight-prep');
+
+      expect(flightsApi['postApiFlightPreparations']).toHaveBeenCalledTimes(1);
+      expect(flightsApi['putApiFlightPreparations']).not.toHaveBeenCalled();
+      const body = flightsApi['postApiFlightPreparations'].mock.calls[0][0].requestBody;
+      expect(body.title).toBe('Weelde · 2026-08-08');
+      expect(body.balloonId).toBe('b1');
+      expect(navigate).toHaveBeenCalledWith(['/flight-preparations', 'server-1'], { replaceUrl: true });
+      expect(q('saved-tag')).not.toBeNull();
+      expect(fixture.componentInstance['form']().dirty).toBe(false);
+      expect(fixture.componentInstance['isExistingFlight']()).toBe(true);
+    });
+
+    it('updates (not creates) a flight the server already has', async () => {
+      seedSavedFlight('flight-1');
+      const { fixture, click } = await createComponent('flight-1', [balloon], [location]);
+      fixture.componentInstance['form']().controls.meteo.patchValue({ windSpeedKt: 12 });
+
+      await click('save-flight-prep');
+
+      expect(flightsApi['putApiFlightPreparations']).toHaveBeenCalledTimes(1);
+      expect(flightsApi['putApiFlightPreparations'].mock.calls[0][0].id).toBe('flight-1');
+      expect(flightsApi['postApiFlightPreparations']).not.toHaveBeenCalled();
+      expect(navigate).not.toHaveBeenCalled();
+    });
+
+    it('drops the local autosave once the flight is stored', async () => {
+      const { fixture, click } = await createComponent(null, [balloon], [location]);
+      mockStore['nimbus.flight-prep.autosave.pilot.a@example.com.new'] = '{}';
+      fillValid(fixture);
+
+      await click('save-flight-prep');
+
+      expect(mockStore['nimbus.flight-prep.autosave.pilot.a@example.com.new']).toBeUndefined();
+    });
+
+    it('keeps the form dirty and shows a failure banner when the server request fails', async () => {
+      flightsApi['postApiFlightPreparations'].mockReturnValue(throwError(() => httpError(500)));
+      const { fixture, q, click } = await createComponent(null, [balloon], [location]);
+      fillValid(fixture);
+
+      await click('save-flight-prep');
+
+      expect(q('save-failure-banner')?.textContent).toContain('Could not save');
+      expect(fixture.componentInstance['form']().dirty).toBe(true);
+      expect(fixture.componentInstance['isExistingFlight']()).toBe(false);
+      expect(navigate).not.toHaveBeenCalled();
+    });
+
+    it('does not call the API for an invalid dossier', async () => {
+      const { click } = await createComponent();
+
+      await click('save-flight-prep');
+
+      expect(flightsApi['postApiFlightPreparations']).not.toHaveBeenCalled();
+    });
+
+    it('treats an id the server does not know as an unsaved draft, so saving creates it', async () => {
+      const { fixture, click } = await createComponent('draft-uuid', [balloon], [location]);
+      fillValid(fixture);
+
+      await click('save-flight-prep');
+
+      expect(flightsApi['postApiFlightPreparations']).toHaveBeenCalledTimes(1);
+    });
+
+    it('blocks saving when the stored flight could not be loaded, instead of overwriting or duplicating it', async () => {
+      flightsApi['getApiFlightPreparations1'].mockReturnValue(throwError(() => httpError(500)));
+      const { fixture, q, click } = await createComponent('flight-1', [balloon], [location]);
+      fillValid(fixture);
+
+      expect(q('load-error-banner')).not.toBeNull();
+      await click('save-flight-prep');
+
+      expect(flightsApi['postApiFlightPreparations']).not.toHaveBeenCalled();
+      expect(flightsApi['putApiFlightPreparations']).not.toHaveBeenCalled();
+      expect(q('save-failure-banner')?.textContent).toContain('Reload the page');
+    });
+  });
+
   describe('"Leave without saving?" dialog (unsaved-changes guard contract)', () => {
     it('opens with the destination and dirty section names, and "stay" resolves false without navigating', async () => {
       seedSavedFlight('flight-1');
@@ -270,7 +401,7 @@ describe('FlightPreparationFormPage', () => {
       await click('leave-without-saving');
 
       expect(resolved).toBe(true);
-      expect(mockStore['nimbus.flight-prep.pilot.a@example.com.flight-1']).toContain('"windSpeedKt":8');
+      expect(flightsApi['putApiFlightPreparations']).not.toHaveBeenCalled();
     });
 
     it('"Save and leave" saves first and only resolves true once the dossier is valid', async () => {
@@ -286,6 +417,7 @@ describe('FlightPreparationFormPage', () => {
       await click('save-and-leave');
 
       expect(resolved).toBe(true);
+      expect(flightsApi['putApiFlightPreparations']).toHaveBeenCalledTimes(1);
     });
   });
 });

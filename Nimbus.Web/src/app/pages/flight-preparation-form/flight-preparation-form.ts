@@ -10,7 +10,7 @@ import {
 import { NonNullableFormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
-import { debounceTime, map, Observable, Subject, Subscription, take } from 'rxjs';
+import { catchError, debounceTime, finalize, map, Observable, of, Subject, Subscription, take, tap } from 'rxjs';
 
 import { Banner } from '../../components/banner/banner';
 import { Button } from '../../components/button/button';
@@ -18,6 +18,7 @@ import { Modal } from '../../components/modal/modal';
 import { SectionCard } from '../../components/section-card/section-card';
 import { formatDayMonthTime } from '../../core/format/dates';
 import { type CanComponentDeactivate } from '../../guards/unsaved-changes-guard';
+import { ApiError, FlightPreparationsService } from '../../core/api-client';
 import { BalloonsStore } from '../../core/balloons/balloons.store';
 import { LaunchLocationsStore } from '../../core/launch-locations/launch-locations.store';
 import {
@@ -31,6 +32,8 @@ import {
   nextFlightSlot,
   sectionCompletionStatus,
 } from '../../core/flight-preparations/flight-preparation-form';
+import { FlightListStore } from '../../core/flight-preparations/flight-list.store';
+import { flightTitle, fromDto, toRequestDto } from '../../core/flight-preparations/flight-preparation.mapper';
 import { FlightPreparationDraftStore } from '../../core/flight-preparations/flight-preparation-draft.store';
 import {
   FLIGHT_PREPARATION_SECTIONS,
@@ -58,10 +61,9 @@ interface SectionErrorSummary {
 
 /**
  * The nine-section flight-preparation dossier (issue #32): one route, one reactive form, nine
- * independently-expandable accordion sections. There is no save/load API yet (#31 was schema
- * only), so this screen is backed entirely by `FlightPreparationDraftStore` — a client-side,
- * per-user draft that survives a refresh. Swapping that store's `save`/`load` for real HTTP calls
- * once the backend endpoint exists (#40/#51-style) is the one seam this component depends on.
+ * independently-expandable accordion sections. Saving and loading go through
+ * `FlightPreparationsService` (create, update, get); `FlightPreparationDraftStore` is only a local,
+ * per-user autosave that survives a refresh or a failed request and is dropped once a save succeeds.
  */
 @Component({
   selector: 'Nimbus-flight-preparation-form',
@@ -90,6 +92,8 @@ export default class FlightPreparationFormPage implements CanComponentDeactivate
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly draftStore = inject(FlightPreparationDraftStore);
+  private readonly api = inject(FlightPreparationsService);
+  private readonly listStore = inject(FlightListStore);
   private readonly balloonsStore = inject(BalloonsStore);
   private readonly locationsStore = inject(LaunchLocationsStore);
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
@@ -109,6 +113,14 @@ export default class FlightPreparationFormPage implements CanComponentDeactivate
   });
   protected readonly expandedIds = signal<ReadonlySet<FlightPreparationSectionId>>(new Set(['General']));
   protected readonly savedAt = signal<string | null>(null);
+  /** True while a save request is in flight (the save button is disabled meanwhile). */
+  protected readonly saving = signal(false);
+  /** Why the last save request failed; cleared on the next attempt. */
+  protected readonly saveFailure = signal<string | null>(null);
+  /** Set when the stored flight could not be fetched for a reason other than "not found"; saving is
+   *  blocked then, because the form would otherwise overwrite (or duplicate) a flight it never saw. */
+  protected readonly loadFailure = signal<string | null>(null);
+  private loadSub: Subscription | null = null;
 
   /** One entry per section, in order, for the segmented progress bar (mockup frames 1A/1B/2A). */
   protected readonly progressSegments = computed(() => {
@@ -237,6 +249,7 @@ export default class FlightPreparationFormPage implements CanComponentDeactivate
     this.valueSub?.unsubscribe();
     this.autosaveSub?.unsubscribe();
     this.balloonSub?.unsubscribe();
+    this.loadSub?.unsubscribe();
   }
 
   /** `CanComponentDeactivate` — the route guard prompts when this is true (issue #32 AC). */
@@ -256,8 +269,7 @@ export default class FlightPreparationFormPage implements CanComponentDeactivate
 
   /** "Save and leave": saves first and only leaves if that succeeded (the dossier was valid). */
   protected saveAndLeave(): void {
-    this.save();
-    this.resolveDeactivate(this.form().valid);
+    this.persist().subscribe((saved) => this.resolveDeactivate(saved));
   }
 
   protected leaveWithoutSaving(): void {
@@ -328,11 +340,15 @@ export default class FlightPreparationFormPage implements CanComponentDeactivate
     this.router.navigate(['/flights']);
   }
 
-  /** Validates the whole dossier; on failure, shows the error banner and expands + focuses the
-   *  first invalid section (issue #32 AC). On success, commits the draft and clears the dirty
-   *  flag the deactivate guard watches — this is the seam a future POST/PUT `FlightPreparations`
-   *  call replaces. */
+  /** Validates the whole dossier and, if it is valid, saves it through the API (create for a flight
+   *  the server has never seen, update otherwise). On a validation failure, shows the error banner
+   *  and expands + focuses the first invalid section (issue #32 AC). */
   protected save(): void {
+    this.persist().subscribe();
+  }
+
+  /** Emits `true` once the flight is stored, `false` when it was invalid, blocked or the request failed. */
+  private persist(): Observable<boolean> {
     const form = this.form();
     form.markAllAsTouched();
     this.formVersion.update((v) => v + 1);
@@ -352,19 +368,64 @@ export default class FlightPreparationFormPage implements CanComponentDeactivate
         this.setExpanded(invalidSection.id, true);
         setTimeout(() => this.focusFirstInvalid(invalidSection.id));
       }
-      return;
+      return of(false);
     }
 
     this.saveErrorSections.set(null);
-    const id = this.ensureId();
+    if (this.saving()) return of(false);
+    if (this.loadFailure()) {
+      this.saveFailure.set('This flight could not be loaded, so saving now could overwrite it. Reload the page and try again.');
+      return of(false);
+    }
+
     const value = form.getRawValue();
-    // TODO(#40/#51): replace this localStorage write with the real save endpoint once it exists.
-    this.savedAt.set(this.draftStore.save(id, value));
-    this.draftStore.removeAutosave(id);
+    const location = this.locationsStore.list().find((l) => l.id === value.general.launchLocationId);
+    const request = toRequestDto(value, flightTitle(location?.name, value.general.flightDate));
+    const call = this.isExistingFlight()
+      ? this.api.putApiFlightPreparations({ id: this.flightId(), requestBody: request })
+      : this.api.postApiFlightPreparations({ requestBody: request });
+
+    this.saving.set(true);
+    this.saveFailure.set(null);
+    return call.pipe(
+      tap((stored) => this.onSaved(stored.id, stored.updatedDate, value)),
+      map(() => true),
+      catchError((error: unknown) => {
+        this.saveFailure.set(this.describeSaveError(error));
+        return of(false);
+      }),
+      finalize(() => this.saving.set(false)),
+    );
+  }
+
+  private onSaved(storedId: string, updatedDate: string | null, value: FlightPreparationFormValue): void {
+    const previousId = this.flightId();
+    // The local draft is superseded by what is now stored.
+    this.draftStore.removeAutosave(previousId);
+    if (storedId !== previousId) {
+      this.flightId.set(storedId);
+      this.lastKnownId = storedId;
+      this.assigningId = true;
+      void this.router
+        .navigate(['/flight-preparations', storedId], { replaceUrl: true })
+        .finally(() => (this.assigningId = false));
+    }
+    this.savedAt.set(updatedDate ?? new Date().toISOString());
     this.savedBaseline.set(value);
     this.restoredFromDraft.set(false);
     this.draftDiffSectionIds.set(new Set());
-    form.markAsPristine();
+    this.form().markAsPristine();
+    // The overview keeps its last result for as long as the app runs; make it show this flight.
+    this.listStore.flights.reload();
+  }
+
+  private describeSaveError(error: unknown): string {
+    if (error instanceof ApiError) {
+      if (error.status === 400 || error.status === 422) return 'The server rejected some values. Check the highlighted sections and try again.';
+      if (error.status === 404) return 'This flight no longer exists on the server.';
+      if (error.status === 401 || error.status === 403) return 'You are not allowed to save this flight. Sign in again and retry.';
+    }
+    return 'Could not save the flight. Your changes are kept on this device; try again in a moment.';
   }
 
   /** Discards the restored autosave (mockup frame 3A "Discard draft"): reverts to the last saved
@@ -405,9 +466,34 @@ export default class FlightPreparationFormPage implements CanComponentDeactivate
 
   private hydrate(id: string): void {
     this.lastKnownId = id;
+    this.loadSub?.unsubscribe();
+    this.loadFailure.set(null);
+    if (id === NEW_FLIGHT_PREPARATION_ID) {
+      this.applyHydration(id, null);
+      return;
+    }
 
-    const saved =
-      id === NEW_FLIGHT_PREPARATION_ID ? null : this.draftStore.load<FlightPreparationFormValue>(id);
+    this.loadSub = this.api
+      .getApiFlightPreparations1({ id })
+      .pipe(
+        map((stored) => ({
+          value: fromDto(stored),
+          // A flight never edited since creation has no update stamp; any autosave counts as newer.
+          updatedAt: stored.updatedDate ?? new Date(0).toISOString(),
+        })),
+        catchError((error: unknown) => {
+          // 404: an id only this browser knows (a draft not saved yet). Anything else is a real
+          // failure: do not pretend the flight is new, or saving would duplicate or overwrite it.
+          if (!(error instanceof ApiError && error.status === 404)) {
+            this.loadFailure.set('Could not load this flight from the server. Reload the page to try again.');
+          }
+          return of(null);
+        }),
+      )
+      .subscribe((saved) => this.applyHydration(id, saved));
+  }
+
+  private applyHydration(id: string, saved: { value: FlightPreparationFormValue; updatedAt: string } | null): void {
     const autosave = id === NEW_FLIGHT_PREPARATION_ID ? null : this.draftStore.loadAutosave<FlightPreparationFormValue>(id);
 
     // An autosave restores over the saved baseline when it's newer and actually differs from it —

@@ -45,6 +45,9 @@ public class FlightListReaderTests
             flights.Add(Flight(_bob, i, balloonB.Id, locB.Id, null));
         }
         flights.Add(Flight(_carol, 0, null, null, null));
+        // One flight carries its own snapshot of the balloon weights, deliberately unlike the balloon's current ones.
+        var snapshotted = flights.First(f => f.OwnerId == _alice && f.Title == "F1");
+        (snapshotted.BasketWeightKg, snapshotted.BurnerWeightKg, snapshotted.CylindersWeightKg) = (55m, 22m, 33m);
         db.AddRange(flights);
         await db.SaveChangesAsync();
 
@@ -152,6 +155,16 @@ public class FlightListReaderTests
         Assert.That(row.Assessment.PilotWeightKg, Is.EqualTo(80));
         Assert.That(row.Assessment.BasketWeightKg, Is.EqualTo(50));
         Assert.That(row.Assessment.PassengerWeightsKg, Is.EqualTo(new[] { 70m }));
+    }
+
+    [Test]
+    public async Task Rows_UseTheFlightsOwnWeightSnapshot_AndFallBackToTheBalloonWhenThereIsNone()
+    {
+        var items = (await Run(Criteria(_alice, sort: FlightListSort.Date, desc: false, size: 5))).Items;
+        var snapshotted = items.Single(r => r.Title == "F1").Assessment;
+        Assert.That((snapshotted.BasketWeightKg, snapshotted.BurnerWeightKg, snapshotted.CylindersWeightKg), Is.EqualTo((55m, 22m, 33m)));
+        var legacy = items.Single(r => r.Title == "F0").Assessment;
+        Assert.That((legacy.BasketWeightKg, legacy.BurnerWeightKg, legacy.CylindersWeightKg), Is.EqualTo((50m, 20m, 30m)));
     }
 
     [Test]

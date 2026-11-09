@@ -48,7 +48,7 @@ public sealed class FlightListReader : IFlightListReader
         var projected = visible.Select(f => new
         {
             f.Id, f.Title, f.FlightDate, f.FlightTime, f.Status, f.FlownAt, f.OwnerId,
-            f.EnvelopeWeightKg, f.TotalLiftKg, f.WindSpeedKt, f.VisibilityKm, f.CapeJPerKg,
+            f.EnvelopeWeightKg, f.BasketWeightKg, f.BurnerWeightKg, f.CylindersWeightKg, f.TotalLiftKg, f.WindSpeedKt, f.VisibilityKm, f.CapeJPerKg,
             Balloon = _db.Balloons.IgnoreQueryFilters().Where(b => b.Id == f.BalloonId && b.OwnerId == f.OwnerId)
                 .Select(b => new { b.Registration, b.BasketWeightKg, b.BurnerWeightKg, b.CylindersWeightKg }).FirstOrDefault(),
             LocationName = _db.LaunchLocations.IgnoreQueryFilters().Where(l => l.Id == f.LaunchLocationId && l.OwnerId == f.OwnerId)
@@ -83,7 +83,9 @@ public sealed class FlightListReader : IFlightListReader
         var items = rows.Select(r => new FlightListRow(
             r.Id, r.Title, r.FlightDate, r.FlightTime, r.Balloon?.Registration, r.LocationName, r.Status, r.FlownAt, r.OwnerId,
             new FlightAssessmentInput(
-                r.EnvelopeWeightKg ?? 0, r.Balloon?.BasketWeightKg ?? 0, r.Balloon?.BurnerWeightKg ?? 0, r.Balloon?.CylindersWeightKg ?? 0,
+                r.EnvelopeWeightKg ?? 0,
+                r.BasketWeightKg ?? r.Balloon?.BasketWeightKg ?? 0, r.BurnerWeightKg ?? r.Balloon?.BurnerWeightKg ?? 0,
+                r.CylindersWeightKg ?? r.Balloon?.CylindersWeightKg ?? 0,
                 r.PilotWeightKg ?? 0, byFlight.GetValueOrDefault(r.Id, []), r.TotalLiftKg ?? 0, r.WindSpeedKt, r.VisibilityKm, r.CapeJPerKg))).ToList();
 
         return new FlightListPage(items, total);

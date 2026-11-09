@@ -1,4 +1,6 @@
 using Microsoft.EntityFrameworkCore;
+using Nimbus.Contracts.DTOs.Features.FlightPreparations;
+using Nimbus.Contracts.Mappers;
 using Nimbus.Domain.Entities;
 using Nimbus.Infrastructure.Persistence;
 using Nimbus.Infrastructure.Persistence.Repositories;
@@ -64,6 +66,45 @@ public class FlightPreparationRepositoryTests
         Assert.That(stored.Passengers.Select(p => p.Order), Is.EqualTo(new[] { 0, 1, 2 }));
         Assert.That(stored.Passengers.All(p => p.FlightPreparationId == flight.Id), Is.True);
         Assert.That(stored.WindLevels, Has.Count.EqualTo(2));
+    }
+
+    [Test]
+    public async Task LoadEditAndUpdate_ThroughTheReadOnlyGetter_ReplacesChildrenAndKeepsOutcomeColumns()
+    {
+        var owner = Guid.NewGuid();
+        var flight = NewFlight(owner);
+        flight.Status = Nimbus.Domain.Enums.FlightPreparationStatus.Flown;
+        flight.FlownAt = new DateTime(2026, 8, 8, 20, 0, 0, DateTimeKind.Utc);
+        flight.OutcomeRemarks = "smooth";
+        flight.TrajectoryJson = "{}";
+        await using (var db = CreateContext())
+            await new FlightPreparationRepository(db).AddAsync(flight);
+
+        // The handler's path: detached read, apply the form's request, hand the same object back.
+        await using (var db = CreateContext())
+        {
+            var repo = new FlightPreparationRepository(db);
+            var loaded = (await repo.GetByIdAsync(owner, flight.Id))!;
+            new FlightPreparationRequestDto
+            {
+                Title = "Edited", BalloonId = Guid.NewGuid(), PilotId = Guid.NewGuid(), LaunchLocationId = Guid.NewGuid(),
+                FlightDate = new DateOnly(2026, 9, 1), FlightTime = new TimeOnly(7, 0),
+                Passengers = [new PassengerDto("Only", 70, false, false, false)],
+                WindLevels = [new WindLevelDto(500, 180, 8, 5), new WindLevelDto(900, 200, 12, 3), new WindLevelDto(1500, 220, 15, 0)]
+            }.ApplyTo(loaded);
+            Assert.That(await repo.UpdateAsync(owner, loaded), Is.True);
+        }
+
+        await using var read = CreateContext();
+        var stored = (await new FlightPreparationRepository(read).GetByIdAsync(owner, flight.Id))!;
+        Assert.That(stored.Title, Is.EqualTo("Edited"));
+        Assert.That(stored.Passengers.Select(p => p.Name), Is.EqualTo(new[] { "Only" }));
+        Assert.That(stored.WindLevels.Select(w => w.AltitudeM), Is.EqualTo(new[] { 500, 900, 1500 }));
+        Assert.That(stored.WindLevels.Select(w => w.Order), Is.EqualTo(new[] { 0, 1, 2 }));
+        Assert.That(stored.Status, Is.EqualTo(Nimbus.Domain.Enums.FlightPreparationStatus.Flown));
+        Assert.That(stored.FlownAt, Is.EqualTo(flight.FlownAt));
+        Assert.That(stored.OutcomeRemarks, Is.EqualTo("smooth"));
+        Assert.That(stored.TrajectoryJson, Is.EqualTo("{}"));
     }
 
     [Test]
