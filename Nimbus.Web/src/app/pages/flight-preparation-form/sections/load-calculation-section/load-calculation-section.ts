@@ -1,16 +1,15 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input, signal } from '@angular/core';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { NonNullableFormBuilder, ReactiveFormsModule } from '@angular/forms';
-import { firstValueFrom, startWith, switchMap } from 'rxjs';
+import { catchError, debounceTime, firstValueFrom, of, startWith, switchMap } from 'rxjs';
 
-import { LiftCalculationService } from '../../../../core/api-client';
+import { FlightAssessmentDto, FlightAssessmentRequestDto, FlightAssessmentService, LiftCalculationService } from '../../../../core/api-client';
 
 import {
   createPassengerGroup,
   type LoadCalculationFormGroup,
   movePassenger,
 } from '../../../../core/flight-preparations/flight-preparation-form';
-import { calculateLoad } from '../../../../core/flight-preparations/load-calculation';
 import { PilotsStore } from '../../../../core/pilots/pilots.store';
 import { FieldErrorPipe } from '../field-error.pipe';
 
@@ -22,6 +21,13 @@ export interface LiftContext {
   internalTemperatureC: number | null;
   siteElevationM: number;
   ambientTemperatureC: number;
+}
+
+/** The meteo values that feed the Go/No-Go verdict; `null` means "not entered". */
+export interface WeatherContext {
+  windSpeedKt: number | null;
+  visibilityKm: number | null;
+  capeJPerKg: number | null;
 }
 
 const FEET_TO_METERS = 0.3048;
@@ -42,6 +48,9 @@ export class LoadCalculationSection {
   /** Site elevation, balloon volume and take-off temperature for the total-lift calculation. */
   liftContext = input<LiftContext>({ envelopeVolumeM3: null, internalTemperatureC: null, siteElevationM: 0, ambientTemperatureC: 0 });
 
+  /** Meteo values for the Go/No-Go verdict (section 02). */
+  weather = input<WeatherContext>({ windSpeedKt: null, visibilityKm: null, capeJPerKg: null });
+
   private readonly liftApi = inject(LiftCalculationService);
   protected readonly calculatingLift = signal(false);
   protected readonly liftError = signal<string | null>(null);
@@ -61,12 +70,35 @@ export class LoadCalculationSection {
     return Number(this.pilotsStore.list().find((p) => p.id === id)?.weightKg ?? 0);
   });
 
-  /** Derived on every change; never written back to the form. */
-  protected readonly load = computed(() => {
+  private readonly assessmentApi = inject(FlightAssessmentService);
+
+  /** The raw values sent to the server; this component never computes weight, lift sufficiency or the verdict itself. */
+  private readonly assessmentRequest = computed<FlightAssessmentRequestDto>(() => {
     this.values();
     const v = this.group().getRawValue();
-    return calculateLoad({ ...v, pilotWeightKg: this.pilotWeightKg(), passengerWeightsKg: v.passengers.map((p) => p.weightKg) });
+    const w = this.weather();
+    return {
+      envelopeWeightKg: Number(v.envelopeWeightKg) || 0,
+      basketWeightKg: Number(v.basketWeightKg) || 0,
+      burnerWeightKg: Number(v.burnerWeightKg) || 0,
+      cylindersWeightKg: Number(v.cylindersWeightKg) || 0,
+      pilotWeightKg: this.pilotWeightKg(),
+      passengerWeightsKg: v.passengers.map((p) => Number(p.weightKg) || 0),
+      totalLiftKg: Number(v.totalLiftKg) || 0,
+      windSpeedKt: w.windSpeedKt,
+      visibilityKm: w.visibilityKm,
+      capeJPerKg: w.capeJPerKg,
+    };
   });
+
+  /** The single server-side assessment (total weight, lift sufficiency, Go/No-Go verdict); `null` until it arrives or when it fails. */
+  protected readonly assessment = toSignal(
+    toObservable(this.assessmentRequest).pipe(
+      debounceTime(150),
+      switchMap((requestBody) => this.assessmentApi.postApiFlightAssessment({ requestBody }).pipe(catchError(() => of(null)))),
+    ),
+    { initialValue: null as FlightAssessmentDto | null },
+  );
 
   protected get passengers() {
     return this.group().controls.passengers;

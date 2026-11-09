@@ -62,7 +62,7 @@
             <Nimbus-checklists-section [group]="form().controls.checklists" />
           }
           @case ('LoadCalculation') {
-            <Nimbus-load-calculation-section [group]="form().controls.loadCalculation" [pilotId]="pilotId()" [liftContext]="liftContext()" />
+            <Nimbus-load-calculation-section [group]="form().controls.loadCalculation" [pilotId]="pilotId()" [liftContext]="liftContext()" [weather]="weatherContext()" />
           }
           @case ('Route') {
             <Nimbus-route-section [group]="form().controls.route" />

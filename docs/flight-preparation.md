@@ -39,7 +39,7 @@ Covers all nine pre-flight sections as flat columns, grouped and commented in th
 | 02 | Meteo | `WindSpeedKt`, `WindDirectionDeg`, `VisibilityKm`, `CapeJPerKg`, `Metar`, `Taf`, … |
 | 03 | Airspace & NOTAMs | `NotamsChecked`, `AirspaceStructureNotes`, `AirspaceRestrictions`, `Obstacles` |
 | 04 | Checklists | safety: `FirstAidAndExtinguisher`, `PassengerListFilled`, `FlightPlanFiled` (`ChecklistAnswer`); technical: `BurnerTested`, `GasCylindersChecked`, `BalloonVisualInspectionDone`, `MooringsChecked`, `InstrumentsChecked` |
-| 05 | Load calculation | `EnvelopeWeightKg`, `MaxAltitudeFt` (AMSL), `LiftUnits`, `TotalLiftKg`, `LoadRemarks` (total weight and the lift-vs-weight verdict are derived in the UI, never stored; passengers are a child collection, see below) |
+| 05 | Load calculation | `EnvelopeWeightKg`, `MaxAltitudeFt` (AMSL), `LiftUnits`, `TotalLiftKg`, `LoadRemarks` (total weight, the lift-vs-weight flag and the Go/No-Go verdict are derived by the single server-side `IFlightAssessmentService` (issue #39), never stored and never recomputed by a surface; passengers are a child collection, see below) |
 | 06 | Route & trajectory | `RouteDescription`, `ClimbRateMetersPerSecond`, `DescentRateMetersPerSecond`, `CruiseAltitudesFtCsv` |
 | 07 | Balloon bulletin | `BulletinText` |
 | 08 | OFP | `OfpOperatorName`, `OfpPicWeightKg`, `OfpFuelAvailableMinutes`, `OfpFuelRequiredMinutes`, `OfpLandingLocation` |
