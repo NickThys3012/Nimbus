@@ -152,6 +152,48 @@ public class GoNoGoThresholdsTests
         Assert.That(errors.EnumerateObject().Select(p => p.Name).ToArray(), Is.EqualTo(new[] { "Thresholds.WindRedKt" }));
     }
 
+    private static async Task<string> VerdictAsync(HttpClient c, string query) =>
+        (await c.GetFromJsonAsync<GoNoGoVerdictDto>($"{Url}/verdict{query}"))!.Verdict;
+
+    [Test]
+    public async Task Verdict_RequiresAuthentication()
+    {
+        using var anon = _factory.CreateClient();
+        Assert.That((await anon.GetAsync($"{Url}/verdict?windSpeedKt=1")).StatusCode, Is.EqualTo(HttpStatusCode.Unauthorized));
+    }
+
+    [Test]
+    public async Task Verdict_UsesDefaults_AndUnknownWithoutData()
+    {
+        var (c, _) = await SignedInAsync();
+        Assert.That(await VerdictAsync(c, ""), Is.EqualTo("unknown"));
+        Assert.That(await VerdictAsync(c, "?windSpeedKt=2&visibilityKm=20&capeJPerKg=0"), Is.EqualTo("green"));
+        Assert.That(await VerdictAsync(c, "?windSpeedKt=15"), Is.EqualTo("red"));
+    }
+
+    [Test]
+    public async Task Verdict_UsesOnlyTheCallersOwnThresholds()
+    {
+        var (a, _) = await SignedInAsync();
+        var (b, _) = await SignedInAsync();
+        // A tightens wind limits (yellow 2 / red 3); B keeps the defaults (10 / 15).
+        Assert.That((await a.PutAsJsonAsync(Url, Custom with { WindYellowKt = 2m, WindRedKt = 3m })).StatusCode, Is.EqualTo(HttpStatusCode.OK));
+
+        Assert.That(await VerdictAsync(a, "?windSpeedKt=5"), Is.EqualTo("red"));
+        Assert.That(await VerdictAsync(b, "?windSpeedKt=5"), Is.EqualTo("green"), "B is not judged by A's thresholds");
+
+        await b.PutAsJsonAsync(Url, Custom with { WindYellowKt = 6m, WindRedKt = 9m });
+        await b.DeleteAsync(Url);
+        Assert.That(await VerdictAsync(a, "?windSpeedKt=5"), Is.EqualTo("red"), "B's save and reset do not affect A");
+    }
+
+    [Test]
+    public async Task Verdict_OutOfRangeInput_Is422()
+    {
+        var (c, _) = await SignedInAsync();
+        Assert.That((await c.GetAsync($"{Url}/verdict?windSpeedKt=-1")).StatusCode, Is.EqualTo(HttpStatusCode.UnprocessableEntity));
+    }
+
     private async Task<Guid?> RowIdAsync(Guid ownerId)
     {
         using var scope = _factory.Services.CreateScope();

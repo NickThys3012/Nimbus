@@ -217,6 +217,349 @@ namespace Nimbus.Infrastructure.Persistence.EntityFramework.Migrations
                     b.ToTable("Balloons");
                 });
 
+            modelBuilder.Entity("Nimbus.Domain.Entities.FlightPreparation", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int?>("ActualDurationMinutes")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ActualLandingLocation")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("AirspaceRestrictions")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<string>("AirspaceStructureNotes")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<Guid?>("BalloonId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<bool>("BalloonVisualInspectionDone")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("BulletinText")
+                        .HasMaxLength(4000)
+                        .HasColumnType("nvarchar(4000)");
+
+                    b.Property<bool>("BurnerTested")
+                        .HasColumnType("bit");
+
+                    b.Property<decimal?>("CapeJPerKg")
+                        .HasPrecision(7, 2)
+                        .HasColumnType("decimal(7,2)");
+
+                    b.Property<decimal?>("ClimbRateMetersPerSecond")
+                        .HasPrecision(4, 2)
+                        .HasColumnType("decimal(4,2)");
+
+                    b.Property<DateTime?>("CreatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CruiseAltitudesFtCsv")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("DefectsDescription")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<decimal?>("DescentRateMetersPerSecond")
+                        .HasPrecision(4, 2)
+                        .HasColumnType("decimal(4,2)");
+
+                    b.Property<decimal?>("DewPointC")
+                        .HasPrecision(5, 2)
+                        .HasColumnType("decimal(5,2)");
+
+                    b.Property<decimal?>("EnvelopeWeightKg")
+                        .HasPrecision(7, 2)
+                        .HasColumnType("decimal(7,2)");
+
+                    b.Property<bool>("FieldOwnerNotified")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("FirstAidAndExtinguisher")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<DateOnly>("FlightDate")
+                        .HasColumnType("date");
+
+                    b.Property<string>("FlightPlanFiled")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<TimeOnly>("FlightTime")
+                        .HasColumnType("time");
+
+                    b.Property<DateTime?>("FlownAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<decimal?>("FuelConsumedLiters")
+                        .HasPrecision(6, 2)
+                        .HasColumnType("decimal(6,2)");
+
+                    b.Property<bool>("GasCylindersChecked")
+                        .HasColumnType("bit");
+
+                    b.Property<bool?>("HasVisibleDefects")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("InstrumentsChecked")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("KmlTrackContentType")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("KmlTrackObjectKey")
+                        .HasMaxLength(1024)
+                        .HasColumnType("nvarchar(1024)");
+
+                    b.Property<Guid?>("LaunchLocationId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<decimal?>("LiftUnits")
+                        .HasPrecision(7, 2)
+                        .HasColumnType("decimal(7,2)");
+
+                    b.Property<string>("LoadRemarks")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<int?>("MaxAltitudeFt")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Metar")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<bool>("MooringsChecked")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("NotamsChecked")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Obstacles")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<int?>("OfpFuelAvailableMinutes")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("OfpFuelRequiredMinutes")
+                        .HasColumnType("int");
+
+                    b.Property<string>("OfpLandingLocation")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("OfpOperatorName")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<decimal?>("OfpPicWeightKg")
+                        .HasPrecision(5, 2)
+                        .HasColumnType("decimal(5,2)");
+
+                    b.Property<DateTime?>("OfpPlannedLandingTime")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("OfpVisibleDefectsChecked")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("OutcomeRemarks")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<Guid>("OwnerId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("PassengerListFilled")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<bool>("PaxBriefingIsCustom")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("PaxBriefingText")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("PaxBriefingVersion")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<Guid?>("PilotId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Precipitation")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<decimal?>("QnhHpa")
+                        .HasPrecision(6, 2)
+                        .HasColumnType("decimal(6,2)");
+
+                    b.Property<string>("RouteDescription")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<int?>("SimulationDurationMinutes")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("SimulationStepSeconds")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<TimeOnly?>("SunriseTime")
+                        .HasColumnType("time");
+
+                    b.Property<TimeOnly?>("SunsetTime")
+                        .HasColumnType("time");
+
+                    b.Property<string>("Taf")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<decimal?>("TemperatureC")
+                        .HasPrecision(5, 2)
+                        .HasColumnType("decimal(5,2)");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<decimal?>("TotalLiftKg")
+                        .HasPrecision(7, 2)
+                        .HasColumnType("decimal(7,2)");
+
+                    b.Property<string>("TrajectoryJson")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("UpdatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<decimal?>("VisibilityKm")
+                        .HasPrecision(6, 2)
+                        .HasColumnType("decimal(6,2)");
+
+                    b.Property<int?>("WindDirectionDeg")
+                        .HasColumnType("int");
+
+                    b.Property<decimal?>("WindSpeedKt")
+                        .HasPrecision(5, 1)
+                        .HasColumnType("decimal(5,1)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("IsDeleted")
+                        .HasFilter("IsDeleted = 0");
+
+                    b.HasIndex("OwnerId");
+
+                    b.ToTable("FlightPreparations");
+                });
+
+            modelBuilder.Entity("Nimbus.Domain.Entities.FlightPreparationImage", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("ContentType")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<DateTime?>("CreatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("FlightPreparationId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("ObjectKey")
+                        .IsRequired()
+                        .HasMaxLength(1024)
+                        .HasColumnType("nvarchar(1024)");
+
+                    b.Property<int>("Order")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Section")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
+                    b.Property<DateTime?>("UpdatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("IsDeleted")
+                        .HasFilter("IsDeleted = 0");
+
+                    b.HasIndex("FlightPreparationId", "Section", "Order");
+
+                    b.ToTable("FlightPreparationImages");
+                });
+
+            modelBuilder.Entity("Nimbus.Domain.Entities.FlightPreparationShare", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("CreatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("FlightPreparationId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<Guid>("SharedWithUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("UpdatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("IsDeleted")
+                        .HasFilter("IsDeleted = 0");
+
+                    b.HasIndex("SharedWithUserId")
+                        .HasFilter("[IsDeleted] = 0");
+
+                    b.HasIndex("FlightPreparationId", "SharedWithUserId")
+                        .IsUnique()
+                        .HasFilter("[IsDeleted] = 0");
+
+                    b.ToTable("FlightPreparationShares");
+                });
+
             modelBuilder.Entity("Nimbus.Domain.Entities.GoNoGoThreshold", b =>
                 {
                     b.Property<Guid>("Id")
@@ -375,6 +718,55 @@ namespace Nimbus.Infrastructure.Persistence.EntityFramework.Migrations
                     b.ToTable("OfpSettings");
                 });
 
+            modelBuilder.Entity("Nimbus.Domain.Entities.Passenger", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("CreatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("FlightPreparationId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<bool>("IsChild")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<bool>("NeedsAssistance")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("NeedsTransport")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("Order")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("UpdatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<decimal>("WeightKg")
+                        .HasPrecision(5, 2)
+                        .HasColumnType("decimal(5,2)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("IsDeleted")
+                        .HasFilter("IsDeleted = 0");
+
+                    b.HasIndex("FlightPreparationId", "Order");
+
+                    b.ToTable("Passengers");
+                });
+
             modelBuilder.Entity("Nimbus.Domain.Entities.Pilot", b =>
                 {
                     b.Property<Guid>("Id")
@@ -474,6 +866,51 @@ namespace Nimbus.Infrastructure.Persistence.EntityFramework.Migrations
                         .IsUnique();
 
                     b.ToTable("UserProfiles");
+                });
+
+            modelBuilder.Entity("Nimbus.Domain.Entities.WindLevel", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("AltitudeM")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("CreatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("DirectionDeg")
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("FlightPreparationId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("Order")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("SpeedKt")
+                        .HasPrecision(5, 1)
+                        .HasColumnType("decimal(5,1)");
+
+                    b.Property<decimal>("TemperatureC")
+                        .HasPrecision(5, 2)
+                        .HasColumnType("decimal(5,2)");
+
+                    b.Property<DateTime?>("UpdatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("IsDeleted")
+                        .HasFilter("IsDeleted = 0");
+
+                    b.HasIndex("FlightPreparationId", "Order");
+
+                    b.ToTable("WindLevels");
                 });
 
             modelBuilder.Entity("Nimbus.Infrastructure.Identity.ApplicationUser", b =>
@@ -664,6 +1101,50 @@ namespace Nimbus.Infrastructure.Persistence.EntityFramework.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("Nimbus.Domain.Entities.FlightPreparationImage", b =>
+                {
+                    b.HasOne("Nimbus.Domain.Entities.FlightPreparation", "FlightPreparation")
+                        .WithMany("Images")
+                        .HasForeignKey("FlightPreparationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("FlightPreparation");
+                });
+
+            modelBuilder.Entity("Nimbus.Domain.Entities.FlightPreparationShare", b =>
+                {
+                    b.HasOne("Nimbus.Domain.Entities.FlightPreparation", "FlightPreparation")
+                        .WithMany("Shares")
+                        .HasForeignKey("FlightPreparationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("FlightPreparation");
+                });
+
+            modelBuilder.Entity("Nimbus.Domain.Entities.Passenger", b =>
+                {
+                    b.HasOne("Nimbus.Domain.Entities.FlightPreparation", "FlightPreparation")
+                        .WithMany("Passengers")
+                        .HasForeignKey("FlightPreparationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("FlightPreparation");
+                });
+
+            modelBuilder.Entity("Nimbus.Domain.Entities.WindLevel", b =>
+                {
+                    b.HasOne("Nimbus.Domain.Entities.FlightPreparation", "FlightPreparation")
+                        .WithMany("WindLevels")
+                        .HasForeignKey("FlightPreparationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("FlightPreparation");
+                });
+
             modelBuilder.Entity("Nimbus.Infrastructure.Identity.RefreshToken", b =>
                 {
                     b.HasOne("Nimbus.Infrastructure.Identity.ApplicationUser", "User")
@@ -673,6 +1154,17 @@ namespace Nimbus.Infrastructure.Persistence.EntityFramework.Migrations
                         .IsRequired();
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("Nimbus.Domain.Entities.FlightPreparation", b =>
+                {
+                    b.Navigation("Images");
+
+                    b.Navigation("Passengers");
+
+                    b.Navigation("Shares");
+
+                    b.Navigation("WindLevels");
                 });
 #pragma warning restore 612, 618
         }

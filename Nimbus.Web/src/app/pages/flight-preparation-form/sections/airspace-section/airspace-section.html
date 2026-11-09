@@ -1,0 +1,21 @@
+<div [formGroup]="group()">
+  <label class="check-row" [class.bad]="group().controls.notamsChecked.invalid && group().controls.notamsChecked.touched">
+    <input data-testid="notams-checked" formControlName="notamsChecked" type="checkbox" />
+    NOTAMs checked *
+  </label>
+  @if (group().controls.notamsChecked.invalid && group().controls.notamsChecked.touched) {
+    <div class="err" data-testid="notams-checked-error">{{ group().controls.notamsChecked.errors | fieldError }}</div>
+  }
+  <div class="field" style="margin-top: 10px;">
+    <label for="fp-airspace-structure">AIRSPACE STRUCTURE NOTES</label>
+    <textarea id="fp-airspace-structure" data-testid="airspace-structure-notes" formControlName="airspaceStructureNotes"></textarea>
+  </div>
+  <div class="field">
+    <label for="fp-airspace-restrictions">RESTRICTIONS</label>
+    <textarea id="fp-airspace-restrictions" data-testid="airspace-restrictions" formControlName="airspaceRestrictions"></textarea>
+  </div>
+  <div class="field">
+    <label for="fp-obstacles">OBSTACLES</label>
+    <textarea id="fp-obstacles" data-testid="obstacles" formControlName="obstacles"></textarea>
+  </div>
+</div>

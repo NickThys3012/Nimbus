@@ -11,8 +11,11 @@ import { OpenAPI } from './core/OpenAPI';
 import { AdminService } from './services/AdminService';
 import { AuthenticationService } from './services/AuthenticationService';
 import { BalloonsService } from './services/BalloonsService';
+import { FlightAssessmentService } from './services/FlightAssessmentService';
+import { FlightPreparationsService } from './services/FlightPreparationsService';
 import { GoNoGoThresholdsService } from './services/GoNoGoThresholdsService';
 import { LaunchLocationsService } from './services/LaunchLocationsService';
+import { LiftCalculationService } from './services/LiftCalculationService';
 import { OfpSettingsService } from './services/OfpSettingsService';
 import { PilotsService } from './services/PilotsService';
 import { ProfileService } from './services/ProfileService';
@@ -41,8 +44,11 @@ import { TelemetryService } from './services/TelemetryService';
         AdminService,
         AuthenticationService,
         BalloonsService,
+        FlightAssessmentService,
+        FlightPreparationsService,
         GoNoGoThresholdsService,
         LaunchLocationsService,
+        LiftCalculationService,
         OfpSettingsService,
         PilotsService,
         ProfileService,

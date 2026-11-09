@@ -1,0 +1,128 @@
+<div class="wrap">
+  <div class="topbar">
+    <button (click)="goBack()" aria-label="Back to my flights" class="icon-btn" data-testid="back" type="button">
+      <i aria-hidden="true" class="ti ti-arrow-left"></i>
+    </button>
+    <div class="title-block">
+      <div class="name" data-testid="title">{{ title() }}</div>
+    </div>
+    <span class="spacer"></span>
+    @if (savedAt(); as t) {
+      <span class="saved-tag" data-testid="saved-tag"><i aria-hidden="true" class="ti ti-check"></i> draft saved</span>
+    }
+  </div>
+
+  @if (saveErrorMessage(); as message) {
+    <Nimbus-banner data-testid="save-error-banner" icon="ti-alert-triangle" id="fp-save-error-banner" type="error">{{ message }}</Nimbus-banner>
+  }
+
+  @if (restoredFromDraft()) {
+    <Nimbus-banner data-testid="draft-restored-banner" icon="ti-restore" id="fp-draft-restored-banner" type="info">
+      {{ draftRestoredMessage() }}
+    </Nimbus-banner>
+    <div class="discard-draft-row">
+      <Nimbus-button (click)="discardDraft()" [fullWidth]="false" data-testid="discard-draft" icon="ti-restore" id="discard-draft" size="sm" variant="ghost" type="button">
+        Discard draft
+      </Nimbus-button>
+    </div>
+  }
+
+  <div class="progress-row" data-testid="progress-row">
+    <div class="segments" data-testid="progress-segments">
+      @for (seg of progressSegments(); track seg.id) {
+        <span [class]="'segment ' + seg.status" [attr.data-status]="seg.status"></span>
+      }
+    </div>
+    <span class="progress-count" data-testid="progress-count">{{ completedCount() }}/{{ sections.length }} complete</span>
+  </div>
+
+  <form (ngSubmit)="save()" [formGroup]="form()" class="sections" data-testid="flight-preparation-form" novalidate>
+    @for (section of sections; track section.id) {
+      <Nimbus-section-card
+        (expandedChange)="setExpanded(section.id, $event)"
+        [badge]="sectionBadge(section.id)"
+        [expanded]="isExpanded(section.id)"
+        [order]="section.order"
+        [sectionId]="section.id"
+        [status]="sectionStatus(section.id)"
+        [summary]="sectionSummary(section.id)"
+        [title]="section.title"
+      >
+        @switch (section.id) {
+          @case ('General') {
+            <Nimbus-general-section [coordinates]="launchCoordinates()" [group]="form().controls.general" />
+          }
+          @case ('Meteo') {
+            <Nimbus-meteo-section [group]="form().controls.meteo" />
+          }
+          @case ('Airspace') {
+            <Nimbus-airspace-section [group]="form().controls.airspace" />
+          }
+          @case ('Checklists') {
+            <Nimbus-checklists-section [group]="form().controls.checklists" />
+          }
+          @case ('LoadCalculation') {
+            <Nimbus-load-calculation-section [group]="form().controls.loadCalculation" [pilotId]="pilotId()" [liftContext]="liftContext()" [weather]="weatherContext()" />
+          }
+          @case ('Route') {
+            <Nimbus-route-section [group]="form().controls.route" />
+          }
+          @case ('Bulletin') {
+            <Nimbus-bulletin-section [group]="form().controls.bulletin" />
+          }
+          @case ('Ofp') {
+            <Nimbus-ofp-section [group]="form().controls.ofp" />
+          }
+          @case ('PaxBriefing') {
+            <Nimbus-pax-briefing-section [group]="form().controls.paxBriefing" />
+          }
+        }
+      </Nimbus-section-card>
+    }
+  </form>
+</div>
+
+<div class="action-bar">
+  <div class="action-bar-inner">
+    @if (dirtySummary(); as summary) {
+      <span class="dirty-summary" data-testid="dirty-summary"><span class="dot">●</span> {{ summary }}</span>
+    } @else {
+      <span class="spacer"></span>
+    }
+    <Nimbus-button (click)="goBack()" class="discard-action" [fullWidth]="false" id="cancel-flight-prep" variant="ghost" type="button">Discard</Nimbus-button>
+    <Nimbus-button (click)="save()" class="save-action" [fullWidth]="false" data-testid="save-flight-prep" id="save-flight-prep" type="button">
+      {{ isExistingFlight() ? 'Save changes' : 'Create flight' }}
+    </Nimbus-button>
+  </div>
+</div>
+
+<Nimbus-modal
+  [alert]="true"
+  [isOpen]="deactivateDialogOpen()"
+  (closed)="stayOnPage()"
+  data-testid="leave-without-saving-dialog"
+  description=""
+  title="Leave without saving?"
+  width="confirm"
+>
+  <div modal-icon class="glyph warn"><i class="ti ti-alert-triangle" aria-hidden="true"></i></div>
+  <div modal-body>
+    <p class="leave-copy" data-testid="leave-copy">
+      You changed <strong>{{ dirtySections().length ? dirtySections().at(0)!.title : '' }}</strong>
+      @for (s of dirtySections().slice(1); track s.id) {
+        and <strong>{{ s.title }}</strong>
+      }. These changes aren't saved to the flight yet.
+    </p>
+    <div class="going-to" data-testid="going-to">GOING TO · {{ deactivateDestination() }}</div>
+  </div>
+  <div modal-actions class="leave-actions">
+    <Nimbus-button (click)="saveAndLeave()" data-testid="save-and-leave" id="save-and-leave" type="button">Save and leave</Nimbus-button>
+    <Nimbus-button (click)="stayOnPage()" data-autofocus data-testid="stay-on-page" id="stay-on-page" variant="ghost" type="button">
+      Stay on this flight
+    </Nimbus-button>
+    <button (click)="leaveWithoutSaving()" class="discard-leave" data-testid="leave-without-saving" type="button">
+      Discard changes and leave
+    </button>
+  </div>
+</Nimbus-modal>
+

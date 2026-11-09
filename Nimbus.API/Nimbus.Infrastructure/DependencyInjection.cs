@@ -76,6 +76,9 @@ public static class DependencyInjection
         services.AddScoped<IGoNoGoThresholdsRepository, GoNoGoThresholdsRepository>();
         services.AddScoped<IUserProfileRepository, UserProfileRepository>();
         services.AddScoped<IOfpSettingsRepository, OfpSettingsRepository>();
+        services.AddScoped<IFlightPreparationRepository, FlightPreparationRepository>();
+        services.AddScoped<IFlightListReader, FlightListReader>();
+        services.AddScoped<IUserDirectory, UserDirectory>();
         services.AddScoped<IBalloonUsageReader, NoFlightsBalloonUsageReader>();
 
         services.Configure<LoginEventRetentionOptions>(config.GetSection(LoginEventRetentionOptions.SectionName));

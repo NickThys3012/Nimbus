@@ -20,4 +20,8 @@
         <Using Include="NUnit.Framework"/>
     </ItemGroup>
 
+    <ItemGroup>
+        <ProjectReference Include="..\Nimbus.Domain\Nimbus.Domain.csproj"/>
+    </ItemGroup>
+
 </Project>
