@@ -451,6 +451,9 @@ namespace Nimbus.Infrastructure.Persistence.EntityFramework.Migrations
                         .HasPrecision(7, 2)
                         .HasColumnType("decimal(7,2)");
 
+                    b.Property<string>("TrajectoryJson")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<DateTime?>("UpdatedDate")
                         .HasColumnType("datetime2");
 

@@ -126,3 +126,32 @@ English, consistently, for every property and the column it maps to:
 - Section 03 keeps `NotamsChecked` (a bool, required to complete the section) plus the airspace/restrictions/obstacles notes.
 - The checklist section holds eight typed checks instead of the old items list/JSON blob. The three safety checks use the `ChecklistAnswer` enum (`No` | `Yes` | `NotApplicable`, stored as a string column and serialised by name; replaces the POC's "JA"/"NEE"/"NVT"). The five technical checks are plain booleans because "not applicable" is never valid for them.
 - Everything defaults to the unchecked state (`No` / `false`); nothing is pre-ticked. Migration `ChecklistSafetyAndTechnicalChecks` drops `ChecklistCompletedCount`/`ChecklistTotalCount`/`ChecklistItemsJson` (never written by any feature) and adds the new columns.
+
+## Saving (issue #42)
+
+`IFlightPreparationRepository` (`FlightPreparationRepository`) is the only write path for the
+dossier. Every method takes the owner id and matches on id **and** owner; another user's flight
+behaves like a missing one (`null`/`false`).
+
+- **Transaction.** `AddAsync` and `UpdateAsync` run in an explicit database transaction and roll
+  back on any failure — a half-saved dossier is impossible.
+- **Detach / restore.** Before EF sees the entity, the flight's child collections (`Passengers`,
+  `WindLevels`, `Images`, `Shares`) are emptied and each child's `FlightPreparation` navigation is
+  nulled, so EF never cascades inserts through the graph. A `finally`-equivalent path restores them
+  whether or not the save succeeded. On failure the generated ids, audit dates, child foreign keys
+  and `Order` values are also rolled back, so the caller's object is exactly what it passed in
+  (covered by `FlightPreparationRepositoryTests`).
+- **Create.** The flight row is inserted first; the children are then re-parented to the generated
+  id and inserted with `Order` = their position in the supplied list.
+- **Update: replace, not diff.** Passengers and wind levels are value-like rows with no external
+  identity (nothing references a passenger id), and the form always submits the whole ordered list.
+  Update therefore hard-deletes all existing rows of those two collections (including soft-deleted
+  ones, so none accumulate) and inserts the supplied list, renumbering `Order`. This is the one
+  strategy for both collections. `Images` and `Shares` have their own lifecycles (object-storage
+  upload #51, sharing #65/#66) and are **never** touched by a dossier save.
+- **Columns the dossier save does not write.** `OwnerId`, `CreatedDate`, `IsDeleted`, the KML
+  reference and `TrajectoryJson` are preserved from the stored row.
+- **Patch operations.** `SetTrajectoryJsonAsync` (`TrajectoryJson`) and
+  `SetKmlTrackAsync` (`KmlTrackObjectKey` + `KmlTrackContentType`) use `ExecuteUpdate` filtered on
+  id and owner: a single statement, no row load, no change tracking. Each also bumps `UpdatedDate`
+  in that same statement, since `ExecuteUpdate` bypasses the `SaveChanges` audit stamping.
