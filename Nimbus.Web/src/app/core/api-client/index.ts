@@ -21,6 +21,7 @@ export type { CurrentUserDto } from './models/CurrentUserDto';
 export type { ForgotPasswordRequestDto } from './models/ForgotPasswordRequestDto';
 export type { GoNoGoThresholdsDto } from './models/GoNoGoThresholdsDto';
 export type { GoNoGoThresholdsRequestDto } from './models/GoNoGoThresholdsRequestDto';
+export type { GoNoGoVerdictDto } from './models/GoNoGoVerdictDto';
 export type { LaunchLocationDto } from './models/LaunchLocationDto';
 export type { LaunchLocationRequestDto } from './models/LaunchLocationRequestDto';
 export type { LoginEventDto } from './models/LoginEventDto';

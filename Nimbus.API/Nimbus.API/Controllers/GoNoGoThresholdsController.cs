@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Nimbus.Application.Features.GoNoGoThresholds.Commands.ResetMyGoNoGoThresholds;
 using Nimbus.Application.Features.GoNoGoThresholds.Commands.SaveMyGoNoGoThresholds;
+using Nimbus.Application.Features.GoNoGoThresholds.Queries.EvaluateGoNoGo;
 using Nimbus.Application.Features.GoNoGoThresholds.Queries.GetMyGoNoGoThresholds;
 using Nimbus.Contracts.DTOs.Features.GoNoGoThresholds;
 namespace Nimbus.API.Controllers;
@@ -40,5 +41,13 @@ public class GoNoGoThresholdsController : ControllerBase
     public async Task<ActionResult<GoNoGoThresholdsDto>> Reset(CancellationToken ct)
     {
         return Ok(await _mediator.Send(new ResetMyGoNoGoThresholdsCommand(), ct));
+    }
+
+    /// <summary>Traffic-light verdict for the given weather values against the caller's own thresholds. All values optional; none gives "unknown".</summary>
+    [HttpGet("verdict")]
+    public async Task<ActionResult<GoNoGoVerdictDto>> Verdict(
+        [FromQuery] decimal? windSpeedKt, [FromQuery] decimal? visibilityKm, [FromQuery] decimal? capeJPerKg, CancellationToken ct)
+    {
+        return Ok(await _mediator.Send(new EvaluateGoNoGoQuery(windSpeedKt, visibilityKm, capeJPerKg), ct));
     }
 }

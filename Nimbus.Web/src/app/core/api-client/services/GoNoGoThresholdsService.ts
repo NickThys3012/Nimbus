@@ -6,6 +6,7 @@ import { Injectable } from '@angular/core';
 import type { Observable } from 'rxjs';
 import type { GoNoGoThresholdsDto } from '../models/GoNoGoThresholdsDto';
 import type { GoNoGoThresholdsRequestDto } from '../models/GoNoGoThresholdsRequestDto';
+import type { GoNoGoVerdictDto } from '../models/GoNoGoVerdictDto';
 import { BaseHttpRequest } from '../core/BaseHttpRequest';
 @Injectable({
     providedIn: 'root',
@@ -46,6 +47,29 @@ export class GoNoGoThresholdsService {
         return this.httpRequest.request({
             method: 'DELETE',
             url: '/api/go-no-go-thresholds',
+        });
+    }
+    /**
+     * @returns GoNoGoVerdictDto OK
+     * @throws ApiError
+     */
+    public getApiGoNoGoThresholdsVerdict({
+        windSpeedKt,
+        visibilityKm,
+        capeJPerKg,
+    }: {
+        windSpeedKt?: number | string,
+        visibilityKm?: number | string,
+        capeJPerKg?: number | string,
+    }): Observable<GoNoGoVerdictDto> {
+        return this.httpRequest.request({
+            method: 'GET',
+            url: '/api/go-no-go-thresholds/verdict',
+            query: {
+                'windSpeedKt': windSpeedKt,
+                'visibilityKm': visibilityKm,
+                'capeJPerKg': capeJPerKg,
+            },
         });
     }
 }
