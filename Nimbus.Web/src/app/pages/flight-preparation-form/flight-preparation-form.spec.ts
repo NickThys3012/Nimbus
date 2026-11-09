@@ -5,7 +5,7 @@ import { vi } from 'vitest';
 
 import FlightPreparationFormPage from './flight-preparation-form';
 import { AuthStore } from '../../core/auth/auth.store';
-import { BalloonsService, LaunchLocationsService, LiftCalculationService, PilotsService } from '../../core/api-client';
+import { BalloonsService, FlightAssessmentService, LaunchLocationsService, LiftCalculationService, PilotsService } from '../../core/api-client';
 import { LOCAL_STORAGE } from '../../services/theme-service';
 
 /**
@@ -52,6 +52,13 @@ describe('FlightPreparationFormPage', () => {
         { provide: BalloonsService, useValue: { getApiBalloons: () => of(balloons) } },
         { provide: PilotsService, useValue: { getApiPilots: () => of([]) } },
         { provide: LiftCalculationService, useValue: { getApiLiftCalculationTotalLift: () => of({ totalLiftKg: 0 }) } },
+        {
+          provide: FlightAssessmentService,
+          useValue: {
+            postApiFlightAssessment: () =>
+              of({ totalWeightKg: 0, passengersWeightKg: 0, marginKg: 0, liftSufficient: null, goNoGoVerdict: 'unknown' }),
+          },
+        },
         { provide: LaunchLocationsService, useValue: { getApiLaunchLocations: () => of(locations) } },
         {
           provide: ActivatedRoute,

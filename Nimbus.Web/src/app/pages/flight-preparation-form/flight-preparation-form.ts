@@ -209,6 +209,15 @@ export default class FlightPreparationFormPage implements CanComponentDeactivate
     };
   });
 
+  /** Meteo values for the server-side Go/No-Go verdict; an untouched 0 means "not entered" (the form defaults to 0), so it is sent as null. */
+  protected readonly weatherContext = computed(() => {
+    this.formVersion();
+    const c = this.form().controls.meteo.controls;
+    const entered = (ctrl: { value: unknown; pristine: boolean }): number | null =>
+      ctrl.pristine && Number(ctrl.value) === 0 ? null : Number(ctrl.value);
+    return { windSpeedKt: entered(c.windSpeedKt), visibilityKm: entered(c.visibilityKm), capeJPerKg: entered(c.capeJPerKg) };
+  });
+
   constructor() {
     this.hydrate(this.initialRouteId);
     // Route param changes (including the id this component assigns to itself on first autosave,

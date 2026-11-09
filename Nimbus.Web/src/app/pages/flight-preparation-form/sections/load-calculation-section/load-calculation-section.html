@@ -103,16 +103,21 @@
   </button>
   <div class="load-summary" data-testid="load-summary">
     <div><span class="label-like">PILOT</span><output data-testid="pilot-weight">{{ pilotWeightKg() }} kg</output></div>
-    <div><span class="label-like">PASSENGERS</span><output data-testid="total-passenger-weight">{{ load().passengersKg }} kg</output></div>
-    <div><span class="label-like">TOTAL WEIGHT</span><output data-testid="total-weight">{{ load().totalWeightKg }} kg</output></div>
+    <div><span class="label-like">PASSENGERS</span><output data-testid="total-passenger-weight">{{ assessment()?.passengersWeightKg ?? '—' }} kg</output></div>
+    <div><span class="label-like">TOTAL WEIGHT</span><output data-testid="total-weight">{{ assessment()?.totalWeightKg ?? '—' }} kg</output></div>
     <div><span class="label-like">LIFT</span><output data-testid="lift-value">{{ group().controls.totalLiftKg.value }} kg</output></div>
+    <div><span class="label-like">GO / NO-GO</span><output data-testid="go-no-go-verdict">{{ assessment()?.goNoGoVerdict ?? 'unknown' }}</output></div>
   </div>
-  @if (load().liftExceedsWeight === null) {
-    <div class="load-verdict" data-testid="load-verdict" data-state="unknown" role="status">Enter total lift to compare it with the total weight.</div>
-  } @else if (load().liftExceedsWeight) {
-    <div class="load-verdict ok" data-testid="load-verdict" data-state="ok" role="status">Lift exceeds weight: margin +{{ load().marginKg }} kg</div>
+  @if (assessment(); as a) {
+    @if (a.liftSufficient === null) {
+      <div class="load-verdict" data-testid="load-verdict" data-state="unknown" role="status">Enter total lift to compare it with the total weight.</div>
+    } @else if (a.liftSufficient) {
+      <div class="load-verdict ok" data-testid="load-verdict" data-state="ok" role="status">Lift exceeds weight: margin +{{ a.marginKg }} kg</div>
+    } @else {
+      <div class="load-verdict bad" data-testid="load-verdict" data-state="over" role="status">Overloaded: lift is {{ -a.marginKg }} kg short</div>
+    }
   } @else {
-    <div class="load-verdict bad" data-testid="load-verdict" data-state="over" role="status">Overloaded: lift is {{ -load().marginKg }} kg short</div>
+    <div class="load-verdict" data-testid="load-verdict" data-state="unknown" role="status">Calculating the load assessment…</div>
   }
   <div class="field">
     <label for="fp-load-remarks">REMARKS</label>

@@ -4,7 +4,7 @@ import { NonNullableFormBuilder } from '@angular/forms';
 import { of, throwError } from 'rxjs';
 import { vi } from 'vitest';
 
-import { LiftCalculationService } from '../../../../core/api-client';
+import { FlightAssessmentService, LiftCalculationService } from '../../../../core/api-client';
 
 import {
   createFlightPreparationForm,
@@ -18,14 +18,21 @@ describe('LoadCalculationSection', () => {
   let fixture: ComponentFixture<LoadCalculationSection>;
   let fb: NonNullableFormBuilder;
   let liftApi: { getApiLiftCalculationTotalLift: ReturnType<typeof vi.fn> };
+  let assessApi: { postApiFlightAssessment: ReturnType<typeof vi.fn> };
   let form: ReturnType<typeof createFlightPreparationForm>;
 
   beforeEach(() => {
+    assessApi = {
+      postApiFlightAssessment: vi.fn(() =>
+        of({ totalWeightKg: 180, passengersWeightKg: 0, marginKg: 120, liftSufficient: true, goNoGoVerdict: 'yellow' }),
+      ),
+    };
     liftApi = { getApiLiftCalculationTotalLift: vi.fn(() => of({ totalLiftKg: 817.8 })) };
     TestBed.configureTestingModule({
       imports: [LoadCalculationSection],
       providers: [
         { provide: LiftCalculationService, useValue: liftApi },
+        { provide: FlightAssessmentService, useValue: assessApi },
         { provide: PilotsStore, useValue: { list: signal([{ id: 'p1', name: 'N. Thys', weightKg: 80 }]) } }],
     });
     fb = TestBed.inject(NonNullableFormBuilder);
@@ -35,6 +42,12 @@ describe('LoadCalculationSection', () => {
     fixture.componentRef.setInput('pilotId', 'p1');
     fixture.detectChanges();
   });
+
+  /** Lets the debounced assessment request fire and its response render. */
+  const settleAssessment = async () => {
+    await new Promise((r) => setTimeout(r, 200));
+    fixture.detectChanges();
+  };
 
   const el = (id: string) => fixture.nativeElement.querySelector(`[data-testid="${id}"]`) as HTMLElement;
   const type = (id: string, value: string) => {
@@ -52,25 +65,52 @@ describe('LoadCalculationSection', () => {
   };
   const names = () => form.controls.loadCalculation.controls.passengers.getRawValue().map((p) => p.name);
 
-  it('recomputes the total live as envelope, pilot and passenger weights change', () => {
+  it('shows the server assessment and sends only raw values (no local calculation)', async () => {
     type('envelope-weight', '100');
-    expect(el('total-weight').textContent).toContain('180 kg'); // envelope + pilot
     addPassenger('A', 70);
-    expect(el('total-weight').textContent).toContain('250 kg');
-    type('passenger-weight-0', '90');
-    expect(el('total-weight').textContent).toContain('270 kg');
-    fixture.componentRef.setInput('pilotId', '');
-    fixture.detectChanges();
-    expect(el('total-weight').textContent).toContain('190 kg');
+    await settleAssessment();
+    const request = assessApi.postApiFlightAssessment.mock.calls.at(-1)![0].requestBody;
+    expect(request).toEqual(
+      expect.objectContaining({ envelopeWeightKg: 100, pilotWeightKg: 80, passengerWeightsKg: [70], windSpeedKt: null }),
+    );
+    expect(el('total-weight').textContent).toContain('180 kg'); // the mocked server answer, not a client sum
+    expect(el('go-no-go-verdict').textContent).toContain('yellow');
   });
 
-  it('indicates whether lift exceeds weight', () => {
+  it('sends the meteo values to the assessment', async () => {
+    fixture.componentRef.setInput('weather', { windSpeedKt: 12, visibilityKm: 8, capeJPerKg: 100 });
+    fixture.detectChanges();
+    await settleAssessment();
+    expect(assessApi.postApiFlightAssessment.mock.calls.at(-1)![0].requestBody).toEqual(
+      expect.objectContaining({ windSpeedKt: 12, visibilityKm: 8, capeJPerKg: 100 }),
+    );
+  });
+
+  it('renders the lift verdict from the server assessment', async () => {
+    const answer = (liftSufficient: boolean | null, marginKg: number) =>
+      assessApi.postApiFlightAssessment.mockReturnValue(
+        of({ totalWeightKg: 180, passengersWeightKg: 0, marginKg, liftSufficient, goNoGoVerdict: 'green' }),
+      );
+    answer(null, 0);
     type('envelope-weight', '100');
+    await settleAssessment();
     expect(el('load-verdict').dataset['state']).toBe('unknown');
+    answer(true, 120);
     type('total-lift', '300');
+    await settleAssessment();
     expect(el('load-verdict').dataset['state']).toBe('ok');
+    answer(false, -30);
     type('total-lift', '150');
+    await settleAssessment();
     expect(el('load-verdict').dataset['state']).toBe('over');
+  });
+
+  it('falls back to a neutral state when the assessment fails', async () => {
+    assessApi.postApiFlightAssessment.mockReturnValue(throwError(() => new Error('boom')));
+    type('envelope-weight', '100');
+    await settleAssessment();
+    expect(el('load-verdict').dataset['state']).toBe('unknown');
+    expect(el('go-no-go-verdict').textContent).toContain('unknown');
   });
 
   it('does not store derived values in the form', () => {
