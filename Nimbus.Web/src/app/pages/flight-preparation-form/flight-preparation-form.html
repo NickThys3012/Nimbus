@@ -8,12 +8,20 @@
     </div>
     <span class="spacer"></span>
     @if (savedAt(); as t) {
-      <span class="saved-tag" data-testid="saved-tag"><i aria-hidden="true" class="ti ti-check"></i> draft saved</span>
+      <span class="saved-tag" data-testid="saved-tag"><i aria-hidden="true" class="ti ti-check"></i> saved</span>
     }
   </div>
 
   @if (saveErrorMessage(); as message) {
     <Nimbus-banner data-testid="save-error-banner" icon="ti-alert-triangle" id="fp-save-error-banner" type="error">{{ message }}</Nimbus-banner>
+  }
+
+  @if (loadFailure(); as message) {
+    <Nimbus-banner data-testid="load-error-banner" icon="ti-alert-triangle" id="fp-load-error-banner" type="error">{{ message }}</Nimbus-banner>
+  }
+
+  @if (saveFailure(); as message) {
+    <Nimbus-banner data-testid="save-failure-banner" icon="ti-alert-triangle" id="fp-save-failure-banner" type="error">{{ message }}</Nimbus-banner>
   }
 
   @if (restoredFromDraft()) {
@@ -90,7 +98,7 @@
       <span class="spacer"></span>
     }
     <Nimbus-button (click)="goBack()" class="discard-action" [fullWidth]="false" id="cancel-flight-prep" variant="ghost" type="button">Discard</Nimbus-button>
-    <Nimbus-button (click)="save()" class="save-action" [fullWidth]="false" data-testid="save-flight-prep" id="save-flight-prep" type="button">
+    <Nimbus-button (click)="save()" class="save-action" [disabled]="saving()" [fullWidth]="false" data-testid="save-flight-prep" id="save-flight-prep" type="button">
       {{ isExistingFlight() ? 'Save changes' : 'Create flight' }}
     </Nimbus-button>
   </div>

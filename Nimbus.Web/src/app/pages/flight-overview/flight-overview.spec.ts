@@ -53,6 +53,19 @@ describe('FlightOverview', () => {
     expect(q('flight-f3')!.textContent).toContain('shared by Bob Builder');
   });
 
+  it('shows flights created since the last visit: opening the page again reloads the list', async () => {
+    const { fixture } = await setup([flight({})]);
+    expect(api.getApiFlightPreparations).toHaveBeenCalledTimes(1);
+
+    api.getApiFlightPreparations.mockReturnValue(of({ items: [flight({}), flight({ id: 'f9', title: 'New one' })], totalCount: 2, page: 1, pageSize: 20 }));
+    const revisited = TestBed.createComponent(FlightOverview);
+    await revisited.whenStable();
+
+    expect(api.getApiFlightPreparations).toHaveBeenCalledTimes(2);
+    expect((revisited.nativeElement as HTMLElement).querySelector('[data-testid="flight-f9"]')).not.toBeNull();
+    expect(fixture).toBeTruthy();
+  });
+
   it('asks the server for the chosen filter and shows an empty state', async () => {
     const { fixture, q } = await setup([]);
     expect(q('empty')).not.toBeNull();

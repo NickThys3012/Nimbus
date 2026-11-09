@@ -24,6 +24,12 @@ export default class FlightOverview {
   protected readonly store = inject(FlightListStore);
   protected readonly auth = inject(AuthStore);
 
+  constructor() {
+    // The store outlives this page, so coming back to it would otherwise show the last result:
+    // a flight created or shared since then would be missing. The first visit already loads.
+    if (this.store.flights.hasValue()) this.store.flights.reload();
+  }
+
   protected readonly filters: { value: FlightFilterValue; label: string; testId: string }[] = [
     { value: FlightFilter.all, label: 'All', testId: 'filter-all' },
     { value: FlightFilter.flown, label: 'Flown', testId: 'filter-flown' },

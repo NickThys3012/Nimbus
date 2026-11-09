@@ -27,7 +27,9 @@ public class FlightPreparationRepository : IFlightPreparationRepository
 
     public Task<FlightPreparation?> GetByIdAsync(Guid ownerId, Guid id, CancellationToken ct = default)
     {
+        // Read-only: callers get a detached copy to edit and hand back to UpdateAsync, never a tracked graph.
         return _db.FlightPreparations
+            .AsNoTracking()
             .Include(f => f.Passengers.OrderBy(p => p.Order))
             .Include(f => f.WindLevels.OrderBy(w => w.Order))
             .FirstOrDefaultAsync(f => f.Id == id && f.OwnerId == ownerId, ct);
