@@ -61,10 +61,9 @@ interface SectionErrorSummary {
 
 /**
  * The nine-section flight-preparation dossier (issue #32): one route, one reactive form, nine
- * independently-expandable accordion sections. There is no save/load API yet (#31 was schema
- * only), so this screen is backed entirely by `FlightPreparationDraftStore` — a client-side,
- * per-user draft that survives a refresh. Swapping that store's `save`/`load` for real HTTP calls
- * once the backend endpoint exists (#40/#51-style) is the one seam this component depends on.
+ * independently-expandable accordion sections. Saving and loading go through
+ * `FlightPreparationsService` (create, update, get); `FlightPreparationDraftStore` is only a local,
+ * per-user autosave that survives a refresh or a failed request and is dropped once a save succeeds.
  */
 @Component({
   selector: 'Nimbus-flight-preparation-form',
