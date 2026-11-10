@@ -75,10 +75,10 @@
         }
         @switch (section.id) {
           @case ('General') {
-            <Nimbus-general-section [coordinates]="launchCoordinates()" [group]="form().controls.general" />
+            <Nimbus-general-section [coordinates]="launchCoordinates()" [group]="form().controls.general" [sunNote]="sun.note()" />
           }
           @case ('Meteo') {
-            <Nimbus-meteo-section [group]="form().controls.meteo" [coordinates]="launchCoordinates()" [hourUtc]="flightHourUtc()" [plannedHour]="plannedHour()" (hourUsed)="onForecastHourUsed($event)" />
+            <Nimbus-meteo-section [group]="form().controls.meteo" [coordinates]="launchCoordinates()" [hourUtc]="flightHourUtc()" [plannedHour]="plannedHour()" />
           }
           @case ('Airspace') {
             <Nimbus-airspace-section [group]="form().controls.airspace" />

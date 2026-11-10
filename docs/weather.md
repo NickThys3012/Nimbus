@@ -137,7 +137,7 @@ utcOffsetSeconds, days[], hours[] }` from [Open-Meteo](https://open-meteo.com/) 
 | Model not in the supported list, or coordinates out of range | `422` |
 | Provider unreachable, slow, error status, bad JSON | `502`, warning logged |
 
-Sunrise/sunset are the provider's, so the calculations epic should reuse `ForecastDayDto` rather than compute them again.
+The days' sunrise and sunset here are the provider's and are only shown beside the forecast. The official ones, which fill the form, are calculated by `SolarCalculator` (`docs/solar.md`).
 
 ### In the form (section 02 · Meteo)
 An **HOURLY FORECAST** block below the wind-on-altitude table, in the same style: a model select, a **Fetch forecast**
@@ -147,8 +147,8 @@ its header. There is no mockup for the forecast table itself; the sunrise/sunset
 
 - The hour of the planned flight (form date and time, read as the site's local time) is highlighted.
 - A row where the model changes is preceded by "icon_eu from here (coarser than icon_d2)".
-- **Use** on an hour fills wind, direction, CAPE and temperature (a missing value leaves its field alone) and the
-  Sunrise and Sunset fields of section 01 for that day. Fetching alone changes no field.
+- **Use** on an hour fills wind, direction, CAPE and temperature (a missing value leaves its field alone). Fetching alone
+  changes no field. Sunrise and Sunset of section 01 come from the NOAA calculation (`docs/solar.md`), not from here.
 - Provider down, or no data for the model: an empty state with the reason, never an error page; the form is unaffected.
 
 ## Wind series for the trajectory simulator (issue #47)
