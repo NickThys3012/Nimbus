@@ -18,6 +18,6 @@ public sealed class AviationWeatherOptions
     /// <summary>Sent on every request; the provider asks clients to identify themselves.</summary>
     public string UserAgent { get; init; } = "Nimbus/1.0 (flight preparation)";
 
-    /// <summary>Retries and circuit breaker. One retry by default: the form is waiting on this fetch.</summary>
-    public ResilienceOptions Resilience { get; init; } = new() { MaxRetries = 1 };
+    /// <summary>Retries and circuit breaker.</summary>
+    public ResilienceOptions Resilience { get; init; } = new();
 }

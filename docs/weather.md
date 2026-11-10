@@ -40,8 +40,8 @@ warning (`Aviation weather {Kind} fetch failed for {Icao}: {Reason}`); only the 
 propagates. The METAR and TAF requests run side by side, and if either fails the whole fetch fails, so the
 pilot is told instead of getting half an answer. A reply over 256 K characters is refused.
 
-Retries and a circuit breaker come from the shared provider policy (issue #48, below); the aviation client retries once
-by default because the form is waiting on it.
+Retries and a circuit breaker come from the shared provider policy (issue #48, below). The form waits on this fetch, so
+lower `AviationWeather:Resilience:MaxRetries` if a slow provider should be reported sooner.
 
 ### In the form (section 02 · Meteo)
 Built to the form mockup (`nimbus-prep-form.html`, in `../Nimbus mocups/`): a **Fetch** button with a refresh icon
@@ -192,7 +192,7 @@ Each provider's section (`AviationWeather`, `OpenMeteo`, `Overpass`, `StaticMapT
 
 | Key | Default | Meaning |
 |---|---|---|
-| `MaxRetries` | 2 (aviation: 1) | Extra attempts after the first, 0 to 5. 0 turns retrying off |
+| `MaxRetries` | 2 | Extra attempts after the first, 0 to 5. 0 turns retrying off |
 | `RetryBaseDelayMs` | 300 | First backoff; doubles each retry, with jitter |
 | `BreakAfterFailures` | 5 | Failed calls within the window that (with a 50% failure ratio) open the circuit |
 | `BreakDurationSeconds` | 30 | How long the circuit stays open before one probe call |
