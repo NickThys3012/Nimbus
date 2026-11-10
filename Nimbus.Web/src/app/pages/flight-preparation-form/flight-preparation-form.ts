@@ -35,6 +35,7 @@ import {
 } from '../../core/flight-preparations/flight-preparation-form';
 import { defaultPaxBriefing } from '../../core/flight-preparations/pax-briefing-template';
 import { metarMeta } from '../../core/flight-preparations/metar-meta';
+import { plannedLocalHour } from '../../core/flight-preparations/hourly-forecast-fetcher';
 import { MetarTafFetcher } from '../../core/flight-preparations/metar-taf-fetcher';
 import { FlightListStore } from '../../core/flight-preparations/flight-list.store';
 import { flightTitle, fromDto, toRequestDto } from '../../core/flight-preparations/flight-preparation.mapper';
@@ -222,6 +223,23 @@ export default class FlightPreparationFormPage implements CanComponentDeactivate
     const at = new Date(`${date}T${time}`);
     return Number.isNaN(at.getTime()) ? null : at.toISOString();
   });
+
+  /** The planned take-off hour as typed (the launch site's local time), to highlight it in the hourly forecast. */
+  protected readonly plannedHour = computed(() => {
+    this.formVersion();
+    const g = this.form().controls.general.controls;
+    return plannedLocalHour(g.flightDate.value, g.flightTime.value);
+  });
+
+  /** Picking a forecast hour also fills sunrise and sunset of its day in section 01. */
+  protected onForecastHourUsed(day: { sunrise: string | null; sunset: string | null }): void {
+    const g = this.form().controls.general.controls;
+    for (const [control, value] of [[g.sunriseTime, day.sunrise], [g.sunsetTime, day.sunset]] as const) {
+      if (!value) continue;
+      control.setValue(value);
+      control.markAsDirty();
+    }
+  }
 
   /** The selected launch location, for what depends on it: whether METAR/TAF can be fetched and for which station. */
   protected readonly launchStation = computed(() => {

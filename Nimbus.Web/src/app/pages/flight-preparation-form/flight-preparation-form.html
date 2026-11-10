@@ -78,7 +78,7 @@
             <Nimbus-general-section [coordinates]="launchCoordinates()" [group]="form().controls.general" />
           }
           @case ('Meteo') {
-            <Nimbus-meteo-section [group]="form().controls.meteo" [coordinates]="launchCoordinates()" [hourUtc]="flightHourUtc()" />
+            <Nimbus-meteo-section [group]="form().controls.meteo" [coordinates]="launchCoordinates()" [hourUtc]="flightHourUtc()" [plannedHour]="plannedHour()" (hourUsed)="onForecastHourUsed($event)" />
           }
           @case ('Airspace') {
             <Nimbus-airspace-section [group]="form().controls.airspace" />

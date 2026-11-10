@@ -16,3 +16,18 @@
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 .glyph { width: 44px; height: 44px; border-radius: 12px; display: grid; place-items: center; font-size: 22px; margin-bottom: 12px; }
 .glyph.warn { background: var(--ab); color: var(--a); }
+
+.fetch-note .empty { color: var(--a); }
+
+.fc-day { margin-top: 10px; }
+.fc-day-head { display: flex; align-items: center; gap: 12px; font: 11px var(--mono); color: var(--dim); margin-bottom: 4px; }
+.fc-sun { color: var(--fnt); }
+.fc-scroll { overflow-x: auto; }
+.fc-table { width: 100%; border-collapse: collapse; font: 12px var(--mono); }
+.fc-table th, .fc-table td { padding: 4px 8px; text-align: left; white-space: nowrap; }
+.fc-table .r { text-align: right; }
+.fc-table th { color: var(--fnt); font-weight: 400; font-size: 10.5px; }
+.fc-table tbody tr { border-top: 0.5px solid var(--ln); }
+.fc-table tr.planned { background: var(--acbg); box-shadow: inset 3px 0 0 var(--ac); font-weight: 600; }
+.fc-table .fc-model-change td { color: var(--a); font-size: 10.5px; }
+.fc-use { padding: 2px 10px; font-size: 11px; }

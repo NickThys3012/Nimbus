@@ -19,6 +19,7 @@ export type { ChecklistAnswer } from './models/ChecklistAnswer';
 export type { ClientTelemetryEventDto } from './models/ClientTelemetryEventDto';
 export { ClientTelemetryEventType } from './models/ClientTelemetryEventType';
 export type { CurrentUserDto } from './models/CurrentUserDto';
+export type { ForecastDayDto } from './models/ForecastDayDto';
 export type { FlightAssessmentDto } from './models/FlightAssessmentDto';
 export type { FlightAssessmentRequestDto } from './models/FlightAssessmentRequestDto';
 export type { FlightDetailDto } from './models/FlightDetailDto';
@@ -39,6 +40,8 @@ export type { LaunchLocationRequestDto } from './models/LaunchLocationRequestDto
 export type { LoginEventDto } from './models/LoginEventDto';
 export type { LoginRequestDto } from './models/LoginRequestDto';
 export type { LoginResponseDto } from './models/LoginResponseDto';
+export type { HourlyForecastDto } from './models/HourlyForecastDto';
+export type { HourlyForecastHourDto } from './models/HourlyForecastHourDto';
 export type { MetarTafDto } from './models/MetarTafDto';
 export type { OfpSettingsDto } from './models/OfpSettingsDto';
 export type { OfpSettingsRequestDto } from './models/OfpSettingsRequestDto';
