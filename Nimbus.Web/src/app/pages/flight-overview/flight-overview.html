@@ -36,7 +36,7 @@
     @if (store.items().length > 0) {
       <div class="list" data-testid="list">
         @for (f of store.items(); track f.id) {
-          <a class="flight-row" [routerLink]="['/flight-preparations', f.id]" [attr.data-testid]="'flight-' + f.id">
+          <a class="flight-row" [routerLink]="['/flights', f.id]" [attr.data-testid]="'flight-' + f.id">
             <div class="date-block"><div class="d">{{ dayLabel(f) }}</div><div class="t">{{ timeLabel(f) }}</div></div>
             <div class="div"></div>
             <div class="info">

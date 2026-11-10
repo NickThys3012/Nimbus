@@ -40,6 +40,7 @@ describe('FlightOverview', () => {
       flight({ id: 'f3', goNoGoVerdict: 'yellow', isShared: true, ownerName: 'Bob Builder' }),
     ]);
     const row1 = q('flight-f1')!;
+    expect(row1.getAttribute('href')).toBe('/flights/f1');
     expect(row1.textContent).toContain('SA 08');
     expect(row1.textContent).toContain('18:45');
     expect(row1.textContent).toContain('OO-BLK');

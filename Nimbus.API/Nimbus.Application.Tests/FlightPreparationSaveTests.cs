@@ -106,7 +106,7 @@ public class FlightPreparationSaveTests
         repo.Rows.Add(stored);
 
         var edited = Req() with { Passengers = [new PassengerDto("Carol", 55, false, false, false)] };
-        var result = await new UpdateFlightPreparationCommandHandler(repo, new Me(me), new RichTextSanitizer()).Handle(new UpdateFlightPreparationCommand(stored.Id, edited), default);
+        var result = await new UpdateFlightPreparationCommandHandler(repo, new Access(repo), new Me(me), new RichTextSanitizer()).Handle(new UpdateFlightPreparationCommand(stored.Id, edited), default);
 
         Assert.That(result.Status, Is.EqualTo("Flown"));
         Assert.That(repo.Rows.Single().OutcomeRemarks, Is.EqualTo("smooth"));
@@ -114,16 +114,71 @@ public class FlightPreparationSaveTests
     }
 
     [Test]
-    public void Update_AndGet_OfAnotherUsersOrMissingFlight_AreNotFound()
+    public void Update_OfAnotherUsersFlight_IsForbidden_AndOfAMissingOne_NotFound()
     {
         var repo = new Repo();
         var theirs = Req().ApplyTo(new FlightPreparation { Id = Guid.NewGuid(), OwnerId = Guid.NewGuid() });
         repo.Rows.Add(theirs);
-        var me = new Me(Guid.NewGuid());
+        var handler = new UpdateFlightPreparationCommandHandler(repo, new Access(repo), new Me(Guid.NewGuid()), new RichTextSanitizer());
 
-        Assert.ThrowsAsync<NotFoundException>(() => new UpdateFlightPreparationCommandHandler(repo, me, new RichTextSanitizer()).Handle(new UpdateFlightPreparationCommand(theirs.Id, Req()), default));
-        Assert.ThrowsAsync<NotFoundException>(() => new GetFlightPreparationQueryHandler(repo, me).Handle(new GetFlightPreparationQuery(theirs.Id), default));
-        Assert.ThrowsAsync<NotFoundException>(() => new GetFlightPreparationQueryHandler(repo, me).Handle(new GetFlightPreparationQuery(Guid.NewGuid()), default));
+        Assert.ThrowsAsync<ForbiddenException>(() => handler.Handle(new UpdateFlightPreparationCommand(theirs.Id, Req()), default));
+        Assert.ThrowsAsync<NotFoundException>(() => handler.Handle(new UpdateFlightPreparationCommand(Guid.NewGuid(), Req()), default));
+    }
+
+    [Test]
+    public async Task Update_ByAnAdmin_EditsSomeoneElsesFlight_OnTheOwnersBehalf()
+    {
+        var owner = Guid.NewGuid();
+        var repo = new Repo();
+        var stored = Req().ApplyTo(new FlightPreparation { Id = Guid.NewGuid(), OwnerId = owner, Status = FlightPreparationStatus.Flown, OutcomeRemarks = "smooth" });
+        repo.Rows.Add(stored);
+        var admin = new Me(Guid.NewGuid(), admin: true);
+
+        var result = await new UpdateFlightPreparationCommandHandler(repo, new Access(repo), admin, new RichTextSanitizer())
+            .Handle(new UpdateFlightPreparationCommand(stored.Id, Req() with { Title = "Edited by admin" }), default);
+
+        Assert.That(repo.LastUpdateAskedAs, Is.EqualTo(owner), "the owner-scoped repository is asked as the flight's owner");
+        Assert.That(result.Status, Is.EqualTo("Flown"));
+        Assert.That(repo.Rows.Single().OwnerId, Is.EqualTo(owner), "ownership never moves to the admin");
+        Assert.That(repo.Rows.Single().Title, Is.EqualTo("Edited by admin"));
+        Assert.That(repo.Rows.Single().OutcomeRemarks, Is.EqualTo("smooth"));
+    }
+
+    [Test]
+    public async Task Get_ForTheForm_ReturnsTheOwnersFlight()
+    {
+        var me = Guid.NewGuid();
+        var repo = new Repo();
+        var mine = Req().ApplyTo(new FlightPreparation { Id = Guid.NewGuid(), OwnerId = me });
+        repo.Rows.Add(mine);
+
+        var dto = await new GetFlightPreparationQueryHandler(repo, new Access(repo), new Me(me)).Handle(new GetFlightPreparationQuery(mine.Id), default);
+
+        Assert.That(dto.Id, Is.EqualTo(mine.Id));
+    }
+
+    [Test]
+    public async Task Get_ForTheForm_ByAnAdmin_ReturnsSomeoneElsesFlight()
+    {
+        var repo = new Repo();
+        var theirs = Req().ApplyTo(new FlightPreparation { Id = Guid.NewGuid(), OwnerId = Guid.NewGuid() });
+        repo.Rows.Add(theirs);
+
+        var dto = await new GetFlightPreparationQueryHandler(repo, new Access(repo), new Me(Guid.NewGuid(), admin: true)).Handle(new GetFlightPreparationQuery(theirs.Id), default);
+
+        Assert.That(dto.Id, Is.EqualTo(theirs.Id));
+    }
+
+    [Test]
+    public void Get_ForTheForm_OfAnotherUsersFlight_IsForbidden_AndOfAMissingOne_NotFound()
+    {
+        var repo = new Repo();
+        var theirs = Req().ApplyTo(new FlightPreparation { Id = Guid.NewGuid(), OwnerId = Guid.NewGuid() });
+        repo.Rows.Add(theirs);
+        var handler = new GetFlightPreparationQueryHandler(repo, new Access(repo), new Me(Guid.NewGuid()));
+
+        Assert.ThrowsAsync<ForbiddenException>(() => handler.Handle(new GetFlightPreparationQuery(theirs.Id), default));
+        Assert.ThrowsAsync<NotFoundException>(() => handler.Handle(new GetFlightPreparationQuery(Guid.NewGuid()), default));
     }
 
     private const string Hostile = "<p>Hold on</p><script>alert(1)</script><img src=x onerror=alert(1)>";
@@ -145,7 +200,7 @@ public class FlightPreparationSaveTests
         var repo = new Repo();
         var stored = Req().ApplyTo(new FlightPreparation { Id = Guid.NewGuid(), OwnerId = me });
         repo.Rows.Add(stored);
-        var handler = new UpdateFlightPreparationCommandHandler(repo, new Me(me), new RichTextSanitizer());
+        var handler = new UpdateFlightPreparationCommandHandler(repo, new Access(repo), new Me(me), new RichTextSanitizer());
 
         var hostile = await handler.Handle(new UpdateFlightPreparationCommand(stored.Id, Req() with { PaxBriefingText = Hostile }), default);
         Assert.That(hostile.Details.PaxBriefingText, Is.EqualTo("<p>Hold on</p>"));
@@ -182,16 +237,34 @@ public class FlightPreparationSaveTests
         Assert.That(v.Validate(Req() with { Passengers = Enumerable.Range(0, 31).Select(i => new PassengerDto($"P{i}", 70, false, false, false)).ToList() }).IsValid, Is.False);
     }
 
-    private sealed class Me(Guid id) : ICurrentUserService
+    private sealed class Me(Guid id, bool admin = false) : ICurrentUserService
     {
         public Guid UserId => id;
+        public bool IsAdmin => admin;
         public Task<User?> GetCurrentUserAsync() => Task.FromResult<User?>(null);
+    }
+
+    /// <summary>The access answer the real reader gives: the owner is the owner, everyone else may not edit.</summary>
+    private sealed class Access(Repo repo) : IFlightDetailReader
+    {
+        public Task<FlightAccess> GetAccessAsync(Guid viewerId, bool isAdmin, Guid flightId, CancellationToken ct = default)
+        {
+            var flight = repo.Rows.FirstOrDefault(f => f.Id == flightId);
+            return Task.FromResult(flight is null
+                ? new FlightAccess(false, null)
+                : new FlightAccess(true, flight.OwnerId == viewerId ? FlightViewerRole.Owner : isAdmin ? FlightViewerRole.Admin : null, flight.OwnerId));
+        }
+
+        public Task<FlightDetailResult> GetAsync(Guid viewerId, bool isAdmin, Guid flightId, CancellationToken ct = default) => throw new NotSupportedException();
     }
 
     /// <summary>Owner-scoped like the real repository: another user's flight behaves like a missing one.</summary>
     private sealed class Repo : IFlightPreparationRepository
     {
         public List<FlightPreparation> Rows { get; } = [];
+
+        /// <summary>The owner id the last update was asked as.</summary>
+        public Guid? LastUpdateAskedAs { get; private set; }
 
         public Task<FlightPreparation?> GetByIdAsync(Guid ownerId, Guid id, CancellationToken ct = default) =>
             Task.FromResult(Rows.FirstOrDefault(f => f.Id == id && f.OwnerId == ownerId));
@@ -203,8 +276,11 @@ public class FlightPreparationSaveTests
             return Task.CompletedTask;
         }
 
-        public Task<bool> UpdateAsync(Guid ownerId, FlightPreparation flight, CancellationToken ct = default) =>
-            Task.FromResult(Rows.Any(f => f.Id == flight.Id && f.OwnerId == ownerId));
+        public Task<bool> UpdateAsync(Guid ownerId, FlightPreparation flight, CancellationToken ct = default)
+        {
+            LastUpdateAskedAs = ownerId;
+            return Task.FromResult(Rows.Any(f => f.Id == flight.Id && f.OwnerId == ownerId));
+        }
 
         public Task<bool> SetTrajectoryJsonAsync(Guid ownerId, Guid id, string? trajectoryJson, CancellationToken ct = default) => Task.FromResult(false);
 

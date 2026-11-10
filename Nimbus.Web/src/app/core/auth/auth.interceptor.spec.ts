@@ -87,6 +87,24 @@ describe('authInterceptor', () => {
     expect(navigate).toHaveBeenCalledWith(['/access-denied']);
   });
 
+  it('leaves a 403 on reading one flight to the page, which sends the user to the flight list itself', () => {
+    const id = '3f2504e0-4f89-41d3-9a0c-0305e82c3301';
+    http.get(`/api/flight-preparations/${id}/detail`).subscribe({ error: () => undefined });
+    httpMock.expectOne(`/api/flight-preparations/${id}/detail`).flush(null, { status: 403, statusText: 'Forbidden' });
+    http.get(`/api/flight-preparations/${id}`).subscribe({ error: () => undefined });
+    httpMock.expectOne(`/api/flight-preparations/${id}`).flush(null, { status: 403, statusText: 'Forbidden' });
+
+    expect(navigate).not.toHaveBeenCalledWith(['/access-denied']);
+  });
+
+  it('still routes to access-denied on a 403 when changing a flight', () => {
+    const id = '3f2504e0-4f89-41d3-9a0c-0305e82c3301';
+    http.put(`/api/flight-preparations/${id}`, {}).subscribe({ error: () => undefined });
+    httpMock.expectOne(`/api/flight-preparations/${id}`).flush(null, { status: 403, statusText: 'Forbidden' });
+
+    expect(navigate).toHaveBeenCalledWith(['/access-denied']);
+  });
+
   it('leaves 403 alone for a pending-approval account', () => {
     store['isPendingApproval'] = () => true;
     http.get('/api/flights').subscribe({ error: () => undefined });

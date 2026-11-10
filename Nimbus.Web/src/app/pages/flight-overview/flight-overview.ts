@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
+import { verdictClass, verdictLabel } from '../../core/flight-preparations/verdict';
 import { AuthStore } from '../../core/auth/auth.store';
 import type { FlightListItemDto } from '../../core/api-client';
 import {
@@ -57,29 +58,6 @@ export default class FlightOverview {
     return flight.flightTime.slice(0, 5);
   }
 
-  protected verdictLabel(verdict: string): string {
-    switch (verdict) {
-      case 'green':
-        return 'GO';
-      case 'yellow':
-        return 'CAUTION';
-      case 'red':
-        return 'NO-GO';
-      default:
-        return 'N/A';
-    }
-  }
-
-  protected verdictClass(verdict: string): string {
-    switch (verdict) {
-      case 'green':
-        return 'go';
-      case 'yellow':
-        return 'caution';
-      case 'red':
-        return 'nogo';
-      default:
-        return 'unknown';
-    }
-  }
+  protected verdictLabel = verdictLabel;
+  protected verdictClass = verdictClass;
 }

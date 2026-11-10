@@ -1,0 +1,101 @@
+<div class="wrap">
+  <a class="back" routerLink="/flights" data-testid="back"><i class="ti ti-arrow-left" aria-hidden="true"></i> Flights</a>
+
+  @if (data(); as f) {
+    @if (header(); as h) {
+      <div class="head-row" data-testid="detail-header">
+        <div class="head-title">
+          <div class="name" data-testid="title">{{ h.title }}</div>
+          <div class="meta" data-testid="meta">{{ h.meta }}</div>
+        </div>
+        @if (isFlown()) { <span class="flown-tag" data-testid="flown-badge">FLOWN</span> }
+        @if (h.roleBadge; as badge) {
+          <span class="role-badge" [class]="badge.kind" data-testid="role-badge"><i class="ti" [class]="badge.icon" aria-hidden="true"></i> {{ badge.text }}</span>
+        }
+      </div>
+
+      <div class="action-row" data-testid="actions">
+        @if (f.permissions.canEdit) {
+          <Nimbus-button data-testid="action-edit" icon="ti-edit" id="action-edit" size="sm" variant="ghost" [fullWidth]="false" [href]="'/flight-preparations/' + f.id">Edit</Nimbus-button>
+        }
+        <span class="readonly-note" data-testid="readonly-note">{{ h.readonlyNote }}</span>
+      </div>
+
+      <div class="status-strip" data-testid="status-strip">
+        @for (c of h.strip; track c.testId) {
+          <div class="status-cell">
+            <div class="lbl">{{ c.label }}</div>
+            <div class="val" [class]="c.tone ?? ''" [attr.data-testid]="c.testId">{{ c.value }}@if (c.unit) { <small> {{ c.unit }}</small> }</div>
+          </div>
+          <div class="status-div"></div>
+        }
+        <div class="status-gonogo" [class]="verdictClass(verdict())" data-testid="status-gonogo">
+          <div class="lbl">GO/NO-GO</div>
+          <div class="val" data-testid="verdict-badge">{{ verdictLabel(verdict()) }}</div>
+        </div>
+      </div>
+    }
+
+    <div class="gap"></div>
+
+    <div class="doc" data-testid="document">
+      @for (g of groups(); track g.id) {
+        <div class="group" [attr.data-section]="g.id" [attr.data-testid]="'section-' + g.id">
+          <div class="grp">{{ g.heading }}@if (g.headingNote) { <span class="grp-note"> {{ g.headingNote }}</span> }</div>
+
+          @for (r of g.rows; track r.testId) {
+            <div class="rw"><span class="k">{{ r.label }}</span><span class="v" [class]="r.tone ?? ''" [class.multiline]="r.multiline" [attr.data-testid]="r.testId">{{ r.value }}</span></div>
+          }
+
+          @for (c of g.checks; track c.testId) {
+            <div class="ck" [class.todo]="!c.done" [attr.data-testid]="c.testId">
+              <i class="ti" [class]="c.done ? 'ti-check' : 'ti-alert-triangle'" aria-hidden="true"></i>{{ c.text }}
+            </div>
+          }
+
+          @for (t of g.tables; track t.testId) {
+            <table class="data" [attr.data-testid]="t.testId">
+              <thead><tr>@for (col of t.columns; track col.label) { <th [class.r]="col.right">{{ col.label }}</th> }</tr></thead>
+              <tbody>
+                @for (cells of t.rows; track $index) {
+                  <tr>
+                    @for (cell of cells; track $index) {
+                      <td [class.r]="cell.right">{{ cell.text }}@for (m of cell.marks ?? []; track m.icon) { <i class="ti mark" [class]="m.icon" [attr.title]="m.title" aria-hidden="true"></i> }</td>
+                    }
+                  </tr>
+                }
+              </tbody>
+            </table>
+          }
+
+          @for (r of g.afterRows; track r.testId) {
+            <div class="rw after"><span class="k">{{ r.label }}</span><span class="v" [class]="r.tone ?? ''" [class.multiline]="r.multiline" [attr.data-testid]="r.testId">{{ r.value }}</span></div>
+          }
+
+          @if (g.note; as note) {
+            <div class="note" [class.dim]="note.dim" [attr.data-testid]="note.testId">{{ note.text }}</div>
+          }
+
+          @if (g.html) {
+            <div class="briefing-box" data-testid="briefing"><Nimbus-rich-text-view [html]="g.html" /></div>
+          }
+
+          @if (g.images.length) {
+            <div class="images" [attr.data-testid]="'images-' + g.id">
+              @for (img of g.images; track img.id) {
+                <a [href]="img.url" target="_blank" rel="noopener noreferrer"><img [src]="img.url" [alt]="g.heading + ' image'" loading="lazy" data-testid="inline-image" /></a>
+              }
+            </div>
+          }
+        </div>
+      }
+    </div>
+  } @else if (failed()) {
+    <Nimbus-banner data-testid="load-error" icon="ti-alert-triangle" id="detail-load-error" type="error">
+      Could not load this flight.
+      <button type="button" class="link" data-testid="retry" (click)="retry()">Try again</button>
+    </Nimbus-banner>
+  } @else {
+    <p class="loading" data-testid="loading">Loading…</p>
+  }
+</div>
