@@ -1,3 +1,4 @@
+using Nimbus.Application.Common;
 using Nimbus.Application.Common.Exceptions;
 using Nimbus.Application.Common.Interfaces;
 using Nimbus.Application.Features.FlightPreparations;
@@ -89,7 +90,7 @@ public class FlightPreparationSaveTests
     {
         var me = Guid.NewGuid();
         var repo = new Repo();
-        var created = await new CreateFlightPreparationCommandHandler(repo, new Me(me)).Handle(new CreateFlightPreparationCommand(Req()), default);
+        var created = await new CreateFlightPreparationCommandHandler(repo, new Me(me), new RichTextSanitizer()).Handle(new CreateFlightPreparationCommand(Req()), default);
 
         Assert.That(repo.Rows.Single().OwnerId, Is.EqualTo(me));
         Assert.That(created.Status, Is.EqualTo("Planned"));
@@ -105,7 +106,7 @@ public class FlightPreparationSaveTests
         repo.Rows.Add(stored);
 
         var edited = Req() with { Passengers = [new PassengerDto("Carol", 55, false, false, false)] };
-        var result = await new UpdateFlightPreparationCommandHandler(repo, new Me(me)).Handle(new UpdateFlightPreparationCommand(stored.Id, edited), default);
+        var result = await new UpdateFlightPreparationCommandHandler(repo, new Me(me), new RichTextSanitizer()).Handle(new UpdateFlightPreparationCommand(stored.Id, edited), default);
 
         Assert.That(result.Status, Is.EqualTo("Flown"));
         Assert.That(repo.Rows.Single().OutcomeRemarks, Is.EqualTo("smooth"));
@@ -120,9 +121,45 @@ public class FlightPreparationSaveTests
         repo.Rows.Add(theirs);
         var me = new Me(Guid.NewGuid());
 
-        Assert.ThrowsAsync<NotFoundException>(() => new UpdateFlightPreparationCommandHandler(repo, me).Handle(new UpdateFlightPreparationCommand(theirs.Id, Req()), default));
+        Assert.ThrowsAsync<NotFoundException>(() => new UpdateFlightPreparationCommandHandler(repo, me, new RichTextSanitizer()).Handle(new UpdateFlightPreparationCommand(theirs.Id, Req()), default));
         Assert.ThrowsAsync<NotFoundException>(() => new GetFlightPreparationQueryHandler(repo, me).Handle(new GetFlightPreparationQuery(theirs.Id), default));
         Assert.ThrowsAsync<NotFoundException>(() => new GetFlightPreparationQueryHandler(repo, me).Handle(new GetFlightPreparationQuery(Guid.NewGuid()), default));
+    }
+
+    private const string Hostile = "<p>Hold on</p><script>alert(1)</script><img src=x onerror=alert(1)>";
+
+    [Test]
+    public async Task Create_StoresTheBriefingSanitised()
+    {
+        var repo = new Repo();
+        await new CreateFlightPreparationCommandHandler(repo, new Me(Guid.NewGuid()), new RichTextSanitizer())
+            .Handle(new CreateFlightPreparationCommand(Req() with { PaxBriefingText = Hostile }), default);
+
+        Assert.That(repo.Rows.Single().PaxBriefingText, Is.EqualTo("<p>Hold on</p>"));
+    }
+
+    [Test]
+    public async Task Update_StoresTheBriefingSanitised_AndAnEmptyEditorBecomesNull()
+    {
+        var me = Guid.NewGuid();
+        var repo = new Repo();
+        var stored = Req().ApplyTo(new FlightPreparation { Id = Guid.NewGuid(), OwnerId = me });
+        repo.Rows.Add(stored);
+        var handler = new UpdateFlightPreparationCommandHandler(repo, new Me(me), new RichTextSanitizer());
+
+        var hostile = await handler.Handle(new UpdateFlightPreparationCommand(stored.Id, Req() with { PaxBriefingText = Hostile }), default);
+        Assert.That(hostile.Details.PaxBriefingText, Is.EqualTo("<p>Hold on</p>"));
+
+        var empty = await handler.Handle(new UpdateFlightPreparationCommand(stored.Id, Req() with { PaxBriefingText = "<p><br></p>" }), default);
+        Assert.That(empty.Details.PaxBriefingText, Is.Null);
+    }
+
+    [Test]
+    public void Validator_RejectsAnOversizedBriefing()
+    {
+        var v = new FlightPreparationRequestValidator();
+        Assert.That(v.Validate(Req() with { PaxBriefingText = new string('x', FlightPreparationRequestValidator.MaxBriefingLength) }).IsValid, Is.True);
+        Assert.That(v.Validate(Req() with { PaxBriefingText = new string('x', FlightPreparationRequestValidator.MaxBriefingLength + 1) }).IsValid, Is.False);
     }
 
     [Test]

@@ -184,6 +184,31 @@ behaves like a missing one (`null`/`false`).
   autosave; a successful one removes the autosave and refreshes the flight list. A flight id the
   server does not know (404) is treated as an unsaved draft; any other load error blocks saving.
 
+## Passenger briefing (issue #35)
+
+Section 09 stores the briefing as one HTML string in `PaxBriefingText`, edited with `ngx-quill` (Quill 2).
+
+- **Standard briefing.** A new flight starts with `PAX_BRIEFING_TEMPLATE_HTML`
+  (`core/flight-preparations/pax-briefing-template.ts`): inflation, in flight, landing, after the
+  flight. `PaxBriefingVersion` records which version of the wording a flight started from.
+  Saved flights keep what is stored; the template is never applied over them.
+- **Customized flag.** `PaxBriefingIsCustom` is derived, not ticked: it is true whenever the text
+  differs from the template. "Reset to template" restores the text, version and flag and touches no
+  other section.
+- **Sanitised on the server.** Create and update run the text through `IRichTextSanitizer`
+  (`RichTextSanitizer`, HtmlSanitizer with an allow-list) before it reaches the repository. Kept:
+  `p br strong b em i u s h1-h3 ol ul li blockquote a`. Dropped: every attribute except a link's
+  `href`, every other tag together with its content, and links that are not `http`, `https`,
+  `mailto` or `tel`. Links get `rel="noopener noreferrer"`. A briefing with nothing visible (the
+  editor's empty `<p><br></p>`) is stored as null. The raw HTML is capped at 20,000 characters.
+- **Display.** Anything shown read-only goes through `Nimbus-rich-text-view`, which binds a plain
+  `[innerHTML]` so Angular's sanitiser runs too. Do not use `quill-view-html` for display: it
+  bypasses Angular's sanitiser unless told otherwise.
+- **Editor formats** are limited to what the sanitiser keeps (headings, bold, italic, underline,
+  strike, lists, quote, link), so nothing typed is silently dropped on save.
+- **PDF export.** Not built yet. The export must render the stored (already sanitised) HTML; see the
+  note in the PR for #35.
+
 ## Flight list (issue #40)
 
 `GET /api/flight-preparations?filter=&sort=&descending=&page=&pageSize=` feeds the Flights overview

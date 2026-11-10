@@ -1,16 +1,45 @@
 <div [formGroup]="group()">
   <div class="field">
-    <label for="fp-pax-briefing-text">BRIEFING TEXT</label>
-    <textarea id="fp-pax-briefing-text" data-testid="pax-briefing-text" formControlName="paxBriefingText"></textarea>
+    <div class="label-row">
+      <span class="label-like" id="fp-pax-briefing-label">BRIEFING TEXT</span>
+      @if (custom()) {
+        <span class="badge custom" data-testid="pax-briefing-custom-badge">CUSTOMIZED FOR THIS FLIGHT</span>
+      } @else {
+        <span class="badge" data-testid="pax-briefing-standard-badge">STANDARD BRIEFING · v{{ templateVersion }}</span>
+      }
+    </div>
+    <quill-editor
+      aria-labelledby="fp-pax-briefing-label"
+      class="editor"
+      data-testid="pax-briefing-text"
+      format="html"
+      formControlName="paxBriefingText"
+      placeholder="Write the passenger safety briefing…"
+      theme="snow"
+      [formats]="formats"
+      [modules]="modules"
+      [sanitize]="true"
+    />
   </div>
-  <div class="field-grid">
-    <div class="field">
-      <label for="fp-pax-briefing-version">VERSION</label>
-      <input id="fp-pax-briefing-version" data-testid="pax-briefing-version" formControlName="paxBriefingVersion" type="text" />
+
+  <div class="actions">
+    <Nimbus-button
+      data-testid="pax-briefing-reset"
+      icon="ti-restore"
+      id="pax-briefing-reset"
+      size="sm"
+      type="button"
+      variant="ghost"
+      [disabled]="!custom()"
+      [fullWidth]="false"
+      (click)="reset()"
+    >Reset to template</Nimbus-button>
+  </div>
+
+  <div class="field preview">
+    <span class="label-like">PREVIEW · AS PASSENGERS WILL READ IT</span>
+    <div class="preview-box" data-testid="pax-briefing-preview">
+      <Nimbus-rich-text-view [html]="text()" />
     </div>
   </div>
-  <label class="check-row">
-    <input data-testid="pax-briefing-custom" formControlName="paxBriefingIsCustom" type="checkbox" />
-    Customized for this flight
-  </label>
 </div>

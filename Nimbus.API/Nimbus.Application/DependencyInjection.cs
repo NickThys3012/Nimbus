@@ -1,7 +1,9 @@
 using FluentValidation;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection;
+using Nimbus.Application.Common;
 using Nimbus.Application.Common.Behaviours;
+using Nimbus.Application.Common.Interfaces;
 using Nimbus.Application.Features.Balloons;
 using Nimbus.Application.Features.FlightAssessment;
 using Nimbus.Application.Features.LaunchLocations;
@@ -20,6 +22,7 @@ public static class DependencyInjection
         services.AddValidatorsFromAssembly(typeof(DependencyInjection).Assembly);
 
         services.AddScoped<EmailHelpers>();
+        services.AddSingleton<IRichTextSanitizer, RichTextSanitizer>();
         services.AddScoped<IBalloonService, BalloonService>();
         services.AddScoped<IFlightAssessmentService, FlightAssessmentService>();
         services.AddScoped<IPilotService, PilotService>();

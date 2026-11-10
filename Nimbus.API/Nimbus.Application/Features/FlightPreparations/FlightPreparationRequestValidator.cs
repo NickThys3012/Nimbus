@@ -12,6 +12,9 @@ public sealed class FlightPreparationRequestValidator : AbstractValidator<Flight
     public const int MaxPassengers = 30;
     public const int MaxWindLevels = 30;
 
+    /// <summary>Limit on the raw HTML the editor sends, before it is sanitised.</summary>
+    public const int MaxBriefingLength = 20000;
+
     public FlightPreparationRequestValidator()
     {
         RuleFor(r => r.Title).MaximumLength(FlightPreparationMappers.MaxTitleLength);
@@ -59,6 +62,7 @@ public sealed class FlightPreparationRequestValidator : AbstractValidator<Flight
         RuleFor(r => r.OfpFuelRequiredMinutes).InclusiveBetween(0, 10000);
         RuleFor(r => r.OfpLandingLocation).MaximumLength(200);
 
+        RuleFor(r => r.PaxBriefingText).MaximumLength(MaxBriefingLength);
         RuleFor(r => r.PaxBriefingVersion).MaximumLength(50);
 
         RuleFor(r => r.WindLevels).NotNull().Must(l => l.Count <= MaxWindLevels).WithMessage($"At most {MaxWindLevels} wind levels.");

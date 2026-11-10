@@ -9,18 +9,19 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="FluentValidation" Version="12.1.1"/>
-        <PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="12.1.1"/>
-        <PackageReference Include="MediatR" Version="14.2.0"/>
+        <PackageReference Include="FluentValidation" Version="12.1.1" />
+        <PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="12.1.1" />
+        <PackageReference Include="HtmlSanitizer" Version="11.0.26" />
+        <PackageReference Include="MediatR" Version="14.2.0" />
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\Nimbus.Contracts\Nimbus.Contracts.csproj"/>
-        <ProjectReference Include="..\Nimbus.Domain\Nimbus.Domain.csproj"/>
+        <ProjectReference Include="..\Nimbus.Contracts\Nimbus.Contracts.csproj" />
+        <ProjectReference Include="..\Nimbus.Domain\Nimbus.Domain.csproj" />
     </ItemGroup>
 
     <ItemGroup>
-        <Folder Include="Common\Interfaces\Auth\"/>
+        <Folder Include="Common\Interfaces\Auth\" />
     </ItemGroup>
 
 </Project>

@@ -11,10 +11,12 @@ public sealed class CreateFlightPreparationCommandHandler : IRequestHandler<Crea
 {
     private readonly ICurrentUserService _currentUser;
     private readonly IFlightPreparationRepository _flights;
+    private readonly IRichTextSanitizer _sanitizer;
 
-    public CreateFlightPreparationCommandHandler(IFlightPreparationRepository flights, ICurrentUserService currentUser)
+    public CreateFlightPreparationCommandHandler(IFlightPreparationRepository flights, ICurrentUserService currentUser, IRichTextSanitizer sanitizer)
     {
         _flights = flights;
+        _sanitizer = sanitizer;
         _currentUser = currentUser;
     }
 
@@ -22,6 +24,7 @@ public sealed class CreateFlightPreparationCommandHandler : IRequestHandler<Crea
     {
         // A flight is always the caller's own, even for an admin; a new one is always planned.
         var flight = request.Flight.ApplyTo(new FlightPreparation { OwnerId = _currentUser.UserId, Status = FlightPreparationStatus.Planned });
+        flight.PaxBriefingText = _sanitizer.Sanitize(flight.PaxBriefingText);
         await _flights.AddAsync(flight, ct);
         return flight.MapToDto();
     }
