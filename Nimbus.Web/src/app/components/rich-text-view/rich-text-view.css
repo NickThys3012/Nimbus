@@ -3,3 +3,10 @@
 :host ::ng-deep .ql-editor { padding: 0; height: auto; overflow: visible; color: var(--tx); }
 :host ::ng-deep .ql-editor h3 { font-size: 15px; margin: 14px 0 6px; }
 :host ::ng-deep .ql-editor h3:first-child { margin-top: 0; }
+/* Quill draws list markers from editor-only `.ql-ui` spans, which the clean HTML it exports does not
+   contain, so outside the editor its styles show no bullets or numbers. Restore the native markers. */
+:host ::ng-deep .ql-editor ul,
+:host ::ng-deep .ql-editor ol { padding-left: 1.5em; margin: 4px 0; }
+:host ::ng-deep .ql-editor ul { list-style: disc; }
+:host ::ng-deep .ql-editor ol { list-style: decimal; }
+:host ::ng-deep .ql-editor li { list-style: inherit; padding-left: 0; }

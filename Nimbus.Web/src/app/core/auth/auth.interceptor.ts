@@ -14,6 +14,13 @@ import { AuthStore } from './auth.store';
 const AUTH_ENDPOINTS = ['/api/Authentication/login', '/api/Authentication/refresh'];
 
 /**
+ * Reading one flight (the edit form's load and the read-only view's load). A 403 there means "this
+ * flight exists but is not yours to open", which those pages answer themselves by going to the
+ * flight list, so the global access-denied screen must not jump in first.
+ */
+const FLIGHT_READ_URL = /^\/api\/flight-preparations\/[0-9a-f-]{36}(\/detail)?$/i;
+
+/**
  * Attaches the in-memory access token to outgoing API requests and
  * transparently retries once on a 401 by attempting a silent refresh
  * (via the httpOnly refresh-token cookie). If the session cannot be restored
@@ -48,7 +55,8 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
 
       if (error.status === 403) {
         // Pending/rejected accounts get 403s by design; the shell already explains that state.
-        if (!authStore.isPendingApproval() && !authStore.isAccessRejected()) {
+        const pageHandlesIt = req.method === 'GET' && FLIGHT_READ_URL.test(req.url.split('?')[0]);
+        if (!pageHandlesIt && !authStore.isPendingApproval() && !authStore.isAccessRejected()) {
           void router.navigate(['/access-denied']);
         }
         return throwError(() => error);

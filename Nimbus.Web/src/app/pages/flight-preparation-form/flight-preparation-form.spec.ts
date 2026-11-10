@@ -369,6 +369,15 @@ describe('FlightPreparationFormPage', () => {
       expect(flightsApi['postApiFlightPreparations']).toHaveBeenCalledTimes(1);
     });
 
+    it('sends a user who may only view the flight (403) to the read-only view instead of showing an editor', async () => {
+      flightsApi['getApiFlightPreparations1'].mockReturnValue(throwError(() => httpError(403)));
+      const { q } = await createComponent('flight-1', [balloon], [location]);
+
+      expect(navigate).toHaveBeenCalledWith(['/flights', 'flight-1'], { replaceUrl: true });
+      expect(q('load-error-banner')).toBeNull();
+      expect(flightsApi['postApiFlightPreparations']).not.toHaveBeenCalled();
+    });
+
     it('blocks saving when the stored flight could not be loaded, instead of overwriting or duplicating it', async () => {
       flightsApi['getApiFlightPreparations1'].mockReturnValue(throwError(() => httpError(500)));
       const { fixture, q, click } = await createComponent('flight-1', [balloon], [location]);

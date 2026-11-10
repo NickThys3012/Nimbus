@@ -4,6 +4,7 @@
 /* eslint-disable */
 import { Injectable } from '@angular/core';
 import type { Observable } from 'rxjs';
+import type { FlightDetailDto } from '../models/FlightDetailDto';
 import type { FlightListFilter } from '../models/FlightListFilter';
 import type { FlightListPageDto } from '../models/FlightListPageDto';
 import type { FlightListSort } from '../models/FlightListSort';
@@ -96,6 +97,23 @@ export class FlightPreparationsService {
             },
             body: requestBody,
             mediaType: 'application/json',
+        });
+    }
+    /**
+     * @returns FlightDetailDto OK
+     * @throws ApiError
+     */
+    public getApiFlightPreparationsDetail({
+        id,
+    }: {
+        id: string,
+    }): Observable<FlightDetailDto> {
+        return this.httpRequest.request({
+            method: 'GET',
+            url: '/api/flight-preparations/{id}/detail',
+            path: {
+                'id': id,
+            },
         });
     }
 }

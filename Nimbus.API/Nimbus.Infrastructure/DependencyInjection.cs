@@ -78,6 +78,7 @@ public static class DependencyInjection
         services.AddScoped<IOfpSettingsRepository, OfpSettingsRepository>();
         services.AddScoped<IFlightPreparationRepository, FlightPreparationRepository>();
         services.AddScoped<IFlightListReader, FlightListReader>();
+        services.AddScoped<IFlightDetailReader, FlightDetailReader>();
         services.AddScoped<IUserDirectory, UserDirectory>();
         services.AddScoped<IBalloonUsageReader, NoFlightsBalloonUsageReader>();
 

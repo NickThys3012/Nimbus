@@ -1,3 +1,4 @@
+using Nimbus.Contracts.DTOs.Features.FlightAssessment;
 using Nimbus.Domain.Enums;
 namespace Nimbus.Contracts.DTOs.Features.FlightPreparations;
 
@@ -89,3 +90,29 @@ public record PassengerDto(string Name, decimal WeightKg, bool NeedsAssistance, 
 
 /// <summary>A stored dossier: its identity and status plus the form-owned fields.</summary>
 public record FlightPreparationDto(Guid Id, string Status, DateTime? UpdatedDate, FlightPreparationRequestDto Details);
+
+/// <summary>What the signed-in viewer may do with a flight. Computed by the API; the UI only reflects it.</summary>
+public record FlightPermissionsDto(bool CanEdit, bool CanDelete, bool CanShare, bool CanMarkFlown, bool CanExport);
+
+/// <summary>An uploaded image with a short-lived download link.</summary>
+public record FlightImageDto(Guid Id, string Section, string ContentType, string Url);
+
+/// <summary>
+///     Everything the read-only flight view shows. <c>ViewerRole</c> is "Owner", "Admin" or "Shared"; <c>OwnerName</c> is set
+///     only when the viewer is not the owner. Names come from the owner's reference data. <c>Assessment</c> is the single
+///     assessment (weights, lift margin, Go/No-Go) every surface uses.
+/// </summary>
+public record FlightDetailDto(
+    Guid Id,
+    string Status,
+    DateTime? FlownAt,
+    string ViewerRole,
+    FlightPermissionsDto Permissions,
+    string? OwnerName,
+    string? BalloonRegistration,
+    string? PilotName,
+    string? LaunchLocationName,
+    string? LaunchLocationIcaoCode,
+    FlightAssessmentDto Assessment,
+    FlightPreparationRequestDto Details,
+    IReadOnlyList<FlightImageDto> Images);

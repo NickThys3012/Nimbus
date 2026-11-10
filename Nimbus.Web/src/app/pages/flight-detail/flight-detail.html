@@ -1,0 +1,86 @@
+<div class="page">
+  <a class="back" routerLink="/flights" data-testid="back"><i class="ti ti-arrow-left" aria-hidden="true"></i> Flights</a>
+
+  @if (data(); as f) {
+    <header class="head" data-testid="detail-header">
+      <div class="title-row">
+        <h1 data-testid="title">{{ f.details.title }}</h1>
+        <div class="badges">
+          @if (isFlown()) { <span class="badge flown" data-testid="flown-badge">FLOWN</span> }
+          <span class="badge" [class]="verdictClass(verdict())" data-testid="verdict-badge">{{ verdictLabel(verdict()) }}</span>
+        </div>
+      </div>
+      @if (f.ownerName) {
+        <p class="by" data-testid="shared-by">
+          {{ f.viewerRole === 'Shared' ? 'Shared with you by' : 'Owned by' }} {{ f.ownerName }}<span class="read-only"> · read only</span>
+        </p>
+      }
+      <p class="sun" data-testid="sun">
+        <i class="ti ti-sunrise" aria-hidden="true"></i> {{ f.details.sunriseTime ? f.details.sunriseTime.slice(0, 5) : none }}
+        <span class="sep">→</span>
+        <i class="ti ti-sunset" aria-hidden="true"></i> {{ f.details.sunsetTime ? f.details.sunsetTime.slice(0, 5) : none }}
+      </p>
+
+      <div class="actions" data-testid="actions">
+        @if (f.permissions.canEdit) {
+          <Nimbus-button data-testid="action-edit" icon="ti-pencil" id="action-edit" size="sm" variant="primary" [fullWidth]="false" [href]="'/flight-preparations/' + f.id">Edit</Nimbus-button>
+        }
+      </div>
+    </header>
+
+    <div class="sections">
+      @for (s of sections(); track s.id) {
+        <section class="card" [attr.data-section]="s.id" [attr.data-testid]="'section-' + s.id">
+          <h2><span class="num">{{ s.order < 10 ? '0' + s.order : s.order }}</span> {{ s.title }}</h2>
+
+          <dl class="rows">
+            @for (r of s.rows; track r.testId) {
+              <div class="row" [class.computed]="r.computed">
+                <dt>{{ r.label }}</dt>
+                <dd [class.multiline]="r.multiline" [attr.data-testid]="r.testId">{{ r.value }}</dd>
+              </div>
+            }
+          </dl>
+
+          @for (b of s.blocks; track b.testId) {
+            <div class="block">
+              <div class="cap">{{ b.label }}</div>
+              <pre [attr.data-testid]="b.testId">{{ b.value }}</pre>
+            </div>
+          }
+
+          @for (t of s.tables; track t.testId) {
+            <div class="block">
+              <div class="cap">{{ t.caption }}</div>
+              <table [attr.data-testid]="t.testId">
+                <thead><tr>@for (c of t.columns; track c) { <th>{{ c }}</th> }</tr></thead>
+                <tbody>@for (cells of t.rows; track $index) { <tr>@for (cell of cells; track $index) { <td>{{ cell }}</td> }</tr> }</tbody>
+              </table>
+            </div>
+          }
+
+          @if (s.html) {
+            <div class="block" data-testid="briefing">
+              <Nimbus-rich-text-view [html]="s.html" />
+            </div>
+          }
+
+          @if (s.images.length) {
+            <div class="images" [attr.data-testid]="'images-' + s.id">
+              @for (img of s.images; track img.id) {
+                <a [href]="img.url" target="_blank" rel="noopener noreferrer"><img [src]="img.url" [alt]="s.title + ' image'" loading="lazy" data-testid="inline-image" /></a>
+              }
+            </div>
+          }
+        </section>
+      }
+    </div>
+  } @else if (failed()) {
+    <Nimbus-banner data-testid="load-error" icon="ti-alert-triangle" id="detail-load-error" type="error">
+      Could not load this flight.
+      <button type="button" class="link" data-testid="retry" (click)="retry()">Try again</button>
+    </Nimbus-banner>
+  } @else {
+    <p class="loading" data-testid="loading">Loading…</p>
+  }
+</div>

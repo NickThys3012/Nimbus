@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Nimbus.Application.Features.FlightPreparations.Commands.CreateFlightPreparation;
 using Nimbus.Application.Features.FlightPreparations.Commands.UpdateFlightPreparation;
+using Nimbus.Application.Features.FlightPreparations.Queries.GetFlightDetail;
 using Nimbus.Application.Features.FlightPreparations.Queries.GetFlightPreparation;
 using Nimbus.Application.Features.FlightPreparations.Queries.ListFlights;
 using Nimbus.Contracts.DTOs.Features.FlightPreparations;
@@ -40,6 +41,13 @@ public class FlightPreparationsController : ControllerBase
     public async Task<ActionResult<FlightPreparationDto>> Get(Guid id, CancellationToken ct)
     {
         return Ok(await _mediator.Send(new GetFlightPreparationQuery(id), ct));
+    }
+
+    /// <summary>Read-only view for the owner, an admin or anyone the flight is shared with; 403 for everyone else, 404 when it does not exist.</summary>
+    [HttpGet("{id:guid}/detail")]
+    public async Task<ActionResult<FlightDetailDto>> Detail(Guid id, CancellationToken ct)
+    {
+        return Ok(await _mediator.Send(new GetFlightDetailQuery(id), ct));
     }
 
     [HttpPost]

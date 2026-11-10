@@ -10,7 +10,7 @@ import {
 import { NonNullableFormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
-import { catchError, debounceTime, finalize, map, Observable, of, Subject, Subscription, take, tap } from 'rxjs';
+import { catchError, debounceTime, EMPTY, finalize, map, Observable, of, Subject, Subscription, take, tap } from 'rxjs';
 
 import { Banner } from '../../components/banner/banner';
 import { Button } from '../../components/button/button';
@@ -483,6 +483,12 @@ export default class FlightPreparationFormPage implements CanComponentDeactivate
           updatedAt: stored.updatedDate ?? new Date(0).toISOString(),
         })),
         catchError((error: unknown) => {
+          // 403: the flight exists but is not this user's to edit (shared with them, or they are an
+          // admin). Show it read-only instead of an editor that could never save.
+          if (error instanceof ApiError && error.status === 403) {
+            void this.router.navigate(['/flights', id], { replaceUrl: true });
+            return EMPTY;
+          }
           // 404: an id only this browser knows (a draft not saved yet). Anything else is a real
           // failure: do not pretend the flight is new, or saving would duplicate or overwrite it.
           if (!(error instanceof ApiError && error.status === 404)) {

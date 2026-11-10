@@ -114,16 +114,40 @@ public class FlightPreparationSaveTests
     }
 
     [Test]
-    public void Update_AndGet_OfAnotherUsersOrMissingFlight_AreNotFound()
+    public void Update_OfAnotherUsersOrMissingFlight_IsNotFound()
     {
         var repo = new Repo();
         var theirs = Req().ApplyTo(new FlightPreparation { Id = Guid.NewGuid(), OwnerId = Guid.NewGuid() });
         repo.Rows.Add(theirs);
-        var me = new Me(Guid.NewGuid());
+        var handler = new UpdateFlightPreparationCommandHandler(repo, new Me(Guid.NewGuid()), new RichTextSanitizer());
 
-        Assert.ThrowsAsync<NotFoundException>(() => new UpdateFlightPreparationCommandHandler(repo, me, new RichTextSanitizer()).Handle(new UpdateFlightPreparationCommand(theirs.Id, Req()), default));
-        Assert.ThrowsAsync<NotFoundException>(() => new GetFlightPreparationQueryHandler(repo, me).Handle(new GetFlightPreparationQuery(theirs.Id), default));
-        Assert.ThrowsAsync<NotFoundException>(() => new GetFlightPreparationQueryHandler(repo, me).Handle(new GetFlightPreparationQuery(Guid.NewGuid()), default));
+        Assert.ThrowsAsync<NotFoundException>(() => handler.Handle(new UpdateFlightPreparationCommand(theirs.Id, Req()), default));
+        Assert.ThrowsAsync<NotFoundException>(() => handler.Handle(new UpdateFlightPreparationCommand(Guid.NewGuid(), Req()), default));
+    }
+
+    [Test]
+    public async Task Get_ForTheForm_ReturnsTheOwnersFlight()
+    {
+        var me = Guid.NewGuid();
+        var repo = new Repo();
+        var mine = Req().ApplyTo(new FlightPreparation { Id = Guid.NewGuid(), OwnerId = me });
+        repo.Rows.Add(mine);
+
+        var dto = await new GetFlightPreparationQueryHandler(repo, new Access(repo), new Me(me)).Handle(new GetFlightPreparationQuery(mine.Id), default);
+
+        Assert.That(dto.Id, Is.EqualTo(mine.Id));
+    }
+
+    [Test]
+    public void Get_ForTheForm_OfAnotherUsersFlight_IsForbidden_AndOfAMissingOne_NotFound()
+    {
+        var repo = new Repo();
+        var theirs = Req().ApplyTo(new FlightPreparation { Id = Guid.NewGuid(), OwnerId = Guid.NewGuid() });
+        repo.Rows.Add(theirs);
+        var handler = new GetFlightPreparationQueryHandler(repo, new Access(repo), new Me(Guid.NewGuid()));
+
+        Assert.ThrowsAsync<ForbiddenException>(() => handler.Handle(new GetFlightPreparationQuery(theirs.Id), default));
+        Assert.ThrowsAsync<NotFoundException>(() => handler.Handle(new GetFlightPreparationQuery(Guid.NewGuid()), default));
     }
 
     private const string Hostile = "<p>Hold on</p><script>alert(1)</script><img src=x onerror=alert(1)>";
@@ -186,6 +210,18 @@ public class FlightPreparationSaveTests
     {
         public Guid UserId => id;
         public Task<User?> GetCurrentUserAsync() => Task.FromResult<User?>(null);
+    }
+
+    /// <summary>The access answer the real reader gives: the owner is the owner, everyone else may not edit.</summary>
+    private sealed class Access(Repo repo) : IFlightDetailReader
+    {
+        public Task<FlightAccess> GetAccessAsync(Guid viewerId, bool isAdmin, Guid flightId, CancellationToken ct = default)
+        {
+            var flight = repo.Rows.FirstOrDefault(f => f.Id == flightId);
+            return Task.FromResult(flight is null ? new FlightAccess(false, null) : new FlightAccess(true, flight.OwnerId == viewerId ? FlightViewerRole.Owner : isAdmin ? FlightViewerRole.Admin : null));
+        }
+
+        public Task<FlightDetailResult> GetAsync(Guid viewerId, bool isAdmin, Guid flightId, CancellationToken ct = default) => throw new NotSupportedException();
     }
 
     /// <summary>Owner-scoped like the real repository: another user's flight behaves like a missing one.</summary>
