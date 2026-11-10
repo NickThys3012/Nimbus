@@ -100,6 +100,23 @@ export class FlightPreparationsService {
         });
     }
     /**
+     * @returns any OK
+     * @throws ApiError
+     */
+    public deleteApiFlightPreparations({
+        id,
+    }: {
+        id: string,
+    }): Observable<any> {
+        return this.httpRequest.request({
+            method: 'DELETE',
+            url: '/api/flight-preparations/{id}',
+            path: {
+                'id': id,
+            },
+        });
+    }
+    /**
      * @returns FlightDetailDto OK
      * @throws ApiError
      */

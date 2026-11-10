@@ -18,6 +18,9 @@
         @if (f.permissions.canEdit) {
           <Nimbus-button data-testid="action-edit" icon="ti-edit" id="action-edit" size="sm" variant="ghost" [fullWidth]="false" [href]="'/flight-preparations/' + f.id">Edit</Nimbus-button>
         }
+        @if (f.permissions.canDelete) {
+          <Nimbus-button data-testid="action-delete" icon="ti-trash" id="action-delete" size="sm" variant="danger" [fullWidth]="false" (click)="askDelete()">Delete</Nimbus-button>
+        }
         <span class="readonly-note" data-testid="readonly-note">{{ h.readonlyNote }}</span>
       </div>
 
@@ -99,3 +102,16 @@
     <p class="loading" data-testid="loading">Loading…</p>
   }
 </div>
+
+<Nimbus-modal [isOpen]="confirmingDelete()" [alert]="true" width="confirm" [title]="deleteTitle()" [description]="deleteText()" (closed)="closeDelete()" data-testid="delete-dialog">
+  <div modal-icon class="glyph err"><i class="ti ti-trash" aria-hidden="true"></i></div>
+  <div modal-body>
+    @if (deleteError(); as message) {
+      <p class="del-error" role="alert" data-testid="delete-error"><i class="ti ti-alert-triangle" aria-hidden="true"></i> {{ message }}</p>
+    }
+  </div>
+  <div modal-actions>
+    <Nimbus-button id="delete-cancel" data-testid="delete-cancel" variant="ghost" [fullWidth]="false" [disabled]="deleting()" (click)="closeDelete()">Cancel</Nimbus-button>
+    <Nimbus-button id="delete-confirm" data-testid="delete-confirm" variant="danger" [fullWidth]="false" [disabled]="deleting()" (click)="confirmDelete()">Delete permanently</Nimbus-button>
+  </div>
+</Nimbus-modal>
