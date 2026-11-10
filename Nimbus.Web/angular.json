@@ -25,8 +25,8 @@
                 "input": "public"
               }
             ],
-            "allowedCommonJsDependencies": ["leaflet"],
-            "styles": ["src/styles.css", "node_modules/@tabler/icons-webfont/dist/tabler-icons.min.css", "node_modules/leaflet/dist/leaflet.css"]
+            "allowedCommonJsDependencies": ["leaflet", "quill-delta"],
+            "styles": ["src/styles.css", "node_modules/@tabler/icons-webfont/dist/tabler-icons.min.css", "node_modules/leaflet/dist/leaflet.css", "node_modules/quill/dist/quill.snow.css"]
           },
           "configurations": {
             "production": {

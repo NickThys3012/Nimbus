@@ -1,1 +1,20 @@
-/* Section-specific overrides, if any — shared field styling lives in ../section-fields.css. */
+/* Section-specific overrides — shared field styling lives in ../section-fields.css. */
+.label-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 5px; }
+.label-row .label-like { margin-bottom: 0; }
+.badge { font: 10px var(--mono); color: var(--dim); }
+.badge.custom { color: var(--a); }
+.editor { display: block; }
+.actions { margin: 8px 0 14px; }
+.preview-box { border: 1px dashed var(--ln2); border-radius: 8px; padding: 12px 14px; background: var(--chip); }
+
+/* Quill's snow theme, dressed with the app's tokens so it follows light and dark. */
+:host ::ng-deep .ql-toolbar.ql-snow { background: var(--inp); border: 1px solid var(--ln); border-radius: 8px 8px 0 0; }
+:host ::ng-deep .ql-container.ql-snow { background: var(--inp); border: 1px solid var(--ln); border-top: 0; border-radius: 0 0 8px 8px; font-family: var(--sans); font-size: 14px; }
+:host ::ng-deep .ql-editor { min-height: 220px; max-height: 420px; overflow-y: auto; color: var(--tx); }
+:host ::ng-deep .ql-editor.ql-blank::before { color: var(--fnt); font-style: normal; }
+:host ::ng-deep .ql-snow .ql-stroke { stroke: var(--tx); }
+:host ::ng-deep .ql-snow .ql-fill { fill: var(--tx); }
+:host ::ng-deep .ql-snow .ql-picker { color: var(--tx); }
+:host ::ng-deep .ql-snow .ql-picker-options { background: var(--inp); border-color: var(--ln); }
+:host ::ng-deep .ql-snow .ql-tooltip { background: var(--inp); color: var(--tx); border-color: var(--ln); box-shadow: none; }
+:host ::ng-deep .ql-snow .ql-tooltip input[type=text] { background: var(--inp); color: var(--tx); border-color: var(--ln); }

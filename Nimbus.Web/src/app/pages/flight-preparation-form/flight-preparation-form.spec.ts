@@ -15,6 +15,7 @@ import {
   LiftCalculationService,
   PilotsService,
 } from '../../core/api-client';
+import { PAX_BRIEFING_TEMPLATE_HTML, PAX_BRIEFING_TEMPLATE_VERSION } from '../../core/flight-preparations/pax-briefing-template';
 import { toRequestDto } from '../../core/flight-preparations/flight-preparation.mapper';
 import { LOCAL_STORAGE } from '../../services/theme-service';
 
@@ -165,6 +166,28 @@ describe('FlightPreparationFormPage', () => {
     expect(q<HTMLInputElement>('flight-time')?.value).toMatch(/^(07|19):00$/);
   });
 
+  it('starts a new flight with the standard passenger briefing, not customized', async () => {
+    const { fixture } = await createComponent();
+
+    expect(fixture.componentInstance['form']().controls.paxBriefing.getRawValue()).toEqual({
+      paxBriefingText: PAX_BRIEFING_TEMPLATE_HTML,
+      paxBriefingVersion: PAX_BRIEFING_TEMPLATE_VERSION,
+      paxBriefingIsCustom: false,
+    });
+    expect(fixture.componentInstance['form']().dirty).toBe(false);
+  });
+
+  it('keeps the stored briefing of a saved flight instead of replacing it with the template', async () => {
+    seedSavedFlight('flight-1', { paxBriefing: { paxBriefingText: '<p>my own</p>', paxBriefingVersion: 'old', paxBriefingIsCustom: true } });
+    const { fixture } = await createComponent('flight-1');
+
+    expect(fixture.componentInstance['form']().controls.paxBriefing.getRawValue()).toEqual({
+      paxBriefingText: '<p>my own</p>',
+      paxBriefingVersion: 'old',
+      paxBriefingIsCustom: true,
+    });
+  });
+
   it('snapshots the picked balloon weights onto a new flight', async () => {
     const { fixture, q } = await createComponent(null, [balloon]);
     const select = q<HTMLSelectElement>('balloon')!;
@@ -285,6 +308,8 @@ describe('FlightPreparationFormPage', () => {
       const body = flightsApi['postApiFlightPreparations'].mock.calls[0][0].requestBody;
       expect(body.title).toBe('Weelde · 2026-08-08');
       expect(body.balloonId).toBe('b1');
+      expect(body.paxBriefingText).toBe(PAX_BRIEFING_TEMPLATE_HTML);
+      expect(body.paxBriefingIsCustom).toBe(false);
       expect(navigate).toHaveBeenCalledWith(['/flight-preparations', 'server-1'], { replaceUrl: true });
       expect(q('saved-tag')).not.toBeNull();
       expect(fixture.componentInstance['form']().dirty).toBe(false);

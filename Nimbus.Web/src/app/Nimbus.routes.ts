@@ -19,12 +19,9 @@ export const routes: Routes = [
     canActivate: [authGuard],
   },
   {
-    path: 'flight-preparations/new',
-    loadComponent: () => import('./pages/flight-preparation-form/flight-preparation-form'),
-    canActivate: [authGuard],
-    canDeactivate: [unsavedChangesGuard],
-  },
-  {
+    // One route for "new" and a saved id: when a new flight gets its id the URL changes from
+    // /new to /:id, and with two route entries that would rebuild the page (editor focus and the
+    // open section lost mid-typing). `new` is simply the id of a flight that has none yet.
     path: 'flight-preparations/:id',
     loadComponent: () => import('./pages/flight-preparation-form/flight-preparation-form'),
     canActivate: [authGuard],

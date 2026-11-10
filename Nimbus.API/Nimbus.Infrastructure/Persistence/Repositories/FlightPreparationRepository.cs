@@ -43,25 +43,42 @@ public class FlightPreparationRepository : IFlightPreparationRepository
         var scope = new CallerGraph(flight);
         scope.Detach();
         var entries = new List<object>();
-        await using var tx = await _db.Database.BeginTransactionAsync(ct);
+
+        // The retrying execution strategy must own the whole transaction so a retry replays
+        // begin/commit together; a manually-scoped transaction isn't supported alongside it.
+        // scope.Detach/Restore wrap every retry attempt exactly once: Restore(success) only
+        // fires after the strategy either finishes successfully or gives up for good.
+        var strategy = _db.Database.CreateExecutionStrategy();
         try
         {
-            // 1. The flight alone: no navigation to children, so EF cannot cascade-insert anything.
-            _db.FlightPreparations.Add(flight);
-            entries.Add(flight);
-            await _db.SaveChangesAsync(ct);
+            await strategy.ExecuteAsync(async () =>
+            {
+                entries.Clear();
+                await using var tx = await _db.Database.BeginTransactionAsync(ct);
+                try
+                {
+                    // 1. The flight alone: no navigation to children, so EF cannot cascade-insert anything.
+                    _db.FlightPreparations.Add(flight);
+                    entries.Add(flight);
+                    await _db.SaveChangesAsync(ct);
 
-            // 2. Children re-parented to the generated id, order = position in the supplied list.
-            InsertChildren(flight.Id, scope.Passengers, scope.WindLevels, entries);
-            await _db.SaveChangesAsync(ct);
+                    // 2. Children re-parented to the generated id, order = position in the supplied list.
+                    InsertChildren(flight.Id, scope.Passengers, scope.WindLevels, entries);
+                    await _db.SaveChangesAsync(ct);
 
-            await tx.CommitAsync(ct);
+                    await tx.CommitAsync(ct);
+                }
+                catch
+                {
+                    await tx.RollbackAsync(CancellationToken.None);
+                    DetachFromTracker(entries);
+                    throw;
+                }
+            });
             scope.Restore(success: true);
         }
         catch
         {
-            await tx.RollbackAsync(CancellationToken.None);
-            DetachFromTracker(entries);
             scope.Restore(success: false);
             throw;
         }
@@ -72,38 +89,53 @@ public class FlightPreparationRepository : IFlightPreparationRepository
         var scope = new CallerGraph(flight);
         scope.Detach();
         var entries = new List<object>();
-        await using var tx = await _db.Database.BeginTransactionAsync(ct);
+
+        // See AddAsync: the retrying execution strategy must own the whole transaction, and
+        // scope.Detach/Restore wrap every retry attempt exactly once.
+        var strategy = _db.Database.CreateExecutionStrategy();
         try
         {
-            // Owner AND id: another user's flight looks exactly like a missing one.
-            var existing = await _db.FlightPreparations.FirstOrDefaultAsync(f => f.Id == flight.Id && f.OwnerId == ownerId, ct);
-            if (existing is null)
+            var found = await strategy.ExecuteAsync(async () =>
             {
-                await tx.RollbackAsync(ct);
-                scope.Restore(success: true);
-                return false;
-            }
+                entries.Clear();
+                await using var tx = await _db.Database.BeginTransactionAsync(ct);
+                try
+                {
+                    // Owner AND id: another user's flight looks exactly like a missing one.
+                    var existing = await _db.FlightPreparations.FirstOrDefaultAsync(f => f.Id == flight.Id && f.OwnerId == ownerId, ct);
+                    if (existing is null)
+                    {
+                        await tx.RollbackAsync(ct);
+                        return false;
+                    }
 
-            entries.Add(existing);
-            CopyDossierColumns(flight, existing);
-            await _db.SaveChangesAsync(ct);
+                    entries.Add(existing);
+                    CopyDossierColumns(flight, existing);
+                    await _db.SaveChangesAsync(ct);
 
-            // Replace strategy: hard-delete every existing child row (including soft-deleted ones,
-            // hence IgnoreQueryFilters), then insert the supplied list in order.
-            await _db.Passengers.IgnoreQueryFilters().Where(p => p.FlightPreparationId == existing.Id).ExecuteDeleteAsync(ct);
-            await _db.WindLevels.IgnoreQueryFilters().Where(w => w.FlightPreparationId == existing.Id).ExecuteDeleteAsync(ct);
-            InsertChildren(existing.Id, scope.Passengers, scope.WindLevels, entries);
-            await _db.SaveChangesAsync(ct);
+                    // Replace strategy: hard-delete every existing child row (including soft-deleted ones,
+                    // hence IgnoreQueryFilters), then insert the supplied list in order.
+                    await _db.Passengers.IgnoreQueryFilters().Where(p => p.FlightPreparationId == existing.Id).ExecuteDeleteAsync(ct);
+                    await _db.WindLevels.IgnoreQueryFilters().Where(w => w.FlightPreparationId == existing.Id).ExecuteDeleteAsync(ct);
+                    InsertChildren(existing.Id, scope.Passengers, scope.WindLevels, entries);
+                    await _db.SaveChangesAsync(ct);
 
-            await tx.CommitAsync(ct);
-            flight.UpdatedDate = existing.UpdatedDate;
+                    await tx.CommitAsync(ct);
+                    flight.UpdatedDate = existing.UpdatedDate;
+                    return true;
+                }
+                catch
+                {
+                    await tx.RollbackAsync(CancellationToken.None);
+                    DetachFromTracker(entries);
+                    throw;
+                }
+            });
             scope.Restore(success: true);
-            return true;
+            return found;
         }
         catch
         {
-            await tx.RollbackAsync(CancellationToken.None);
-            DetachFromTracker(entries);
             scope.Restore(success: false);
             throw;
         }

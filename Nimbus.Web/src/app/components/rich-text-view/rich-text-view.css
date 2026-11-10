@@ -1,0 +1,5 @@
+:host { display: block; }
+:host ::ng-deep .ql-container.ql-snow { border: 0; font-family: inherit; font-size: 14px; }
+:host ::ng-deep .ql-editor { padding: 0; height: auto; overflow: visible; color: var(--tx); }
+:host ::ng-deep .ql-editor h3 { font-size: 15px; margin: 14px 0 6px; }
+:host ::ng-deep .ql-editor h3:first-child { margin-top: 0; }

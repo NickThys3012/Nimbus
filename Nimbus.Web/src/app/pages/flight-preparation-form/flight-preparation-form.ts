@@ -32,6 +32,7 @@ import {
   nextFlightSlot,
   sectionCompletionStatus,
 } from '../../core/flight-preparations/flight-preparation-form';
+import { defaultPaxBriefing } from '../../core/flight-preparations/pax-briefing-template';
 import { FlightListStore } from '../../core/flight-preparations/flight-list.store';
 import { flightTitle, fromDto, toRequestDto } from '../../core/flight-preparations/flight-preparation.mapper';
 import { FlightPreparationDraftStore } from '../../core/flight-preparations/flight-preparation-draft.store';
@@ -513,7 +514,11 @@ export default class FlightPreparationFormPage implements CanComponentDeactivate
 
     const form = createFlightPreparationForm(this.fb);
     if (valueToUse) hydrateFlightPreparationForm(form, this.fb, valueToUse);
-    else form.controls.general.patchValue(nextFlightSlot());
+    else {
+      form.controls.general.patchValue(nextFlightSlot());
+      // A new flight starts with the standard passenger briefing, ready to adapt.
+      form.controls.paxBriefing.patchValue(defaultPaxBriefing());
+    }
     form.markAsPristine();
 
     this.replaceForm(form);
