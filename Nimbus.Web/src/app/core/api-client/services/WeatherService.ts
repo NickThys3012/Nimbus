@@ -7,6 +7,7 @@ import type { Observable } from 'rxjs';
 import type { HourlyForecastDto } from '../models/HourlyForecastDto';
 import type { MetarTafDto } from '../models/MetarTafDto';
 import type { WindProfileDto } from '../models/WindProfileDto';
+import type { WindSeriesDto } from '../models/WindSeriesDto';
 import { BaseHttpRequest } from '../core/BaseHttpRequest';
 @Injectable({
     providedIn: 'root',
@@ -75,6 +76,35 @@ export class WeatherService {
             query: {
                 'latitude': latitude,
                 'longitude': longitude,
+                'model': model,
+            },
+        });
+    }
+    /**
+     * @returns WindSeriesDto OK
+     * @throws ApiError
+     */
+    public getApiWeatherWindSeries({
+        latitude,
+        longitude,
+        fromUtc,
+        toUtc,
+        model,
+    }: {
+        latitude?: number | string,
+        longitude?: number | string,
+        fromUtc?: string,
+        toUtc?: string,
+        model?: string,
+    }): Observable<WindSeriesDto> {
+        return this.httpRequest.request({
+            method: 'GET',
+            url: '/api/weather/wind-series',
+            query: {
+                'latitude': latitude,
+                'longitude': longitude,
+                'fromUtc': fromUtc,
+                'toUtc': toUtc,
                 'model': model,
             },
         });

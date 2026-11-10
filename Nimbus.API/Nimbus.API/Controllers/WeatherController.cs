@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Nimbus.Application.Features.Weather.Queries.GetHourlyForecast;
 using Nimbus.Application.Features.Weather.Queries.GetMetarTaf;
 using Nimbus.Application.Features.Weather.Queries.GetWindProfile;
+using Nimbus.Application.Features.Weather.Queries.GetWindSeries;
 using Nimbus.Contracts.DTOs.Features.Weather;
 namespace Nimbus.API.Controllers;
 
@@ -51,5 +52,17 @@ public class WeatherController : ControllerBase
         [FromQuery] double latitude, [FromQuery] double longitude, [FromQuery] string? model, CancellationToken ct)
     {
         return Ok(await _mediator.Send(new GetHourlyForecastQuery(latitude, longitude, model), ct));
+    }
+
+    /// <summary>
+    ///     Hourly wind snapshots across the pressure levels and the 10-200 m levels between two UTC hours, for the trajectory
+    ///     simulator. The window is clamped to what the model offers and the shortfall is reported; a provider outage is an empty
+    ///     series with <c>providerAvailable: false</c>, not an error. 422 for an unsupported model or a bad window. Nothing is stored.
+    /// </summary>
+    [HttpGet("wind-series")]
+    public async Task<ActionResult<WindSeriesDto>> WindSeries(
+        [FromQuery] double latitude, [FromQuery] double longitude, [FromQuery] DateTime fromUtc, [FromQuery] DateTime toUtc, [FromQuery] string? model, CancellationToken ct)
+    {
+        return Ok(await _mediator.Send(new GetWindSeriesQuery(latitude, longitude, fromUtc, toUtc, model), ct));
     }
 }

@@ -150,3 +150,31 @@ its header. There is no mockup for the forecast table itself; the sunrise/sunset
 - **Use** on an hour fills wind, direction, CAPE and temperature (a missing value leaves its field alone) and the
   Sunrise and Sunset fields of section 01 for that day. Fetching alone changes no field.
 - Provider down, or no data for the model: an empty state with the reason, never an error page; the form is unaffected.
+
+## Wind series for the trajectory simulator (issue #47)
+
+`GET /api/weather/wind-series?latitude=&longitude=&fromUtc=&toUtc=&model=` returns hourly wind snapshots between two UTC
+hours: `WindSeriesDto { model, requestedFromUtc, requestedToUtc, fromUtc, toUtc, shortfallHours, gapHoursUtc[],
+providerAvailable, snapshots[] }`. Each snapshot is `{ hourUtc, levels[] }` with the same levels as the wind profile
+(#46): 10, 20, 50, 100, 150, 200 m above ground plus 950/925/900/850 hPa, lowest first. Data is Open-Meteo, knots, one
+request for the whole window. `model` defaults to `OpenMeteo:ForecastModel` (`icon_seamless`), and only the models
+the wind profile accepts (`WindProfileMapper.SupportedModels`) are allowed. Nothing is stored. No UI: it is for the simulator.
+
+- **Clamped window.** Only hours from now up to the model's horizon exist: 96 h by default, 59 h for `icon_d2` and
+  `ukmo_uk_deterministic_2km`, 56 h for `meteofrance_arome_france`. `fromUtc` / `toUtc` are what was served,
+  `shortfallHours` is how many requested hours fall outside it (past hours count). A window wholly beyond the horizon
+  is an empty series and the provider is not called.
+- **Never null downstream.** `snapshots` and `gapHoursUtc` are always lists. A failed provider (down, slow, error
+  status, bad JSON) is an empty series with `providerAvailable: false` and a logged warning, not a 502. This differs
+  from `wind-profile`, where the pilot is waiting on a single answer.
+- **Nulls are gaps, not zeros.** An hour where the model lacks any required level (or that the reply left out) is not
+  a snapshot; it is listed in `gapHoursUtc`, so a snapshot is always complete.
+- **Cache.** A successful fetch is cached per model, place (0.01°) and window for `OpenMeteo:SeriesCacheMinutes`
+  (default 60, below the models' 3 to 6 h update cycles), so re-running a simulation does not refetch. The model is part
+  of the key. A failed fetch is not cached. The cache is in memory, per API instance.
+
+| Outcome | Answer |
+|---|---|
+| Series (possibly clamped, with gaps) | `200` |
+| Provider failed | `200`, empty series, `providerAvailable: false` |
+| Unsupported model, `toUtc` before `fromUtc`, window over 7 days, bad coordinates | `422` |

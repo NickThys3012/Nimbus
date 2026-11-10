@@ -18,6 +18,9 @@ public sealed class OpenMeteoOptions : IForecastSettings
     /// <summary>Days the hourly forecast covers.</summary>
     public int ForecastDays { get; init; } = 3;
 
+    /// <summary>Minutes a fetched wind series is cached for (issue #47), so re-running a simulation does not refetch.</summary>
+    public int SeriesCacheMinutes { get; init; } = 60;
+
     string IForecastSettings.DefaultModel => ForecastModel;
 
     int IForecastSettings.Days => ForecastDays;
