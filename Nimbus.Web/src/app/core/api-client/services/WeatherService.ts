@@ -4,6 +4,7 @@
 /* eslint-disable */
 import { Injectable } from '@angular/core';
 import type { Observable } from 'rxjs';
+import type { HourlyForecastDto } from '../models/HourlyForecastDto';
 import type { MetarTafDto } from '../models/MetarTafDto';
 import type { WindProfileDto } from '../models/WindProfileDto';
 import { BaseHttpRequest } from '../core/BaseHttpRequest';
@@ -51,6 +52,29 @@ export class WeatherService {
                 'latitude': latitude,
                 'longitude': longitude,
                 'hourUtc': hourUtc,
+                'model': model,
+            },
+        });
+    }
+    /**
+     * @returns HourlyForecastDto OK
+     * @throws ApiError
+     */
+    public getApiWeatherHourlyForecast({
+        latitude,
+        longitude,
+        model,
+    }: {
+        latitude?: number | string,
+        longitude?: number | string,
+        model?: string,
+    }): Observable<HourlyForecastDto> {
+        return this.httpRequest.request({
+            method: 'GET',
+            url: '/api/weather/hourly-forecast',
+            query: {
+                'latitude': latitude,
+                'longitude': longitude,
                 'model': model,
             },
         });

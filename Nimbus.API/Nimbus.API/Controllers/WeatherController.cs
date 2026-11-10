@@ -1,6 +1,7 @@
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Nimbus.Application.Features.Weather.Queries.GetHourlyForecast;
 using Nimbus.Application.Features.Weather.Queries.GetMetarTaf;
 using Nimbus.Application.Features.Weather.Queries.GetWindProfile;
 using Nimbus.Contracts.DTOs.Features.Weather;
@@ -38,5 +39,17 @@ public class WeatherController : ControllerBase
         [FromQuery] double latitude, [FromQuery] double longitude, [FromQuery] DateTime? hourUtc, [FromQuery] string? model, CancellationToken ct)
     {
         return Ok(await _mediator.Send(new GetWindProfileQuery(latitude, longitude, hourUtc, model), ct));
+    }
+
+    /// <summary>
+    ///     Hourly forecast (temperature, wind, gusts, CAPE, precipitation) and sunrise/sunset for a place over the configured
+    ///     horizon, in the site's own timezone. 422 for an unsupported model or bad coordinates, 502 when the provider is down.
+    ///     Nothing is stored.
+    /// </summary>
+    [HttpGet("hourly-forecast")]
+    public async Task<ActionResult<HourlyForecastDto>> HourlyForecast(
+        [FromQuery] double latitude, [FromQuery] double longitude, [FromQuery] string? model, CancellationToken ct)
+    {
+        return Ok(await _mediator.Send(new GetHourlyForecastQuery(latitude, longitude, model), ct));
     }
 }

@@ -7,6 +7,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
 using Nimbus.Application.Common.Interfaces;
+using Nimbus.Application.Features.Weather;
 using Nimbus.Domain.Interfaces;
 using Nimbus.Infrastructure.Identity;
 using Nimbus.Infrastructure.Persistence;
@@ -131,7 +132,18 @@ public static class DependencyInjection
             .Bind(config.GetSection(OpenMeteoOptions.SectionName))
             .Validate(o => Uri.TryCreate(o.BaseUrl, UriKind.Absolute, out var u) && u.Scheme == Uri.UriSchemeHttps, "OpenMeteo:BaseUrl must be an absolute https URL.")
             .Validate(o => o.TimeoutSeconds is >= 1 and <= 60, "OpenMeteo:TimeoutSeconds must be between 1 and 60.")
-            .Validate(o => !string.IsNullOrWhiteSpace(o.UserAgent), "OpenMeteo:UserAgent must be configured.");
+            .Validate(o => !string.IsNullOrWhiteSpace(o.UserAgent), "OpenMeteo:UserAgent must be configured.")
+            .Validate(o => HourlyForecastModels.Supported.Contains(o.ForecastModel), "OpenMeteo:ForecastModel must be a supported forecast model.")
+            .Validate(o => o.ForecastDays is >= 1 and <= 7, "OpenMeteo:ForecastDays must be between 1 and 7.");
+
+        services.AddSingleton<IForecastSettings>(sp => sp.GetRequiredService<IOptions<OpenMeteoOptions>>().Value);
+        services.AddHttpClient<IHourlyForecastClient, OpenMeteoHourlyForecastClient>((sp, http) =>
+        {
+            var options = sp.GetRequiredService<IOptions<OpenMeteoOptions>>().Value;
+            http.BaseAddress = new Uri(options.BaseUrl.EndsWith('/') ? options.BaseUrl : options.BaseUrl + "/");
+            http.Timeout = TimeSpan.FromSeconds(options.TimeoutSeconds);
+            http.DefaultRequestHeaders.UserAgent.ParseAdd(options.UserAgent);
+        });
 
         services.AddHttpClient<IWindProfileClient, OpenMeteoWindProfileClient>((sp, http) =>
         {

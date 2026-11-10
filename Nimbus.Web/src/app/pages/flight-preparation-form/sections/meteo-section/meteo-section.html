@@ -136,6 +136,99 @@
     <i aria-hidden="true" class="ti ti-plus"></i> Level
   </button>
 
+  <div class="forecast" data-testid="hourly-forecast">
+    <div class="wind-head">
+      <span class="wind-title">HOURLY FORECAST</span>
+      <span class="wind-rule"></span>
+      <span class="wind-source">open-meteo</span>
+    </div>
+    <div class="wind-fetch">
+      <label class="sr-only" for="fp-forecast-model">Forecast model</label>
+      <select id="fp-forecast-model" data-testid="forecast-model" [value]="forecast.model()" (change)="setForecastModel($event)">
+        @for (m of forecastModels; track m) {
+          <option [value]="m" [selected]="m === forecast.model()">{{ m }}{{ m === defaultForecastModel ? ' (default)' : '' }}</option>
+        }
+      </select>
+      <button
+        class="btn"
+        data-testid="fetch-forecast"
+        type="button"
+        [disabled]="forecast.fetching() || !!forecast.blockedReason()"
+        [attr.title]="forecast.blockedReason()"
+        (click)="fetchForecast()"
+      >
+        <i aria-hidden="true" class="ti ti-refresh" [class.spin]="forecast.fetching()"></i>
+        {{ forecast.fetching() ? 'Fetching…' : 'Fetch forecast' }}
+      </button>
+    </div>
+    <div class="fetch-note" aria-live="polite">
+      @if (forecast.blockedReason(); as reason) {
+        <span class="blocked" data-testid="forecast-blocked">{{ reason }}</span>
+      } @else if (forecast.unavailable(); as reason) {
+        <span class="empty" data-testid="forecast-empty">{{ reason }}</span>
+      } @else if (forecast.forecast(); as f) {
+        <span data-testid="forecast-summary">Times in {{ f.timeZone }} (the launch site's local time). Pick an hour to fill the meteo fields above.</span>
+      }
+    </div>
+    @for (day of forecast.days(); track day.date) {
+      <div class="fc-day" [attr.data-testid]="'forecast-day-' + day.date">
+        <div class="fc-day-head">
+          <span class="fc-date">{{ day.date }}</span>
+          @if (day.sunrise && day.sunset) {
+            <span class="fc-sun" data-testid="forecast-sun"><i aria-hidden="true" class="ti ti-sun"></i> {{ day.sunrise }} – {{ day.sunset }}</span>
+          }
+        </div>
+        <div class="fc-scroll">
+          <table class="data fc-table">
+            <thead>
+              <tr>
+                <th scope="col">TIME</th>
+                <th scope="col" class="r">°C</th>
+                <th scope="col" class="r">KT</th>
+                <th scope="col" class="r">DIR</th>
+                <th scope="col" class="r">GUST</th>
+                <th scope="col" class="r">CAPE</th>
+                <th scope="col" class="r">MM</th>
+                <th scope="col" class="r">%</th>
+                <th scope="col"><span class="sr-only">Use</span></th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (row of day.hours; track row.hour.time) {
+                @if (row.modelChange; as change) {
+                  <tr class="fc-model-change" data-testid="forecast-model-change">
+                    <td colspan="9"><i aria-hidden="true" class="ti ti-arrow-down"></i> {{ change.to }} from here (coarser than {{ change.from }})</td>
+                  </tr>
+                }
+                <tr [class.planned]="isPlanned(row.hour)" [attr.aria-current]="isPlanned(row.hour) ? 'time' : null" [attr.data-testid]="'forecast-hour-' + row.hour.time">
+                  <td>{{ row.hour.time.slice(11) }}</td>
+                  <td class="r">{{ row.hour.temperatureC ?? '–' }}</td>
+                  <td class="r">{{ row.hour.windSpeedKt ?? '–' }}</td>
+                  <td class="r">{{ row.hour.windDirectionDeg === null || row.hour.windDirectionDeg === undefined ? '–' : row.hour.windDirectionDeg + '°' }}</td>
+                  <td class="r">{{ row.hour.windGustKt ?? '–' }}</td>
+                  <td class="r">{{ row.hour.capeJPerKg ?? '–' }}</td>
+                  <td class="r">{{ row.hour.precipitationMm ?? '–' }}</td>
+                  <td class="r">{{ row.hour.precipitationProbabilityPct ?? '–' }}</td>
+                  <td class="r">
+                    <button
+                      class="btn fc-use"
+                      type="button"
+                      [attr.data-testid]="'forecast-use-' + row.hour.time"
+                      [attr.aria-label]="'Use the forecast for ' + row.hour.time.slice(11)"
+                      (click)="useHour(row.hour, day)"
+                    >
+                      Use
+                    </button>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+    }
+  </div>
+
   <Nimbus-modal
     [isOpen]="!!wind.pending()"
     [alert]="true"

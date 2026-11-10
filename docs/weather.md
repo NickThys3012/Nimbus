@@ -113,3 +113,40 @@ flight's date and time (current hour when not filled in). `+ Level` keeps workin
 - **Never overwrites the pilot's rows silently.** When the table has rows that are not blank and not exactly what the
   last fetch wrote, a confirmation dialog ("Replace your wind levels?" / Keep mine / Replace) appears first; rows still
   equal to the last fetch are replaced without asking.
+
+## Hourly forecast and sunrise/sunset (issue #45)
+
+`GET /api/weather/hourly-forecast?latitude=&longitude=&model=` returns `HourlyForecastDto { model, timeZone,
+utcOffsetSeconds, days[], hours[] }` from [Open-Meteo](https://open-meteo.com/) (knots, three days). Nothing is stored.
+
+- **Hour** `{ time, model, temperatureC, windSpeedKt, windDirectionDeg, windGustKt, capeJPerKg, precipitationMm,
+  precipitationProbabilityPct }`. `time` is the launch site's **local** wall-clock time (`yyyy-MM-ddTHH:mm`); the
+  timezone comes from `timezone=auto` (derived from the coordinates, nothing hard-coded). A value the model does not
+  provide is `null` and shown as "–", never zero.
+- **Day** `{ date, sunrise, sunset }`, `HH:mm` local (`daily=sunrise,sunset`), null when the sun does not rise or set.
+- **Per-hour model.** A seamless model is requested as its parts (`icon_seamless` = `icon_d2` → `icon_eu` →
+  `icon_global`, likewise `meteofrance_seamless`, `ukmo_seamless`; any other model is requested as is). Each hour
+  takes the first part that has data and records it in `model`, so the UI marks where the resolution drops. Hours no
+  part covers are left out.
+- **Model** is configuration (`OpenMeteo:ForecastModel`, default `icon_seamless`; `OpenMeteo:ForecastDays`, default 3)
+  and optionally per request, from `HourlyForecastModels.Supported` (mirrored in `hourly-forecast-fetcher.ts`).
+
+| Outcome | Answer |
+|---|---|
+| Forecast returned | `200` |
+| Model not in the supported list, or coordinates out of range | `422` |
+| Provider unreachable, slow, error status, bad JSON | `502`, warning logged |
+
+Sunrise/sunset are the provider's, so the calculations epic should reuse `ForecastDayDto` rather than compute them again.
+
+### In the form (section 02 · Meteo)
+An **HOURLY FORECAST** block below the wind-on-altitude table, in the same style: a model select, a **Fetch forecast**
+button and one table per local day (time, °C, kt, direction, gust, CAPE, mm, %) with the day's sunrise and sunset in
+its header. There is no mockup for the forecast table itself; the sunrise/sunset fields it feeds are in section 01 of
+`nimbus-prep-form.html`.
+
+- The hour of the planned flight (form date and time, read as the site's local time) is highlighted.
+- A row where the model changes is preceded by "icon_eu from here (coarser than icon_d2)".
+- **Use** on an hour fills wind, direction, CAPE and temperature (a missing value leaves its field alone) and the
+  Sunrise and Sunset fields of section 01 for that day. Fetching alone changes no field.
+- Provider down, or no data for the model: an empty state with the reason, never an error page; the form is unaffected.
