@@ -2,6 +2,7 @@ using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Nimbus.Application.Features.FlightPreparations.Commands.CreateFlightPreparation;
+using Nimbus.Application.Features.FlightPreparations.Commands.DeleteFlightPreparation;
 using Nimbus.Application.Features.FlightPreparations.Commands.UpdateFlightPreparation;
 using Nimbus.Application.Features.FlightPreparations.Queries.GetFlightDetail;
 using Nimbus.Application.Features.FlightPreparations.Queries.GetFlightPreparation;
@@ -61,5 +62,12 @@ public class FlightPreparationsController : ControllerBase
     public async Task<ActionResult<FlightPreparationDto>> Update(Guid id, FlightPreparationRequestDto request, CancellationToken ct)
     {
         return Ok(await _mediator.Send(new UpdateFlightPreparationCommand(id, request), ct));
+    }
+    /// <summary>Permanently deletes the flight and everything that belongs to it. Owner or admin only; 403 for anyone else who can see it, 404 when it does not exist.</summary>
+    [HttpDelete("{id:guid}")]
+    public async Task<ActionResult> Delete(Guid id, CancellationToken ct)
+    {
+        await _mediator.Send(new DeleteFlightPreparationCommand(id), ct);
+        return NoContent();
     }
 }

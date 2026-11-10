@@ -67,6 +67,9 @@ table.data td { padding: 5px 0; color: var(--tx); border-top: 0.5px solid var(--
 
 .images { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px; margin-top: 10px; }
 .images img { width: 100%; height: auto; max-height: 420px; object-fit: contain; background: var(--inp); border-radius: 8px; border: 0.5px solid var(--ln); display: block; }
+.glyph { width: 44px; height: 44px; border-radius: 12px; display: grid; place-items: center; font-size: 22px; margin-bottom: 12px; }
+.glyph.err { background: var(--rb); color: var(--r); }
+.del-error { margin: 8px 0 0; font-size: 12.5px; color: var(--r); display: flex; align-items: center; gap: 6px; }
 .loading { color: var(--dim); font: 12px var(--mono); }
 .link { background: none; border: 0; padding: 0; margin-left: 8px; color: inherit; text-decoration: underline; cursor: pointer; font: inherit; }
 

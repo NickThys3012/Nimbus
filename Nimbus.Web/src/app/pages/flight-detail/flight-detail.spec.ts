@@ -1,27 +1,34 @@
 import { TestBed } from '@angular/core/testing';
 import { ActivatedRoute, convertToParamMap, provideRouter, Router } from '@angular/router';
-import { of, throwError } from 'rxjs';
+import { of, Subject, throwError } from 'rxjs';
 import { type Mock, vi } from 'vitest';
 
 import FlightDetail from './flight-detail';
 import { ApiError, type FlightDetailDto, FlightPreparationsService } from '../../core/api-client';
+import { FlightPreparationDraftStore } from '../../core/flight-preparations/flight-preparation-draft.store';
 import { sampleDetail } from '../../core/flight-preparations/testing/flight-detail.fixture';
 
 describe('FlightDetail', () => {
-  let api: { getApiFlightPreparationsDetail: Mock };
+  let api: { getApiFlightPreparationsDetail: Mock; deleteApiFlightPreparations: Mock };
+  let removeAutosave: Mock;
   let navigate: Mock;
 
   const httpError = (status: number) =>
     new ApiError({ method: 'GET', url: '/x' } as never, { url: '', ok: false, status, statusText: '', body: null }, `HTTP ${status}`);
 
   async function setup(result: FlightDetailDto | Error) {
-    api = { getApiFlightPreparationsDetail: vi.fn().mockReturnValue(result instanceof Error ? throwError(() => result) : of(result)) };
+    api = {
+      getApiFlightPreparationsDetail: vi.fn().mockReturnValue(result instanceof Error ? throwError(() => result) : of(result)),
+      deleteApiFlightPreparations: vi.fn().mockReturnValue(of(undefined)),
+    };
+    removeAutosave = vi.fn();
     navigate = vi.fn().mockResolvedValue(true);
     await TestBed.configureTestingModule({
       imports: [FlightDetail],
       providers: [
         provideRouter([]),
         { provide: FlightPreparationsService, useValue: api },
+        { provide: FlightPreparationDraftStore, useValue: { removeAutosave } },
         { provide: ActivatedRoute, useValue: { paramMap: of(convertToParamMap({ id: 'f1' })) } },
       ],
     }).compileComponents();
@@ -31,7 +38,14 @@ describe('FlightDetail', () => {
     fixture.detectChanges();
     const el = fixture.nativeElement as HTMLElement;
     const q = (id: string) => el.querySelector(`[data-testid="${id}"]`) as HTMLElement | null;
-    return { fixture, el, q };
+    const click = async (id: string) => {
+      const target = q(id);
+      (target?.querySelector('button') ?? target)?.dispatchEvent(new Event('click', { bubbles: true }));
+      fixture.detectChanges();
+      await fixture.whenStable();
+      fixture.detectChanges();
+    };
+    return { fixture, el, q, click };
   }
 
   it('asks the detail endpoint for the flight in the route', async () => {
@@ -148,6 +162,113 @@ describe('FlightDetail', () => {
     expect(el.querySelector('script')).toBeNull();
     expect(el.innerHTML).not.toContain('onerror');
     expect(g.__pwned).toBe(false);
+  });
+
+  describe('deleting (issue #43)', () => {
+    const manages = { canEdit: true, canDelete: true, canShare: true, canMarkFlown: true, canExport: true };
+
+    it('offers Delete to the owner and to an admin, but not to a viewer it is only shared with', async () => {
+      expect((await setup(sampleDetail())).q('action-delete')).not.toBeNull();
+      TestBed.resetTestingModule();
+      expect((await setup(sampleDetail({ viewerRole: 'Admin', ownerName: 'Bob Builder', permissions: manages }))).q('action-delete')).not.toBeNull();
+      TestBed.resetTestingModule();
+      const shared = await setup(sampleDetail({ viewerRole: 'Shared', ownerName: 'Bob Builder', permissions: { ...manages, canEdit: false, canDelete: false, canShare: false, canMarkFlown: false } }));
+      expect(shared.q('action-delete')).toBeNull();
+    });
+
+    it('asks first: the dialog names the flight, says the delete is permanent, and nothing is deleted yet', async () => {
+      const { q, click } = await setup(sampleDetail());
+
+      await click('action-delete');
+
+      const dialog = q('delete-dialog')!;
+      expect(dialog.textContent).toContain('Delete Weelde · 2026-08-08?');
+      expect(dialog.textContent).toContain('permanently deletes the flight');
+      expect(dialog.textContent).toContain('passengers, wind levels, images and shares');
+      expect(dialog.textContent).toContain("can't be undone");
+      expect(api.deleteApiFlightPreparations).not.toHaveBeenCalled();
+    });
+
+    it('tells an admin whose flight it is', async () => {
+      const { q, click } = await setup(sampleDetail({ viewerRole: 'Admin', ownerName: 'Bob Builder', permissions: manages }));
+
+      await click('action-delete');
+
+      expect(q('delete-dialog')?.textContent).toContain('It belongs to Bob Builder.');
+    });
+
+    it('cancelling closes the dialog and deletes nothing', async () => {
+      const { q, click } = await setup(sampleDetail());
+      await click('action-delete');
+
+      await click('delete-cancel');
+
+      expect(q('delete-dialog')?.querySelector('.modal')).toBeNull();
+      expect(api.deleteApiFlightPreparations).not.toHaveBeenCalled();
+      expect(navigate).not.toHaveBeenCalled();
+    });
+
+    it('confirming deletes the flight, drops its local draft and goes back to the flight list', async () => {
+      const { click } = await setup(sampleDetail());
+      await click('action-delete');
+
+      await click('delete-confirm');
+
+      expect(api.deleteApiFlightPreparations).toHaveBeenCalledWith({ id: 'f1' });
+      expect(removeAutosave).toHaveBeenCalledWith('f1');
+      expect(navigate).toHaveBeenCalledWith(['/flights'], { replaceUrl: true });
+    });
+
+    it('does not delete twice when the confirm button is clicked repeatedly', async () => {
+      const inFlight = new Subject<void>();
+      const { click } = await setup(sampleDetail());
+      api.deleteApiFlightPreparations.mockReturnValue(inFlight);
+      await click('action-delete');
+
+      await click('delete-confirm');
+      await click('delete-confirm');
+
+      expect(api.deleteApiFlightPreparations).toHaveBeenCalledTimes(1);
+    });
+
+    it('treats a flight that is already gone (404) as deleted', async () => {
+      const { click } = await setup(sampleDetail());
+      api.deleteApiFlightPreparations.mockReturnValue(throwError(() => httpError(404)));
+      await click('action-delete');
+
+      await click('delete-confirm');
+
+      expect(removeAutosave).toHaveBeenCalledWith('f1');
+      expect(navigate).toHaveBeenCalledWith(['/flights'], { replaceUrl: true });
+    });
+
+    it('says so, stays and keeps the draft when the server refuses (403)', async () => {
+      const { q, click } = await setup(sampleDetail());
+      api.deleteApiFlightPreparations.mockReturnValue(throwError(() => httpError(403)));
+      await click('action-delete');
+
+      await click('delete-confirm');
+
+      expect(q('delete-error')?.textContent).toContain('not allowed to delete');
+      expect(q('delete-dialog')?.querySelector('.modal')).not.toBeNull();
+      expect(removeAutosave).not.toHaveBeenCalled();
+      expect(navigate).not.toHaveBeenCalled();
+    });
+
+    it('says nothing was removed and lets the pilot try again when the request fails (500)', async () => {
+      const { q, click } = await setup(sampleDetail());
+      api.deleteApiFlightPreparations.mockReturnValue(throwError(() => httpError(500)));
+      await click('action-delete');
+
+      await click('delete-confirm');
+
+      expect(q('delete-error')?.textContent).toContain('Nothing was removed');
+      expect(navigate).not.toHaveBeenCalled();
+
+      api.deleteApiFlightPreparations.mockReturnValue(of(undefined));
+      await click('delete-confirm');
+      expect(navigate).toHaveBeenCalledWith(['/flights'], { replaceUrl: true });
+    });
   });
 
   it.each([403, 404])('sends the viewer back to the flight list on a %i', async (status) => {

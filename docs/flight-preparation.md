@@ -252,6 +252,36 @@ action leads to the form.
   page only displays them. Empty values show a dash. The briefing goes through `Nimbus-rich-text-view`
   (Angular's sanitiser). An image whose link cannot be made is left out rather than failing the view.
 
+## Deleting a flight (issue #43)
+
+`DELETE /api/flight-preparations/{id}` answers `204`. The page offers it on the flight detail view,
+only when `permissions.canDelete` is true, behind a dialog that names the flight and says it is
+permanent.
+
+- **Decision: a hard delete.** The row is removed, not flagged. The rest of the app soft-deletes
+  reference data so that old flights keep resolving a balloon or location; a flight is the thing being
+  resolved, so nothing needs it afterwards. Two reasons not to keep a hidden copy: passenger names and
+  weights are personal data that should be gone when the pilot says so, and a flight's images and KML
+  track are files in object storage that would otherwise stay for good. The confirmation therefore says
+  plainly: *This permanently deletes the flight with its passengers, wind levels, images and shares.
+  This can't be undone.* (Trade-off accepted: a flight deleted by mistake cannot be recovered.)
+- **What goes with it.** Passengers, wind levels, images and shares are removed by the database's
+  `ON DELETE CASCADE` foreign keys, soft-deleted rows included (a test asserts every table is empty for
+  the flight). Revoking access is therefore automatic: shared viewers' links stop working.
+- **Files.** The repository returns the object keys the flight referenced; the handler then removes the
+  image files (`FlightImages` bucket) and the KML track (`FlightTracks`) best effort. The row is the
+  source of truth, so a storage failure neither blocks nor undoes the delete: the file is logged as
+  orphaned (`Flight {FlightId} is deleted but its file {Key} ... is orphaned`) and the rest are still
+  tried. A malformed stored key is skipped with a warning.
+- **Who.** The owner and an admin (an admin deletes on the owner's behalf: the owner-scoped repository
+  is asked as the flight's owner). Anyone else who can see the flight gets `403` and the attempt is
+  logged as a warning (user, flight, viewer role) before anything is touched; a flight that does not
+  exist is `404` and is not logged as an attempt. A successful delete is logged at information level
+  with who deleted it and in which role.
+- **Client.** The dialog stays open with a message when the server refuses or fails (nothing was
+  removed), a repeated click cannot send a second request, a `404` (someone deleted it first) counts as
+  done, and the flight's local autosave draft is dropped so it cannot resurface in the form.
+
 ## Flight list (issue #40)
 
 `GET /api/flight-preparations?filter=&sort=&descending=&page=&pageSize=` feeds the Flights overview

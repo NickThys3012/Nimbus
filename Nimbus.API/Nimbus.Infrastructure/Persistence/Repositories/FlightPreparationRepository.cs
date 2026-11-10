@@ -141,6 +141,39 @@ public class FlightPreparationRepository : IFlightPreparationRepository
         }
     }
 
+    public async Task<FlightDeletion?> DeleteAsync(Guid ownerId, Guid id, CancellationToken ct = default)
+    {
+        // One transaction: read the file references, then delete the row. The foreign keys cascade to passengers, wind levels,
+        // images and shares, so nothing is left behind, and soft-deleted children go with it (hence IgnoreQueryFilters).
+        await using var tx = await _db.Database.BeginTransactionAsync(ct);
+        var kml = await _db.FlightPreparations.IgnoreQueryFilters().AsNoTracking()
+            .Where(f => f.Id == id && f.OwnerId == ownerId)
+            .Select(f => new { f.KmlTrackObjectKey })
+            .FirstOrDefaultAsync(ct);
+        if (kml is null)
+        {
+            await tx.RollbackAsync(ct);
+            return null;
+        }
+
+        var images = await _db.FlightPreparationImages.IgnoreQueryFilters().AsNoTracking()
+            .Where(i => i.FlightPreparationId == id)
+            .OrderBy(i => i.Order)
+            .Select(i => i.ObjectKey)
+            .ToListAsync(ct);
+        var rows = await _db.FlightPreparations.IgnoreQueryFilters()
+            .Where(f => f.Id == id && f.OwnerId == ownerId)
+            .ExecuteDeleteAsync(ct);
+        if (rows == 0)
+        {
+            await tx.RollbackAsync(ct);
+            return null;
+        }
+
+        await tx.CommitAsync(ct);
+        return new FlightDeletion(images, string.IsNullOrWhiteSpace(kml.KmlTrackObjectKey) ? null : kml.KmlTrackObjectKey);
+    }
+
     public async Task<bool> SetTrajectoryJsonAsync(Guid ownerId, Guid id, string? trajectoryJson, CancellationToken ct = default)
     {
         var rows = await _db.FlightPreparations

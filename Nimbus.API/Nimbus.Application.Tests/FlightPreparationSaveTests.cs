@@ -282,6 +282,9 @@ public class FlightPreparationSaveTests
             return Task.FromResult(Rows.Any(f => f.Id == flight.Id && f.OwnerId == ownerId));
         }
 
+        public Task<FlightDeletion?> DeleteAsync(Guid ownerId, Guid id, CancellationToken ct = default) =>
+            throw new NotSupportedException();
+
         public Task<bool> SetTrajectoryJsonAsync(Guid ownerId, Guid id, string? trajectoryJson, CancellationToken ct = default) => Task.FromResult(false);
 
         public Task<bool> SetKmlTrackAsync(Guid ownerId, Guid id, string? objectKey, string? contentType, CancellationToken ct = default) => Task.FromResult(false);

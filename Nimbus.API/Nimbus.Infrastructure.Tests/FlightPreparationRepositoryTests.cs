@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Nimbus.Contracts.DTOs.Features.FlightPreparations;
 using Nimbus.Contracts.Mappers;
 using Nimbus.Domain.Entities;
+using Nimbus.Domain.Interfaces;
 using Nimbus.Infrastructure.Persistence;
 using Nimbus.Infrastructure.Persistence.Repositories;
 using Testcontainers.MsSql;
@@ -105,6 +106,94 @@ public class FlightPreparationRepositoryTests
         Assert.That(stored.FlownAt, Is.EqualTo(flight.FlownAt));
         Assert.That(stored.OutcomeRemarks, Is.EqualTo("smooth"));
         Assert.That(stored.TrajectoryJson, Is.EqualTo("{}"));
+    }
+
+    private async Task<FlightPreparation> SeedFullFlightAsync(Guid owner)
+    {
+        var flight = NewFlight(owner, passengers: 2, windLevels: 2);
+        flight.KmlTrackObjectKey = $"{owner}/track.kml";
+        await using (var db = CreateContext())
+            await new FlightPreparationRepository(db).AddAsync(flight);
+
+        await using var extra = CreateContext();
+        extra.FlightPreparationImages.AddRange(
+            new FlightPreparationImage { FlightPreparationId = flight.Id, ObjectKey = $"{owner}/b.png", ContentType = "image/png", Order = 1 },
+            new FlightPreparationImage { FlightPreparationId = flight.Id, ObjectKey = $"{owner}/a.png", ContentType = "image/png", Order = 0 },
+            new FlightPreparationImage { FlightPreparationId = flight.Id, ObjectKey = $"{owner}/gone.png", ContentType = "image/png", Order = 2, IsDeleted = true });
+        extra.FlightPreparationShares.AddRange(
+            new FlightPreparationShare { FlightPreparationId = flight.Id, SharedWithUserId = Guid.NewGuid() },
+            new FlightPreparationShare { FlightPreparationId = flight.Id, SharedWithUserId = Guid.NewGuid(), IsDeleted = true });
+        await extra.SaveChangesAsync();
+        return flight;
+    }
+
+    private async Task<(int Flights, int Passengers, int WindLevels, int Images, int Shares)> CountsAsync(Guid flightId)
+    {
+        await using var db = CreateContext();
+        return (
+            await db.FlightPreparations.IgnoreQueryFilters().CountAsync(f => f.Id == flightId),
+            await db.Passengers.IgnoreQueryFilters().CountAsync(p => p.FlightPreparationId == flightId),
+            await db.WindLevels.IgnoreQueryFilters().CountAsync(w => w.FlightPreparationId == flightId),
+            await db.FlightPreparationImages.IgnoreQueryFilters().CountAsync(i => i.FlightPreparationId == flightId),
+            await db.FlightPreparationShares.IgnoreQueryFilters().CountAsync(sh => sh.FlightPreparationId == flightId));
+    }
+
+    [Test]
+    public async Task Delete_RemovesTheFlightAndEverythingBelongingToIt_SoftDeletedRowsIncluded_AndReturnsTheFileKeys()
+    {
+        var owner = Guid.NewGuid();
+        var flight = await SeedFullFlightAsync(owner);
+        Assert.That(await CountsAsync(flight.Id), Is.EqualTo((1, 2, 2, 3, 2)));
+
+        FlightDeletion? deletion;
+        await using (var db = CreateContext())
+            deletion = await new FlightPreparationRepository(db).DeleteAsync(owner, flight.Id);
+
+        Assert.That(await CountsAsync(flight.Id), Is.EqualTo((0, 0, 0, 0, 0)), "nothing is left behind, not even soft-deleted rows");
+        Assert.That(deletion!.ImageObjectKeys, Is.EqualTo(new[] { $"{owner}/a.png", $"{owner}/b.png", $"{owner}/gone.png" }));
+        Assert.That(deletion.KmlTrackObjectKey, Is.EqualTo($"{owner}/track.kml"));
+    }
+
+    [Test]
+    public async Task Delete_LeavesEveryOtherFlightUntouched()
+    {
+        var owner = Guid.NewGuid();
+        var doomed = await SeedFullFlightAsync(owner);
+        var sibling = await SeedFullFlightAsync(owner);
+        var strangers = await SeedFullFlightAsync(Guid.NewGuid());
+
+        await using (var db = CreateContext())
+            await new FlightPreparationRepository(db).DeleteAsync(owner, doomed.Id);
+
+        Assert.That(await CountsAsync(sibling.Id), Is.EqualTo((1, 2, 2, 3, 2)));
+        Assert.That(await CountsAsync(strangers.Id), Is.EqualTo((1, 2, 2, 3, 2)));
+    }
+
+    [Test]
+    public async Task Delete_AsSomeoneWhoIsNotTheOwner_OrOfAMissingFlight_DeletesNothingAndReturnsNull()
+    {
+        var owner = Guid.NewGuid();
+        var flight = await SeedFullFlightAsync(owner);
+
+        await using var db = CreateContext();
+        var repo = new FlightPreparationRepository(db);
+        Assert.That(await repo.DeleteAsync(Guid.NewGuid(), flight.Id), Is.Null);
+        Assert.That(await repo.DeleteAsync(owner, Guid.NewGuid()), Is.Null);
+        Assert.That(await CountsAsync(flight.Id), Is.EqualTo((1, 2, 2, 3, 2)));
+    }
+
+    [Test]
+    public async Task Delete_OfASoftDeletedFlight_StillRemovesItForGood()
+    {
+        var owner = Guid.NewGuid();
+        var flight = await SeedFullFlightAsync(owner);
+        await using (var db = CreateContext())
+            await db.FlightPreparations.IgnoreQueryFilters().Where(f => f.Id == flight.Id).ExecuteUpdateAsync(u => u.SetProperty(f => f.IsDeleted, true));
+
+        await using (var db = CreateContext())
+            Assert.That(await new FlightPreparationRepository(db).DeleteAsync(owner, flight.Id), Is.Not.Null);
+
+        Assert.That(await CountsAsync(flight.Id), Is.EqualTo((0, 0, 0, 0, 0)));
     }
 
     [Test]
