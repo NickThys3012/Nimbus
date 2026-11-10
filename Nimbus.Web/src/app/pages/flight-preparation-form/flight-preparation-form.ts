@@ -2,6 +2,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
+  effect,
   ElementRef,
   inject,
   OnDestroy,
@@ -33,6 +34,8 @@ import {
   sectionCompletionStatus,
 } from '../../core/flight-preparations/flight-preparation-form';
 import { defaultPaxBriefing } from '../../core/flight-preparations/pax-briefing-template';
+import { metarMeta } from '../../core/flight-preparations/metar-meta';
+import { MetarTafFetcher } from '../../core/flight-preparations/metar-taf-fetcher';
 import { FlightListStore } from '../../core/flight-preparations/flight-list.store';
 import { flightTitle, fromDto, toRequestDto } from '../../core/flight-preparations/flight-preparation.mapper';
 import { FlightPreparationDraftStore } from '../../core/flight-preparations/flight-preparation-draft.store';
@@ -84,6 +87,7 @@ interface SectionErrorSummary {
     OfpSection,
     PaxBriefingSection,
   ],
+  providers: [MetarTafFetcher],
   templateUrl: './flight-preparation-form.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrl: './flight-preparation-form.css',
@@ -95,6 +99,7 @@ export default class FlightPreparationFormPage implements CanComponentDeactivate
   private readonly draftStore = inject(FlightPreparationDraftStore);
   private readonly api = inject(FlightPreparationsService);
   private readonly listStore = inject(FlightListStore);
+  protected readonly fetcher = inject(MetarTafFetcher);
   private readonly balloonsStore = inject(BalloonsStore);
   private readonly locationsStore = inject(LaunchLocationsStore);
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
@@ -240,6 +245,8 @@ export default class FlightPreparationFormPage implements CanComponentDeactivate
   });
 
   constructor() {
+    // The Fetch button needs to know which launch location the form has.
+    effect(() => this.fetcher.station.set(this.launchStation()));
     this.hydrate(this.initialRouteId);
     // Route param changes (including the id this component assigns to itself on first autosave,
     // guarded against by `lastKnownId`) rebuild the form for that flight's draft.
@@ -321,7 +328,8 @@ export default class FlightPreparationFormPage implements CanComponentDeactivate
       case 'General':
         return v.general.flightDate && v.general.flightTime ? `${v.general.flightDate} · ${v.general.flightTime}` : null;
       case 'Meteo':
-        return v.meteo.windSpeedKt ? `${v.meteo.windSpeedKt} kt · ${v.meteo.windDirectionDeg}°` : null;
+        // The METAR's station and time ("EBAW · 08:50Z") when there is one, as in the form mockup; else the wind.
+        return metarMeta(v.meteo.metar) ?? (v.meteo.windSpeedKt ? `${v.meteo.windSpeedKt} kt · ${v.meteo.windDirectionDeg}°` : null);
       case 'Checklists': {
         const { done, total } = checklistProgress(v.checklists);
         return done > 0 ? `${done}/${total}` : null;
@@ -343,6 +351,12 @@ export default class FlightPreparationFormPage implements CanComponentDeactivate
     if (group.dirty) return this.isExistingFlight() ? 'edited' : null;
     if (this.draftDiffSectionIds().has(id)) return 'from-draft';
     return null;
+  }
+
+  /** The Fetch button in the Meteo header: opens the section so the result, or the reason nothing was fetched, is in view. */
+  protected fetchMeteo(): void {
+    this.setExpanded('Meteo', true);
+    void this.fetcher.fetch(this.form().controls.meteo);
   }
 
   protected goBack(): void {

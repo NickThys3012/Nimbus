@@ -69,3 +69,16 @@
   .action-bar-inner .spacer { display: none; }
   .save-action { flex: 1; }
 }
+
+/* A section's action in its card header (Meteo "Fetch"), as in the form mockup. */
+.card-action {
+  margin-right: 4px; font: 12px var(--sans); color: var(--ac); background: none; border: 0.5px solid var(--ln2);
+  padding: 6px 12px; border-radius: 8px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap;
+}
+.card-action:hover { background: var(--chip); }
+.card-action:focus-visible { outline: 2px solid var(--ac); outline-offset: 2px; }
+.card-action[disabled] { cursor: progress; opacity: .7; }
+/* Not possible right now: dimmed but still clickable, which opens the section to show why. */
+.card-action.blocked { color: var(--fnt); }
+.card-action .spin { animation: card-action-spin 1s linear infinite; }
+@keyframes card-action-spin { to { transform: rotate(360deg); } }

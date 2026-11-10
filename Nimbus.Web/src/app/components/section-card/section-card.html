@@ -1,4 +1,5 @@
 <div class="card" [class.active-border]="expanded()">
+  <div class="card-header">
   <button
     (click)="toggle()"
     [attr.aria-controls]="bodyId()"
@@ -17,10 +18,16 @@
     }
     <span class="spacer"></span>
     @if (summary(); as text) {
-      <span class="sec-meta">{{ text }}</span>
+      <span class="sec-meta" data-testid="section-summary">{{ text }}</span>
     }
+  </button>
+  <!-- An action that belongs to the section (e.g. "Fetch" on Meteo) sits in the header, beside, never inside, the toggle button. -->
+  <ng-content select="[card-action]" />
+  <!-- Mouse target only: the toggle button above is the one keyboard and screen-reader users get. -->
+  <button (click)="toggle()" aria-hidden="true" class="chev-btn" tabindex="-1" type="button">
     <i [class.ti-chevron-down]="!expanded()" [class.ti-chevron-up]="expanded()" aria-hidden="true" class="ti chev"></i>
   </button>
+  </div>
   @if (expanded()) {
     <div [id]="bodyId()" class="card-body">
       <ng-content />

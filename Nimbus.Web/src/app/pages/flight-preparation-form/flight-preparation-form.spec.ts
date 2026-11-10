@@ -35,6 +35,7 @@ describe('FlightPreparationFormPage', () => {
   /** The flights "stored on the server" for this test, by id. */
   let server: Record<string, FlightPreparationDto>;
   let flightsApi: Record<string, ReturnType<typeof vi.fn>>;
+  let weatherApi: { getApiWeatherMetarTaf: ReturnType<typeof vi.fn> };
 
   const httpError = (status: number) =>
     new ApiError({ method: 'GET', url: '/api/flight-preparations' } as never, { url: '', ok: false, status, statusText: '', body: null }, `HTTP ${status}`);
@@ -51,6 +52,9 @@ describe('FlightPreparationFormPage', () => {
     } as Storage;
     email = 'pilot.a@example.com';
     server = {};
+    weatherApi = {
+      getApiWeatherMetarTaf: vi.fn().mockReturnValue(of({ station: 'EBDM', metar: 'EBDM 100850Z 08003KT 0400 FG Q1013', taf: 'TAF EBDM 100800Z 1009/1018 09006KT 0500 FG BKN001\n  BECMG 1009/1011 6000 NSW SCT010' })),
+    };
     flightsApi = {
       getApiFlightPreparations: vi.fn().mockReturnValue(of({ items: [], totalCount: 0, page: 1, pageSize: 20 })),
       getApiFlightPreparations1: vi.fn(({ id }: { id: string }) => (server[id] ? of(server[id]) : throwError(() => httpError(404)))),
@@ -87,7 +91,7 @@ describe('FlightPreparationFormPage', () => {
           },
         },
         { provide: FlightPreparationsService, useValue: flightsApi },
-        { provide: WeatherService, useValue: { getApiWeatherMetarTaf: vi.fn().mockReturnValue(of({ station: 'EBAW', metar: null, taf: null })) } },
+        { provide: WeatherService, useValue: weatherApi },
         { provide: LaunchLocationsService, useValue: { getApiLaunchLocations: () => of(locations) } },
         {
           provide: ActivatedRoute,
@@ -240,30 +244,121 @@ describe('FlightPreparationFormPage', () => {
     expect(q('launch-coordinates')?.textContent).toContain('51.4');
   });
 
-  it('offers the METAR/TAF fetch for a launch location that has an ICAO code, and explains why it cannot without one', async () => {
+  describe('METAR/TAF fetch in the Meteo header (issue #44, form mockup)', () => {
     const withIcao = { ...location, id: 'l2', name: 'Dendermonde', icaoCode: 'EBDM' };
-    const { fixture, q, expandSection } = await createComponent(null, [], [location, withIcao]);
-    const pick = async (id: string) => {
-      const select = q<HTMLSelectElement>('launch-location')!;
-      select.value = id;
-      select.dispatchEvent(new Event('change'));
-      fixture.detectChanges();
-      await fixture.whenStable();
-      fixture.detectChanges();
-    };
-    const fetchButton = () => q('fetch-metar-taf')?.querySelector('button') as HTMLButtonElement;
-    await expandSection('Meteo');
 
-    expect(fetchButton().disabled).toBe(true);
-    expect(q('fetch-blocked')?.textContent).toContain('Pick a launch location');
+    async function open() {
+      const ctx = await createComponent(null, [], [location, withIcao]);
+      const pick = async (id: string) => {
+        const select = ctx.q<HTMLSelectElement>('launch-location')!;
+        select.value = id;
+        select.dispatchEvent(new Event('change'));
+        ctx.fixture.detectChanges();
+        await ctx.fixture.whenStable();
+        ctx.fixture.detectChanges();
+      };
+      const button = () => ctx.q<HTMLButtonElement>('fetch-metar-taf')!;
+      const flush = async () => {
+        ctx.fixture.detectChanges();
+        await ctx.fixture.whenStable();
+        ctx.fixture.detectChanges();
+      };
+      const meteoSummary = () => ctx.el.querySelector('[data-section="Meteo"] [data-testid="section-summary"]')?.textContent?.trim() ?? null;
+      return { ...ctx, pick, button, flush, meteoSummary };
+    }
 
-    await pick('l1');
-    expect(fetchButton().disabled).toBe(true);
-    expect(q('fetch-blocked')?.textContent).toContain('no ICAO code');
+    it('puts a "Fetch" button with a refresh icon in the section header, beside, not inside, the toggle, even while collapsed', async () => {
+      const { el, button } = await open();
 
-    await pick('l2');
-    expect(fetchButton().disabled).toBe(false);
-    expect(q('fetch-blocked')).toBeNull();
+      expect(el.querySelector('[data-section="Meteo"] .card-body')).toBeNull();
+      expect(button()).not.toBeNull();
+      expect(button().textContent?.trim()).toBe('Fetch');
+      expect(button().querySelector('.ti-refresh')).not.toBeNull();
+      expect(button().closest('.card-header')).not.toBeNull();
+      expect(button().closest('.card-head')).toBeNull();
+      expect(el.querySelectorAll('[data-testid="fetch-metar-taf"]').length).toBe(1);
+    });
+
+    it('is not offered on any other section', async () => {
+      const { el } = await open();
+      expect(el.querySelectorAll('[data-section]:not([data-section="Meteo"]) .card-action').length).toBe(0);
+    });
+
+    it('is blocked, and shows why once opened, until the launch location has an ICAO code', async () => {
+      const { button, pick, flush, q, el } = await open();
+
+      expect(button().getAttribute('aria-disabled')).toBe('true');
+      expect(button().getAttribute('title')).toContain('Pick a launch location');
+
+      await pick('l1');
+      expect(button().getAttribute('aria-disabled')).toBe('true');
+      expect(button().getAttribute('title')).toContain('no ICAO code');
+
+      button().click(); // blocked, but still answers: the section opens to show the reason
+      await flush();
+      expect(el.querySelector('[data-section="Meteo"] .card-body')).not.toBeNull();
+      expect(q('fetch-blocked')?.textContent).toContain('no ICAO code');
+      expect(weatherApi.getApiWeatherMetarTaf).not.toHaveBeenCalled();
+
+      await pick('l2');
+      expect(button().getAttribute('aria-disabled')).toBeNull();
+      expect(q('fetch-blocked')).toBeNull();
+    });
+
+    it('fetches for the picked location, opens the section and shows the result there', async () => {
+      const { button, pick, flush, q, el } = await open();
+      await pick('l2');
+
+      button().click();
+      await flush();
+
+      expect(weatherApi.getApiWeatherMetarTaf).toHaveBeenCalledWith({ icao: 'EBDM' });
+      expect(el.querySelector('[data-section="Meteo"] .card-body')).not.toBeNull();
+      expect(q<HTMLTextAreaElement>('metar')?.value).toBe('EBDM 100850Z 08003KT 0400 FG Q1013');
+      expect(q<HTMLTextAreaElement>('taf')?.value.split('\n')).toHaveLength(2);
+      expect(q('fetch-ok')?.textContent).toContain('Fetched the METAR and TAF for EBDM');
+    });
+
+    it('shows the METAR station and observation time in the header, as in the mockup', async () => {
+      const { button, pick, flush, meteoSummary } = await open();
+      await pick('l2');
+      expect(meteoSummary()).toBeNull();
+
+      button().click();
+      await flush();
+
+      expect(meteoSummary()).toBe('EBDM · 08:50Z');
+    });
+
+    it('shows it for a saved flight too, read from its METAR text, not remembered from a fetch', async () => {
+      seedSavedFlight('flight-1', { meteo: { windSpeedKt: 8, windDirectionDeg: 240, visibilityKm: 10, capeJPerKg: 0, temperatureC: 0, dewPointC: 0, qnhHpa: 1018, metar: 'EBAW 081750Z 24006KT 9999 FEW035 19/11 Q1018', taf: '', windLevels: [] } });
+      const { el } = await createComponent('flight-1');
+
+      expect(el.querySelector('[data-section="Meteo"] [data-testid="section-summary"]')?.textContent?.trim()).toBe('EBAW · 17:50Z');
+    });
+
+    it('falls back to the wind in the header while the METAR is empty or free text', async () => {
+      seedSavedFlight('flight-1');
+      const { el } = await createComponent('flight-1');
+
+      expect(el.querySelector('[data-section="Meteo"] [data-testid="section-summary"]')?.textContent?.trim()).toBe('8 kt · 240°');
+    });
+
+    it('shows a provider failure in the section and leaves what the pilot typed alone', async () => {
+      const { button, pick, flush, q, expandSection } = await open();
+      await pick('l2');
+      await expandSection('Meteo');
+      const metar = q<HTMLTextAreaElement>('metar')!;
+      metar.value = 'my own METAR';
+      metar.dispatchEvent(new Event('input'));
+      weatherApi.getApiWeatherMetarTaf.mockReturnValue(throwError(() => httpError(502)));
+
+      button().click();
+      await flush();
+
+      expect(q('fetch-failed')?.textContent).toContain('Your entries are unchanged');
+      expect(q<HTMLTextAreaElement>('metar')?.value).toBe('my own METAR');
+    });
   });
 
   it('shows a save-error banner naming the invalid sections and expands the first one when saving an empty form', async () => {

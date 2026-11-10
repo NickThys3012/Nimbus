@@ -1,3 +1,4 @@
+import { Component } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { SectionCard } from './section-card';
@@ -53,6 +54,23 @@ describe('SectionCard', () => {
     expect((fixture.nativeElement as HTMLElement).getAttribute('data-section')).toBe('General');
   });
 
+  it('keeps the toggle a button of its own: nothing interactive is nested inside it', () => {
+    const head = fixture.nativeElement.querySelector('.card-head') as HTMLElement;
+    expect(head.tagName).toBe('BUTTON');
+    expect(head.querySelector('button, a, input')).toBeNull();
+  });
+
+  it('toggles from the chevron too, which only the mouse needs', () => {
+    const chevron = fixture.nativeElement.querySelector('.chev-btn') as HTMLButtonElement;
+    expect(chevron.getAttribute('aria-hidden')).toBe('true');
+    expect(chevron.tabIndex).toBe(-1);
+
+    chevron.click();
+    fixture.detectChanges();
+    expect(component.expanded()).toBe(true);
+    expect(fixture.nativeElement.querySelector('.chev-btn .ti-chevron-up')).not.toBeNull();
+  });
+
   it('renders no badge by default', () => {
     expect(fixture.nativeElement.querySelector('[data-testid="section-badge"]')).toBeNull();
   });
@@ -73,5 +91,55 @@ describe('SectionCard', () => {
     expect(badge).not.toBeNull();
     expect(badge.classList.contains('from-draft')).toBe(true);
     expect(badge.textContent.trim()).toContain('FROM DRAFT');
+  });
+});
+
+@Component({
+  imports: [SectionCard],
+  template: `
+    <Nimbus-section-card [order]="2" sectionId="Meteo" title="Meteo" [(expanded)]="open">
+      <button card-action data-testid="action" type="button" (click)="clicks = clicks + 1">Fetch</button>
+      <p data-testid="body">body</p>
+    </Nimbus-section-card>
+  `,
+})
+class HostWithAction {
+  open = false;
+  clicks = 0;
+}
+
+describe('SectionCard header action', () => {
+  function setup() {
+    const fixture = TestBed.createComponent(HostWithAction);
+    fixture.detectChanges();
+    const el = fixture.nativeElement as HTMLElement;
+    return { fixture, el, host: fixture.componentInstance, action: () => el.querySelector('[data-testid="action"]') as HTMLButtonElement };
+  }
+
+  it('shows the action in the header even while the section is collapsed, outside the toggle button', () => {
+    const { el, action } = setup();
+
+    expect(el.querySelector('[data-testid="body"]')).toBeNull();
+    expect(action()).not.toBeNull();
+    expect(action().closest('.card-header')).not.toBeNull();
+    expect(action().closest('.card-head')).toBeNull();
+  });
+
+  it('does not toggle the section when the action is clicked', () => {
+    const { fixture, host, action, el } = setup();
+
+    action().click();
+    fixture.detectChanges();
+
+    expect(host.clicks).toBe(1);
+    expect(host.open).toBe(false);
+    expect(el.querySelector('[data-testid="body"]')).toBeNull();
+  });
+
+  it('puts the action after the title and before the chevron', () => {
+    const { el } = setup();
+
+    const kids = [...(el.querySelector('.card-header') as HTMLElement).children].map((c) => c.className.split(' ')[0] || c.tagName.toLowerCase());
+    expect(kids).toEqual(['card-head', 'button', 'chev-btn']);
   });
 });

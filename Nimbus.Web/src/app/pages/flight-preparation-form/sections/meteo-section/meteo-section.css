@@ -1,6 +1,6 @@
 /* Section-specific overrides, if any — shared field styling lives in ../section-fields.css. */
 
-.fetch-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }
-.fetch-note { font: 11px var(--mono); color: var(--dim); min-width: 0; }
+.fetch-note { font: 11px var(--mono); color: var(--dim); margin-bottom: 10px; }
+.fetch-note:empty { display: none; }
 .fetch-note .blocked { color: var(--a); }
 .fetch-note .problem { color: var(--r); }

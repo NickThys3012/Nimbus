@@ -9,11 +9,13 @@
 }
 .card.active-border { border-color: var(--ac); }
 
+.card-header { display: flex; align-items: center; }
 .card-head {
   display: flex;
   align-items: center;
   gap: 10px;
-  width: 100%;
+  flex: 1;
+  min-width: 0;
   padding: 13px 15px;
   cursor: pointer;
   background: none;
@@ -31,6 +33,8 @@
 .spacer { flex: 1; }
 .sec-meta { font: 11px var(--mono); color: var(--fnt); white-space: nowrap; }
 .chev { color: var(--fnt); font-size: 15px; flex: 0 0 auto; }
+.chev-btn { background: none; border: 0; padding: 13px 15px 13px 8px; cursor: pointer; display: flex; align-self: stretch; align-items: center; }
+.card-header > ::ng-deep [card-action] { flex: 0 0 auto; }
 
 .badge {
   font: 10px var(--mono); color: var(--a); white-space: nowrap; flex: 0 0 auto;
