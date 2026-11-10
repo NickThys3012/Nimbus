@@ -14,6 +14,7 @@ import {
   LaunchLocationsService,
   LiftCalculationService,
   PilotsService,
+  WeatherService,
 } from '../../core/api-client';
 import { PAX_BRIEFING_TEMPLATE_HTML, PAX_BRIEFING_TEMPLATE_VERSION } from '../../core/flight-preparations/pax-briefing-template';
 import { toRequestDto } from '../../core/flight-preparations/flight-preparation.mapper';
@@ -86,6 +87,7 @@ describe('FlightPreparationFormPage', () => {
           },
         },
         { provide: FlightPreparationsService, useValue: flightsApi },
+        { provide: WeatherService, useValue: { getApiWeatherMetarTaf: vi.fn().mockReturnValue(of({ station: 'EBAW', metar: null, taf: null })) } },
         { provide: LaunchLocationsService, useValue: { getApiLaunchLocations: () => of(locations) } },
         {
           provide: ActivatedRoute,
@@ -236,6 +238,32 @@ describe('FlightPreparationFormPage', () => {
 
     expect(fixture.componentInstance.launchCoordinates()).toEqual({ latitude: 51.4, longitude: 4.9 });
     expect(q('launch-coordinates')?.textContent).toContain('51.4');
+  });
+
+  it('offers the METAR/TAF fetch for a launch location that has an ICAO code, and explains why it cannot without one', async () => {
+    const withIcao = { ...location, id: 'l2', name: 'Dendermonde', icaoCode: 'EBDM' };
+    const { fixture, q, expandSection } = await createComponent(null, [], [location, withIcao]);
+    const pick = async (id: string) => {
+      const select = q<HTMLSelectElement>('launch-location')!;
+      select.value = id;
+      select.dispatchEvent(new Event('change'));
+      fixture.detectChanges();
+      await fixture.whenStable();
+      fixture.detectChanges();
+    };
+    const fetchButton = () => q('fetch-metar-taf')?.querySelector('button') as HTMLButtonElement;
+    await expandSection('Meteo');
+
+    expect(fetchButton().disabled).toBe(true);
+    expect(q('fetch-blocked')?.textContent).toContain('Pick a launch location');
+
+    await pick('l1');
+    expect(fetchButton().disabled).toBe(true);
+    expect(q('fetch-blocked')?.textContent).toContain('no ICAO code');
+
+    await pick('l2');
+    expect(fetchButton().disabled).toBe(false);
+    expect(q('fetch-blocked')).toBeNull();
   });
 
   it('shows a save-error banner naming the invalid sections and expands the first one when saving an empty form', async () => {

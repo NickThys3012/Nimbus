@@ -61,7 +61,7 @@
             <Nimbus-general-section [coordinates]="launchCoordinates()" [group]="form().controls.general" />
           }
           @case ('Meteo') {
-            <Nimbus-meteo-section [group]="form().controls.meteo" />
+            <Nimbus-meteo-section [group]="form().controls.meteo" [icaoCode]="launchStation().icaoCode" [locationChosen]="launchStation().chosen" />
           }
           @case ('Airspace') {
             <Nimbus-airspace-section [group]="form().controls.airspace" />

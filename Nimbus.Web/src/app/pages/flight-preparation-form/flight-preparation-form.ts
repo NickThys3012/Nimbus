@@ -207,6 +207,14 @@ export default class FlightPreparationFormPage implements CanComponentDeactivate
     return location ? { latitude: Number(location.latitude), longitude: Number(location.longitude) } : null;
   });
 
+  /** The selected launch location, for what depends on it: whether METAR/TAF can be fetched and for which station. */
+  protected readonly launchStation = computed(() => {
+    this.formVersion();
+    const id = this.form().controls.general.controls.launchLocationId.value;
+    const location = this.locationsStore.list().find((l) => l.id === id);
+    return { chosen: !!location, icaoCode: location?.icaoCode ?? null };
+  });
+
   /** Site elevation, envelope volume and take-off temperature that feed the total-lift calculation in section 05. */
   protected readonly liftContext = computed(() => {
     this.formVersion();

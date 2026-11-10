@@ -23,6 +23,12 @@ public class ExceptionStatusMappingTests
     }
 
     [Test]
+    public async Task ProviderUnavailableException_Answers502()
+    {
+        Assert.That(await StatusFor(new ProviderUnavailableException("The aviation weather service")), Is.EqualTo(StatusCodes.Status502BadGateway));
+    }
+
+    [Test]
     public async Task NotFoundException_StillAnswers404()
     {
         Assert.That(await StatusFor(new NotFoundException("FlightPreparation", Guid.NewGuid())), Is.EqualTo(StatusCodes.Status404NotFound));

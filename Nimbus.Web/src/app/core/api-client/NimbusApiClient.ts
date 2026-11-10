@@ -20,6 +20,7 @@ import { OfpSettingsService } from './services/OfpSettingsService';
 import { PilotsService } from './services/PilotsService';
 import { ProfileService } from './services/ProfileService';
 import { TelemetryService } from './services/TelemetryService';
+import { WeatherService } from './services/WeatherService';
 @NgModule({
     imports: [HttpClientModule],
     providers: [
@@ -53,6 +54,7 @@ import { TelemetryService } from './services/TelemetryService';
         PilotsService,
         ProfileService,
         TelemetryService,
+        WeatherService,
     ]
 })
 export class NimbusApiClient {}
