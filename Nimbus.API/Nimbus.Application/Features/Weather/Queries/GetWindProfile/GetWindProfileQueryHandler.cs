@@ -13,17 +13,19 @@ namespace Nimbus.Application.Features.Weather.Queries.GetWindProfile;
 public sealed class GetWindProfileQueryHandler : IRequestHandler<GetWindProfileQuery, WindProfileDto>
 {
     private readonly IWindProfileClient _client;
+    private readonly IForecastSettings _settings;
     private readonly TimeProvider _time;
 
-    public GetWindProfileQueryHandler(IWindProfileClient client, TimeProvider time)
+    public GetWindProfileQueryHandler(IWindProfileClient client, IForecastSettings settings, TimeProvider time)
     {
         _client = client;
+        _settings = settings;
         _time = time;
     }
 
     public async Task<WindProfileDto> Handle(GetWindProfileQuery request, CancellationToken ct)
     {
-        var model = string.IsNullOrWhiteSpace(request.Model) ? WindProfileMapper.DefaultModel : request.Model.Trim();
+        var model = string.IsNullOrWhiteSpace(request.Model) ? _settings.DefaultModel : request.Model.Trim();
         var at = request.HourUtc?.ToUniversalTime() ?? _time.GetUtcNow().UtcDateTime;
         var hour = new DateTime(at.Year, at.Month, at.Day, at.Hour, 0, 0, DateTimeKind.Utc);
 

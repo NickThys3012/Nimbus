@@ -1,3 +1,4 @@
+using Nimbus.Infrastructure.Http;
 namespace Nimbus.Infrastructure.Weather;
 
 /// <summary>
@@ -11,9 +12,12 @@ public sealed class AviationWeatherOptions
     /// <summary>Base address of the Data API. A trailing slash is added when missing.</summary>
     public string BaseUrl { get; init; } = "https://aviationweather.gov/api/data/";
 
-    /// <summary>How long one request may take before it counts as failed. The form waits on this, so it stays short.</summary>
+    /// <summary>How long one attempt may take before it counts as failed. The form waits on this, so it stays short.</summary>
     public int TimeoutSeconds { get; init; } = 8;
 
     /// <summary>Sent on every request; the provider asks clients to identify themselves.</summary>
     public string UserAgent { get; init; } = "Nimbus/1.0 (flight preparation)";
+
+    /// <summary>Retries and circuit breaker. One retry by default: the form is waiting on this fetch.</summary>
+    public ResilienceOptions Resilience { get; init; } = new() { MaxRetries = 1 };
 }

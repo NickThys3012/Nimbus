@@ -18,6 +18,13 @@ public class GetWindProfileHandlerTests
         }
     }
 
+    private sealed class Settings : IForecastSettings
+    {
+        public string DefaultModel => "icon_seamless";
+        public int Days => 3;
+        public int SeriesCacheMinutes => 60;
+    }
+
     private sealed class Clock(DateTimeOffset now) : TimeProvider { public override DateTimeOffset GetUtcNow() => now; }
 
     private static RawWindProfile Raw(params string[] without)
@@ -27,7 +34,7 @@ public class GetWindProfileHandlerTests
         return new RawWindProfile(v);
     }
 
-    private static GetWindProfileQueryHandler Handler(FakeClient c) => new(c, new Clock(new DateTimeOffset(2026, 11, 10, 9, 41, 0, TimeSpan.Zero)));
+    private static GetWindProfileQueryHandler Handler(FakeClient c) => new(c, new Settings(), new Clock(new DateTimeOffset(2026, 11, 10, 9, 41, 0, TimeSpan.Zero)));
 
     [Test]
     public async Task Defaults_ToIconSeamless_AndTheCurrentHour()
