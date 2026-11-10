@@ -4,6 +4,7 @@
 /* eslint-disable */
 export type ForecastDayDto = {
     date: string;
-    sunrise?: string | null;
-    sunset?: string | null;
+    sunrise: string | null;
+    sunset: string | null;
 };
+

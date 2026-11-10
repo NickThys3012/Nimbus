@@ -67,7 +67,7 @@ export class MeteoSection {
   /** Fills wind, direction, CAPE and temperature from the chosen hour (a value the model lacks leaves its field alone). */
   protected useHour(hour: HourlyForecastHourDto, day: { sunrise: string | null; sunset: string | null }): void {
     const c = this.group().controls;
-    const fill = (control: { setValue(v: number): void; markAsDirty(): void }, value: number | null | undefined) => {
+    const fill = (control: { setValue(v: number): void; markAsDirty(): void }, value: number | string | null | undefined) => {
       if (value === null || value === undefined) return;
       control.setValue(Number(value));
       control.markAsDirty();

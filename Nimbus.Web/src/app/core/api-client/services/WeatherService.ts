@@ -14,29 +14,6 @@ import { BaseHttpRequest } from '../core/BaseHttpRequest';
 export class WeatherService {
     constructor(public readonly httpRequest: BaseHttpRequest) {}
     /**
-     * @returns HourlyForecastDto OK
-     * @throws ApiError
-     */
-    public getApiWeatherHourlyForecast({
-        latitude,
-        longitude,
-        model,
-    }: {
-        latitude?: number | string,
-        longitude?: number | string,
-        model?: string,
-    }): Observable<HourlyForecastDto> {
-        return this.httpRequest.request({
-            method: 'GET',
-            url: '/api/weather/hourly-forecast',
-            query: {
-                'latitude': latitude,
-                'longitude': longitude,
-                'model': model,
-            },
-        });
-    }
-    /**
      * @returns MetarTafDto OK
      * @throws ApiError
      */
@@ -75,6 +52,29 @@ export class WeatherService {
                 'latitude': latitude,
                 'longitude': longitude,
                 'hourUtc': hourUtc,
+                'model': model,
+            },
+        });
+    }
+    /**
+     * @returns HourlyForecastDto OK
+     * @throws ApiError
+     */
+    public getApiWeatherHourlyForecast({
+        latitude,
+        longitude,
+        model,
+    }: {
+        latitude?: number | string,
+        longitude?: number | string,
+        model?: string,
+    }): Observable<HourlyForecastDto> {
+        return this.httpRequest.request({
+            method: 'GET',
+            url: '/api/weather/hourly-forecast',
+            query: {
+                'latitude': latitude,
+                'longitude': longitude,
                 'model': model,
             },
         });

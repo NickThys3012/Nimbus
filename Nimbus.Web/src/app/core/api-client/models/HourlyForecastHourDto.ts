@@ -5,11 +5,12 @@
 export type HourlyForecastHourDto = {
     time: string;
     model: string;
-    temperatureC?: number | null;
-    windSpeedKt?: number | null;
-    windDirectionDeg?: number | null;
-    windGustKt?: number | null;
-    capeJPerKg?: number | null;
-    precipitationMm?: number | null;
-    precipitationProbabilityPct?: number | null;
+    temperatureC: number | string | null;
+    windSpeedKt: number | string | null;
+    windDirectionDeg: number | string | null;
+    windGustKt: number | string | null;
+    capeJPerKg: number | string | null;
+    precipitationMm: number | string | null;
+    precipitationProbabilityPct: number | string | null;
 };
+
