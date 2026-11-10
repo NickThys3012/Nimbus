@@ -236,6 +236,7 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
             e.Property(i => i.Section).HasConversion<string>().HasMaxLength(30);
             e.Property(i => i.ObjectKey).IsRequired().HasMaxLength(1024);
             e.Property(i => i.ContentType).IsRequired().HasMaxLength(100);
+            e.Property(i => i.ThumbnailObjectKey).HasMaxLength(1024);
             e.HasIndex(i => new { i.FlightPreparationId, i.Section, i.Order });
         });
 

@@ -148,8 +148,8 @@ describe('buildDetailGroups', () => {
 
   it('groups images by their section', () => {
     const d = sampleDetail({ images: [
-      { id: 'i1', section: 'Meteo', contentType: 'image/png', url: 'https://files.test/a.png' },
-      { id: 'i2', section: 'Route', contentType: 'image/png', url: 'https://files.test/b.png' },
+      { id: 'i1', section: 'Meteo', contentType: 'image/png', url: 'https://files.test/a.png', thumbnailUrl: 'https://files.test/a.thumb.png', sizeBytes: 1000, order: 0 },
+      { id: 'i2', section: 'Route', contentType: 'image/png', url: 'https://files.test/b.png', thumbnailUrl: 'https://files.test/b.thumb.png', sizeBytes: 1000, order: 0 },
     ] });
     expect(groupOf(d, 'Meteo').images.map((i) => i.id)).toEqual(['i1']);
     expect(groupOf(d, 'Route').images.map((i) => i.id)).toEqual(['i2']);

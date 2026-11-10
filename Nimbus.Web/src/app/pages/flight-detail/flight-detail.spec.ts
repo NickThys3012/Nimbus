@@ -141,15 +141,17 @@ describe('FlightDetail', () => {
   it('renders uploaded images inline in their own section', async () => {
     const { el } = await setup(sampleDetail({
       images: [
-        { id: 'i1', section: 'Meteo', contentType: 'image/png', url: 'https://files.test/stuve.png' },
-        { id: 'i2', section: 'Route', contentType: 'image/png', url: 'https://files.test/track.png' },
+        { id: 'i1', section: 'Meteo', contentType: 'image/png', url: 'https://files.test/stuve.png', thumbnailUrl: 'https://files.test/stuve.thumb.png', sizeBytes: 1000, order: 0 },
+        { id: 'i2', section: 'Route', contentType: 'image/png', url: 'https://files.test/track.png', thumbnailUrl: 'https://files.test/track.thumb.png', sizeBytes: 1000, order: 0 },
       ],
     }));
 
     const meteo = el.querySelector('[data-section="Meteo"] [data-testid="inline-image"]') as HTMLImageElement;
     const route = el.querySelector('[data-section="Route"] [data-testid="inline-image"]') as HTMLImageElement;
-    expect(meteo.getAttribute('src')).toBe('https://files.test/stuve.png');
-    expect(route.getAttribute('src')).toBe('https://files.test/track.png');
+    // The page shows the small variant and links to the original, so a phone does not download full-resolution charts.
+    expect(meteo.getAttribute('src')).toBe('https://files.test/stuve.thumb.png');
+    expect(route.getAttribute('src')).toBe('https://files.test/track.thumb.png');
+    expect(meteo.closest('a')?.getAttribute('href')).toBe('https://files.test/stuve.png');
     expect(el.querySelector('[data-section="General"] img')).toBeNull();
   });
 
