@@ -164,8 +164,15 @@ behaves like a missing one (`null`/`false`).
 | `POST` | `/api/flight-preparations` | Create. The caller becomes the owner and the flight starts as `Planned`. |
 | `PUT` | `/api/flight-preparations/{id}` | Replace the form-owned fields, passengers and wind levels. |
 
-- **Who may do what.** `GET /{id}` (the edit form's load) and `PUT` are owner-only. For anyone else:
-  `403` when the flight exists, `404` when it does not. See "Flight detail view" for reading.
+- **Who may do what.** `GET /{id}` (the edit form's load) and `PUT` are for the owner **and an admin**
+  (the flight-detail mockup gives an admin every owner action). For anyone else, including a viewer the
+  flight is only shared with: `403` when the flight exists, `404` when it does not. The repository stays
+  owner-scoped, so an admin's update is made *as the flight's owner* (the access check supplies the owner
+  id) and ownership never moves to the admin. See "Flight detail view" for reading.
+- **Known limit.** The form's balloon, pilot and location pickers list the *signed-in* user's reference
+  data. An admin editing someone else's flight keeps the stored ids as long as those pickers are not
+  touched, but cannot pick the owner's other balloons, and the API does not yet check that a referenced
+  balloon, pilot or location belongs to the flight's owner.
 - **`FlightPreparationRequestDto` is exactly what the form owns.** An update loads the stored row
   (read-only), applies the request onto it and hands it to `UpdateAsync`, so the columns the form
   does not own (status, flight outcome, simulation settings, precipitation, trajectory, KML) keep
@@ -222,13 +229,20 @@ action leads to the form.
   yours" separately from "does not exist", so the API says `403` or `404`; a soft-deleted flight does
   not exist for anyone. No flight data leaves the reader for a viewer who may not see it.
 - **Permissions** (`FlightPermissions`, computed per request): reading and exporting is open to every
-  viewer; edit, delete, share and mark-as-flown are the owner's alone. An admin sees every flight but
-  does not edit someone else's. The page shows an action only when its permission is true and the
-  action exists; today that is Edit. Export PDF, share, mark as flown and delete get their buttons with
-  their own stories (they only need to read `permissions`).
+  viewer; edit, delete, share and mark-as-flown belong to the owner and to an admin; a viewer the flight
+  is only shared with gets none of them. The page shows an action only when its permission is true and
+  the action exists; today that is Edit. Export PDF, Duplicate, share, mark as flown and delete get their
+  buttons with their own stories (they only need to read `permissions`).
+- **Layout.** Built to `nimbus-flight-detail.html` (in `../Nimbus mocups/`, one level above the repo): a
+  header (title, a "date · time · balloon and type · pilot" line, a role badge for shared and admin
+  views, a read-only note), a status strip (total, lift, margin, Go/No-Go) and one document card with
+  grouped key/value rows, the checklists as tick lines, the passengers as a small table and the
+  briefing in a box. Not built: the route map and the "after the flight" block (no trajectory or
+  outcome data yet), and the Export PDF and Duplicate buttons. Differences kept on purpose: a back link,
+  the balloon weight snapshot and max altitude rows, and English text (the mockup is Dutch).
 - **Names are the owner's.** Balloon, pilot and location are resolved from the flight owner's reference
   data, including entries the owner has since soft-deleted, never from the viewer's own lists.
-- **One assessment.** The badge and the computed weights come from `IFlightAssessmentService`, the
+- **One assessment.** The strip and the margin come from `IFlightAssessmentService`, the
   same service the list uses, fed with the flight's weight snapshot (falling back to the balloon for
   rows without one). Like the list, it judges against the *viewer's* Go/No-Go thresholds.
 - **403 and 404 go to the flight list.** The auth interceptor leaves a 403 on `GET /flight-preparations/{id}`

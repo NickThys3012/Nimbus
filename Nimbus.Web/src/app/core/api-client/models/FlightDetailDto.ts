@@ -14,6 +14,7 @@ export type FlightDetailDto = {
     permissions: FlightPermissionsDto;
     ownerName: string | null;
     balloonRegistration: string | null;
+    balloonType: string | null;
     pilotName: string | null;
     launchLocationName: string | null;
     launchLocationIcaoCode: string | null;

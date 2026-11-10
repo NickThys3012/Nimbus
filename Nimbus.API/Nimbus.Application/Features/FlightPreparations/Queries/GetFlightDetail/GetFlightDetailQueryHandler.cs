@@ -50,7 +50,7 @@ public sealed class GetFlightDetailQueryHandler : IRequestHandler<GetFlightDetai
 
         return new FlightDetailDto(
             flight.Id, flight.Status.ToString(), flight.FlownAt, data.Role.ToString(), FlightPermissions.For(data.Role), ownerName,
-            data.BalloonRegistration, data.PilotName, data.LocationName, data.LocationIcaoCode, assessment,
+            data.BalloonRegistration, data.BalloonType, data.PilotName, data.LocationName, data.LocationIcaoCode, assessment,
             flight.MapToRequestDto(), await ImagesAsync(flight));
     }
 

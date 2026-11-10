@@ -60,14 +60,16 @@ public class FlightDetailHandlerTests
     }
 
     [Test]
-    public async Task Admin_CanRead_ButDoesNotEditSomeoneElsesFlight()
+    public async Task Admin_HasTheOwnersFullSet_AndSeesTheOwnersName()
     {
-        var flight = Flight(Guid.NewGuid());
-        var dto = await Handler(new Reader(flight, FlightViewerRole.Admin), Guid.NewGuid(), admin: true).Handle(new GetFlightDetailQuery(flight.Id), default);
+        var owner = Guid.NewGuid();
+        var flight = Flight(owner);
+        var dto = await Handler(new Reader(flight, FlightViewerRole.Admin), Guid.NewGuid(), admin: true, directory: new Directory { [owner] = "Bob Builder" })
+            .Handle(new GetFlightDetailQuery(flight.Id), default);
 
         Assert.That(dto.ViewerRole, Is.EqualTo("Admin"));
-        Assert.That(dto.Permissions.CanEdit, Is.False);
-        Assert.That(dto.Permissions.CanExport, Is.True);
+        Assert.That(dto.Permissions, Is.EqualTo(new Nimbus.Contracts.DTOs.Features.FlightPreparations.FlightPermissionsDto(true, true, true, true, true)));
+        Assert.That(dto.OwnerName, Is.EqualTo("Bob Builder"));
     }
 
     [Test]
@@ -89,7 +91,7 @@ public class FlightDetailHandlerTests
         var dto = await Handler(new Reader(flight, FlightViewerRole.Owner), me).Handle(new GetFlightDetailQuery(flight.Id), default);
 
         Assert.That(dto.Assessment, Is.EqualTo(Assessed));
-        Assert.That((dto.BalloonRegistration, dto.PilotName, dto.LaunchLocationName, dto.LaunchLocationIcaoCode), Is.EqualTo(("OO-ABC", "Alice", "Weelde", "EBWE")));
+        Assert.That((dto.BalloonRegistration, dto.BalloonType, dto.PilotName, dto.LaunchLocationName, dto.LaunchLocationIcaoCode), Is.EqualTo(("OO-ABC", "Cameron Z-90", "Alice", "Weelde", "EBWE")));
         Assert.That(dto.Details.WindSpeedKt, Is.EqualTo(6.5m));
     }
 
@@ -109,11 +111,13 @@ public class FlightDetailHandlerTests
     }
 
     [TestCase(FlightViewerRole.Owner, true)]
-    [TestCase(FlightViewerRole.Admin, false)]
+    [TestCase(FlightViewerRole.Admin, true)]
     [TestCase(FlightViewerRole.Shared, false)]
-    public void OnlyTheOwnerCanEdit(FlightViewerRole role, bool canEdit)
+    public void OwnerAndAdminManageTheFlight_ASharedViewerOnlyReadsAndExports(FlightViewerRole role, bool manages)
     {
-        Assert.That(FlightPermissions.For(role).CanEdit, Is.EqualTo(canEdit));
+        var p = FlightPermissions.For(role);
+        Assert.That((p.CanEdit, p.CanDelete, p.CanShare, p.CanMarkFlown), Is.EqualTo((manages, manages, manages, manages)));
+        Assert.That(p.CanExport, Is.True);
     }
 
     private sealed class Me(Guid id, bool admin) : ICurrentUserService
@@ -126,14 +130,14 @@ public class FlightDetailHandlerTests
     private sealed class Reader(FlightPreparation? flight, FlightViewerRole? role) : IFlightDetailReader
     {
         public Task<FlightAccess> GetAccessAsync(Guid viewerId, bool isAdmin, Guid flightId, CancellationToken ct = default) =>
-            Task.FromResult(new FlightAccess(flight is not null, role));
+            Task.FromResult(new FlightAccess(flight is not null, role, flight?.OwnerId));
 
         public Task<FlightDetailResult> GetAsync(Guid viewerId, bool isAdmin, Guid flightId, CancellationToken ct = default)
         {
-            var access = new FlightAccess(flight is not null, role);
+            var access = new FlightAccess(flight is not null, role, flight?.OwnerId);
             return Task.FromResult(new FlightDetailResult(access, flight is null || role is null
                 ? null
-                : new FlightDetailData(flight, role.Value, "OO-ABC", "Alice", "Weelde", "EBWE", Input)));
+                : new FlightDetailData(flight, role.Value, "OO-ABC", "Cameron Z-90", "Alice", "Weelde", "EBWE", Input)));
         }
     }
 

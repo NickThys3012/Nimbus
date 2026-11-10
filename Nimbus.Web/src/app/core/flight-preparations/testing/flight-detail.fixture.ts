@@ -5,7 +5,7 @@ export function sampleDetail(over: Partial<FlightDetailDto> = {}, details: Parti
   return {
     id: 'f1', status: 'Planned', flownAt: null, viewerRole: 'Owner',
     permissions: { canEdit: true, canDelete: true, canShare: true, canMarkFlown: true, canExport: true },
-    ownerName: null, balloonRegistration: 'OO-ABC', pilotName: 'Alice', launchLocationName: 'Weelde', launchLocationIcaoCode: 'EBWE',
+    ownerName: null, balloonRegistration: 'OO-ABC', balloonType: 'Cameron Z-90', pilotName: 'Alice', launchLocationName: 'Weelde', launchLocationIcaoCode: 'EBWE',
     assessment: { totalWeightKg: 350, passengersWeightKg: 130, marginKg: 150, liftSufficient: true, goNoGoVerdict: 'green' },
     images: [],
     details: {

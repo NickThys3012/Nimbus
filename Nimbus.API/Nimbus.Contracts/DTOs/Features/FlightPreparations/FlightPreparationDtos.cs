@@ -110,6 +110,7 @@ public record FlightDetailDto(
     FlightPermissionsDto Permissions,
     string? OwnerName,
     string? BalloonRegistration,
+    string? BalloonType,
     string? PilotName,
     string? LaunchLocationName,
     string? LaunchLocationIcaoCode,

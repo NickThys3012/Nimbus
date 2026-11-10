@@ -30,7 +30,7 @@ public class FlightDetailReaderTests
         await db.Database.MigrateAsync();
 
         // The owner's reference data; the balloon and the location are soft-deleted, as an owner may do later.
-        var balloon = new Balloon { OwnerId = _owner, Registration = "OO-OWN", BasketWeightKg = 50, BurnerWeightKg = 20, CylindersWeightKg = 30, IsDeleted = true };
+        var balloon = new Balloon { OwnerId = _owner, Registration = "OO-OWN", Type = "Cameron Z-90", BasketWeightKg = 50, BurnerWeightKg = 20, CylindersWeightKg = 30, IsDeleted = true };
         var location = new LaunchLocation { OwnerId = _owner, Name = "Weelde", IcaoCode = "EBWE", IsDeleted = true };
         var pilot = new Pilot { OwnerId = _owner, Name = "Alice", WeightKg = 80 };
         // The viewer's own, different, reference data must never leak into the owner's flight.
@@ -86,7 +86,7 @@ public class FlightDetailReaderTests
     public async Task Owner_IsTheOwner()
     {
         var r = await Get(_owner, _flight);
-        Assert.That(r.Access, Is.EqualTo(new FlightAccess(true, FlightViewerRole.Owner)));
+        Assert.That(r.Access, Is.EqualTo(new FlightAccess(true, FlightViewerRole.Owner, _owner)));
         Assert.That(r.Data, Is.Not.Null);
     }
 
@@ -102,7 +102,7 @@ public class FlightDetailReaderTests
     public async Task ARevokedShare_GrantsNothing_ButTheFlightIsKnownToExist()
     {
         var r = await Get(_revoked, _flight);
-        Assert.That(r.Access, Is.EqualTo(new FlightAccess(true, null)));
+        Assert.That(r.Access, Is.EqualTo(new FlightAccess(true, null, _owner)));
         Assert.That(r.Data, Is.Null, "no data leaves the reader for a viewer who may not see it");
     }
 
@@ -110,7 +110,7 @@ public class FlightDetailReaderTests
     public async Task AStranger_ExistsButMayNotRead()
     {
         var r = await Get(_stranger, _flight);
-        Assert.That(r.Access, Is.EqualTo(new FlightAccess(true, null)));
+        Assert.That(r.Access, Is.EqualTo(new FlightAccess(true, null, _owner)));
         Assert.That(r.Data, Is.Null);
     }
 
@@ -135,7 +135,7 @@ public class FlightDetailReaderTests
     {
         await using var db = CreateContext();
         var access = await new FlightDetailReader(db).GetAccessAsync(_sharedWith, false, _flight);
-        Assert.That(access, Is.EqualTo(new FlightAccess(true, FlightViewerRole.Shared)));
+        Assert.That(access, Is.EqualTo(new FlightAccess(true, FlightViewerRole.Shared, _owner)));
         Assert.That(db.ChangeTracker.Entries(), Is.Empty);
     }
 
@@ -143,7 +143,7 @@ public class FlightDetailReaderTests
     public async Task Names_ComeFromTheOwnersData_EvenWhenSoftDeleted_NeverTheViewers()
     {
         var d = (await Get(_sharedWith, _flight)).Data!;
-        Assert.That((d.BalloonRegistration, d.PilotName, d.LocationName, d.LocationIcaoCode), Is.EqualTo(("OO-OWN", "Alice", "Weelde", "EBWE")));
+        Assert.That((d.BalloonRegistration, d.BalloonType, d.PilotName, d.LocationName, d.LocationIcaoCode), Is.EqualTo(("OO-OWN", "Cameron Z-90", "Alice", "Weelde", "EBWE")));
     }
 
     [Test]

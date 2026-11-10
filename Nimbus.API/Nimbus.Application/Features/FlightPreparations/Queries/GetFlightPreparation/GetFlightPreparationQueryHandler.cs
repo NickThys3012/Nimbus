@@ -7,7 +7,7 @@ using Nimbus.Domain.Entities;
 using Nimbus.Domain.Interfaces;
 namespace Nimbus.Application.Features.FlightPreparations.Queries.GetFlightPreparation;
 
-/// <summary>The editable dossier, for the form. Only the owner edits: anyone else who may merely view it gets 403 (the UI then shows the read-only view).</summary>
+/// <summary>The editable dossier, for the form. The owner and an admin edit; anyone else who may merely view it gets 403 (the UI then shows the read-only view).</summary>
 public sealed class GetFlightPreparationQueryHandler : IRequestHandler<GetFlightPreparationQuery, FlightPreparationDto>
 {
     private readonly ICurrentUserService _currentUser;
@@ -26,10 +26,10 @@ public sealed class GetFlightPreparationQueryHandler : IRequestHandler<GetFlight
         var access = await _access.GetAccessAsync(_currentUser.UserId, _currentUser.IsAdmin, request.Id, ct);
         if (!access.Exists)
             throw new NotFoundException(nameof(FlightPreparation), request.Id);
-        if (access.Role != FlightViewerRole.Owner)
+        if (access.Role is not (FlightViewerRole.Owner or FlightViewerRole.Admin))
             throw new ForbiddenException(nameof(FlightPreparation), request.Id);
 
-        var flight = await _flights.GetByIdAsync(_currentUser.UserId, request.Id, ct)
+        var flight = await _flights.GetByIdAsync(access.OwnerId!.Value, request.Id, ct)
                      ?? throw new NotFoundException(nameof(FlightPreparation), request.Id);
         return flight.MapToDto();
     }

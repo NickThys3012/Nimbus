@@ -7,7 +7,7 @@ import { Banner } from '../../components/banner/banner';
 import { Button } from '../../components/button/button';
 import { RichTextView } from '../../components/rich-text-view/rich-text-view';
 import { ApiError, FlightPreparationsService } from '../../core/api-client';
-import { buildDetailSections, NONE } from '../../core/flight-preparations/flight-detail.view';
+import { buildDetailGroups, buildDetailHeader } from '../../core/flight-preparations/flight-detail.view';
 import { verdictClass, verdictLabel } from '../../core/flight-preparations/verdict';
 
 /**
@@ -30,16 +30,19 @@ export default class FlightDetail {
 
   private readonly id = toSignal(inject(ActivatedRoute).paramMap.pipe(map((p) => p.get('id') ?? '')), { initialValue: '' });
 
-  protected readonly none = NONE;
   protected readonly flight = rxResource({
     params: () => this.id() || undefined,
     stream: ({ params }) => this.api.getApiFlightPreparationsDetail({ id: params }),
   });
 
   protected readonly data = computed(() => (this.flight.hasValue() ? this.flight.value() : null));
-  protected readonly sections = computed(() => {
+  protected readonly header = computed(() => {
     const d = this.data();
-    return d ? buildDetailSections(d) : [];
+    return d ? buildDetailHeader(d) : null;
+  });
+  protected readonly groups = computed(() => {
+    const d = this.data();
+    return d ? buildDetailGroups(d) : [];
   });
   protected readonly isFlown = computed(() => this.data()?.status === 'Flown');
   protected readonly verdict = computed(() => this.data()?.assessment.goNoGoVerdict ?? 'unknown');

@@ -26,7 +26,7 @@ public sealed class FlightDetailReader : IFlightDetailReader
             .Where(f => f.Id == flightId && !f.IsDeleted)
             .Select(f => (Guid?)f.OwnerId)
             .FirstOrDefaultAsync(ct);
-        return owner is null ? new FlightAccess(false, null) : new FlightAccess(true, await RoleAsync(viewerId, isAdmin, flightId, owner.Value, ct));
+        return owner is null ? new FlightAccess(false, null) : new FlightAccess(true, await RoleAsync(viewerId, isAdmin, flightId, owner.Value, ct), owner);
     }
 
     public async Task<FlightDetailResult> GetAsync(Guid viewerId, bool isAdmin, Guid flightId, CancellationToken ct = default)
@@ -46,7 +46,7 @@ public sealed class FlightDetailReader : IFlightDetailReader
         var balloon = flight.BalloonId is { } balloonId
             ? await _db.Balloons.IgnoreQueryFilters().AsNoTracking()
                 .Where(b => b.Id == balloonId && b.OwnerId == flight.OwnerId)
-                .Select(b => new { b.Registration, b.BasketWeightKg, b.BurnerWeightKg, b.CylindersWeightKg })
+                .Select(b => new { b.Registration, b.Type, b.BasketWeightKg, b.BurnerWeightKg, b.CylindersWeightKg })
                 .FirstOrDefaultAsync(ct)
             : null;
         var pilot = flight.PilotId is { } pilotId
@@ -65,7 +65,7 @@ public sealed class FlightDetailReader : IFlightDetailReader
         var assessment = FlightAssessmentInput.From(
             flight, pilot?.WeightKg ?? 0, balloon?.BasketWeightKg ?? 0, balloon?.BurnerWeightKg ?? 0, balloon?.CylindersWeightKg ?? 0);
         return new FlightDetailResult(access, new FlightDetailData(
-            flight, role, balloon?.Registration, pilot?.Name, location?.Name, location?.IcaoCode, assessment));
+            flight, role, balloon?.Registration, balloon?.Type, pilot?.Name, location?.Name, location?.IcaoCode, assessment));
     }
 
     private async Task<FlightViewerRole?> RoleAsync(Guid viewerId, bool isAdmin, Guid flightId, Guid ownerId, CancellationToken ct)

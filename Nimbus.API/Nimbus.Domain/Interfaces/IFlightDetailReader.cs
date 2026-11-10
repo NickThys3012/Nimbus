@@ -10,8 +10,8 @@ public enum FlightViewerRole
     Shared
 }
 
-/// <summary><see cref="Role" /> is null when the flight exists but the caller may not see it.</summary>
-public sealed record FlightAccess(bool Exists, FlightViewerRole? Role);
+/// <summary><see cref="Role" /> is null when the flight exists but the caller may not see it. <see cref="OwnerId" /> is set whenever the flight exists.</summary>
+public sealed record FlightAccess(bool Exists, FlightViewerRole? Role, Guid? OwnerId = null);
 
 /// <summary>
 ///     A flight with everything the read-only view needs: the dossier, its owner-scoped names and the single
@@ -21,6 +21,7 @@ public sealed record FlightDetailData(
     FlightPreparation Flight,
     FlightViewerRole Role,
     string? BalloonRegistration,
+    string? BalloonType,
     string? PilotName,
     string? LocationName,
     string? LocationIcaoCode,
