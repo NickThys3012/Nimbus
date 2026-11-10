@@ -84,7 +84,7 @@ public static class DependencyInjection
         services.AddScoped<IFlightPreparationRepository, FlightPreparationRepository>();
         services.AddScoped<IFlightImageRepository, FlightImageRepository>();
         services.Configure<ImageUploadOptions>(config.GetSection(ImageUploadOptions.SectionName));
-        services.AddSingleton<IImageInspector, ImageSharpImageInspector>();
+        services.AddSingleton<IImageInspector, SkiaImageInspector>();
         services.AddScoped<IFlightListReader, FlightListReader>();
         services.AddScoped<IFlightDetailReader, FlightDetailReader>();
         services.AddScoped<IUserDirectory, UserDirectory>();
