@@ -55,6 +55,8 @@ export type { TotalLiftDto } from './models/TotalLiftDto';
 export type { UnblockVerificationEmailRequestDto } from './models/UnblockVerificationEmailRequestDto';
 export type { UserDto } from './models/UserDto';
 export type { WindLevelDto } from './models/WindLevelDto';
+export type { WindProfileDto } from './models/WindProfileDto';
+export type { WindProfileLevelDto } from './models/WindProfileLevelDto';
 
 export { AdminService } from './services/AdminService';
 export { AuthenticationService } from './services/AuthenticationService';

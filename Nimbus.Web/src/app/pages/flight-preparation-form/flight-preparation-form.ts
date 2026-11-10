@@ -212,6 +212,17 @@ export default class FlightPreparationFormPage implements CanComponentDeactivate
     return location ? { latitude: Number(location.latitude), longitude: Number(location.longitude) } : null;
   });
 
+  /** The planned take-off hour as a UTC ISO string, so the wind profile is for that hour; null (current hour) until date and time are filled in. */
+  protected readonly flightHourUtc = computed(() => {
+    this.formVersion();
+    const g = this.form().controls.general.controls;
+    const date = g.flightDate.value;
+    const time = g.flightTime.value;
+    if (!date || !time) return null;
+    const at = new Date(`${date}T${time}`);
+    return Number.isNaN(at.getTime()) ? null : at.toISOString();
+  });
+
   /** The selected launch location, for what depends on it: whether METAR/TAF can be fetched and for which station. */
   protected readonly launchStation = computed(() => {
     this.formVersion();
