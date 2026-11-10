@@ -13,6 +13,7 @@ using Nimbus.Infrastructure.Persistence;
 using Nimbus.Infrastructure.Persistence.Repositories;
 using Nimbus.Infrastructure.Services;
 using Nimbus.Infrastructure.Storage;
+using Nimbus.Infrastructure.Weather;
 namespace Nimbus.Infrastructure;
 
 public static class DependencyInjection
@@ -92,6 +93,7 @@ public static class DependencyInjection
         services.AddHostedService<LoginEventWriterService>();
 
         AddObjectStorage(services, config);
+        AddAviationWeather(services, config);
 
         // Tagged "ready" (issue #97): /health/ready runs only checks carrying this tag, so
         // SQL Server and MinIO gate readiness while /health/live — which runs no checks at
@@ -100,6 +102,25 @@ public static class DependencyInjection
             .AddSqlServer(connectionString, tags: ["ready"])
             .AddDbContextCheck<AppDbContext>(tags: ["ready"])
             .AddCheck<MinioHealthCheck>("minio", tags: ["ready"]);
+    }
+
+    private static void AddAviationWeather(IServiceCollection services, IConfiguration config)
+    {
+        services
+            .AddOptions<AviationWeatherOptions>()
+            .Bind(config.GetSection(AviationWeatherOptions.SectionName))
+            .Validate(o => Uri.TryCreate(o.BaseUrl, UriKind.Absolute, out var u) && u.Scheme == Uri.UriSchemeHttps, "AviationWeather:BaseUrl must be an absolute https URL.")
+            .Validate(o => o.TimeoutSeconds is >= 1 and <= 60, "AviationWeather:TimeoutSeconds must be between 1 and 60.")
+            .Validate(o => !string.IsNullOrWhiteSpace(o.UserAgent), "AviationWeather:UserAgent must be configured.");
+
+        // Its own named client: its own address, timeout and user agent, so a slow provider cannot affect another one.
+        services.AddHttpClient<IAviationWeatherClient, AviationWeatherClient>((sp, http) =>
+        {
+            var options = sp.GetRequiredService<IOptions<AviationWeatherOptions>>().Value;
+            http.BaseAddress = new Uri(options.BaseUrl.EndsWith('/') ? options.BaseUrl : options.BaseUrl + "/");
+            http.Timeout = TimeSpan.FromSeconds(options.TimeoutSeconds);
+            http.DefaultRequestHeaders.UserAgent.ParseAdd(options.UserAgent);
+        });
     }
 
     private static void AddObjectStorage(IServiceCollection services, IConfiguration config)

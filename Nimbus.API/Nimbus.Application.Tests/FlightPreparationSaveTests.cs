@@ -218,6 +218,15 @@ public class FlightPreparationSaveTests
     }
 
     [Test]
+    public void Validator_AcceptsAWholeFetchedMetarAndTaf_AndRefusesOnesThatCannotBeStored()
+    {
+        var v = new FlightPreparationRequestValidator();
+        Assert.That(v.Validate(Req() with { Metar = new string('m', 1000), Taf = new string('t', 2000) }).IsValid, Is.True);
+        Assert.That(v.Validate(Req() with { Metar = new string('m', 1001) }).IsValid, Is.False);
+        Assert.That(v.Validate(Req() with { Taf = new string('t', 2001) }).IsValid, Is.False);
+    }
+
+    [Test]
     public void Validator_AcceptsAValidRequest()
     {
         Assert.That(new FlightPreparationRequestValidator().Validate(Req()).IsValid, Is.True);

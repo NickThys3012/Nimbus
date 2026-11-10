@@ -40,6 +40,13 @@
       <input id="fp-qnh" data-testid="qnh" formControlName="qnhHpa" type="number" />
     </div>
   </div>
+  <div class="fetch-note" aria-live="polite">
+    @if (fetcher.blockedReason(); as reason) {
+      <span class="blocked" data-testid="fetch-blocked">{{ reason }}</span>
+    } @else if (fetcher.outcome(); as o) {
+      <span [class.problem]="o.kind === 'failed'" [attr.data-testid]="'fetch-' + o.kind">{{ o.message }}</span>
+    }
+  </div>
   <div class="field">
     <label for="fp-metar">METAR</label>
     <textarea id="fp-metar" data-testid="metar" formControlName="metar"></textarea>

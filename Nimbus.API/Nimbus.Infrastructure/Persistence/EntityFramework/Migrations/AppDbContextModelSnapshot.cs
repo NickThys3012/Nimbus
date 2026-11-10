@@ -355,8 +355,8 @@ namespace Nimbus.Infrastructure.Persistence.EntityFramework.Migrations
                         .HasColumnType("int");
 
                     b.Property<string>("Metar")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
 
                     b.Property<bool>("MooringsChecked")
                         .HasColumnType("bit");
@@ -447,8 +447,8 @@ namespace Nimbus.Infrastructure.Persistence.EntityFramework.Migrations
                         .HasColumnType("time");
 
                     b.Property<string>("Taf")
-                        .HasMaxLength(1000)
-                        .HasColumnType("nvarchar(1000)");
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
 
                     b.Property<decimal?>("TemperatureC")
                         .HasPrecision(5, 2)

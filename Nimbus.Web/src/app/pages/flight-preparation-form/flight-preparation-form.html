@@ -56,6 +56,23 @@
         [summary]="sectionSummary(section.id)"
         [title]="section.title"
       >
+        @if (section.id === 'Meteo') {
+          <button
+            card-action
+            aria-label="Fetch METAR and TAF"
+            class="card-action"
+            data-testid="fetch-metar-taf"
+            type="button"
+            [attr.aria-disabled]="fetcher.blockedReason() ? 'true' : null"
+            [attr.title]="fetcher.blockedReason()"
+            [class.blocked]="!!fetcher.blockedReason()"
+            [disabled]="fetcher.fetching()"
+            (click)="fetchMeteo()"
+          >
+            <i aria-hidden="true" class="ti ti-refresh" [class.spin]="fetcher.fetching()"></i>
+            {{ fetcher.fetching() ? 'Fetching…' : 'Fetch' }}
+          </button>
+        }
         @switch (section.id) {
           @case ('General') {
             <Nimbus-general-section [coordinates]="launchCoordinates()" [group]="form().controls.general" />

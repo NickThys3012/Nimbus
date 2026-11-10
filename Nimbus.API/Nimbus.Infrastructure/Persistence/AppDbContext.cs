@@ -159,8 +159,9 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
             e.Property(f => f.DewPointC).HasPrecision(5, 2);
             e.Property(f => f.QnhHpa).HasPrecision(6, 2);
             e.Property(f => f.Precipitation).HasMaxLength(200);
-            e.Property(f => f.Metar).HasMaxLength(500);
-            e.Property(f => f.Taf).HasMaxLength(1000);
+            // Fetched reports are stored whole (issue #44): a TAF with many change groups, or a METAR with long remarks, must fit.
+            e.Property(f => f.Metar).HasMaxLength(1000);
+            e.Property(f => f.Taf).HasMaxLength(2000);
 
             e.Property(f => f.AirspaceStructureNotes).HasMaxLength(2000);
             e.Property(f => f.AirspaceRestrictions).HasMaxLength(2000);

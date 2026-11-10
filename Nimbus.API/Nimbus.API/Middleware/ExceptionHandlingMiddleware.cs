@@ -58,6 +58,8 @@ public class ExceptionHandlingMiddleware
                 ex.Message, null),
             ForbiddenException => (HttpStatusCode.Forbidden,
                 ex.Message, null),
+            ProviderUnavailableException => (HttpStatusCode.BadGateway,
+                ex.Message, null),
             ProcessingException => (HttpStatusCode.BadRequest,
                 ex.Message, null),
             DuplicateException => (HttpStatusCode.Conflict,

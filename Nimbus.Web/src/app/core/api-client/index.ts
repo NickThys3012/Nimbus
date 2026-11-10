@@ -39,6 +39,7 @@ export type { LaunchLocationRequestDto } from './models/LaunchLocationRequestDto
 export type { LoginEventDto } from './models/LoginEventDto';
 export type { LoginRequestDto } from './models/LoginRequestDto';
 export type { LoginResponseDto } from './models/LoginResponseDto';
+export type { MetarTafDto } from './models/MetarTafDto';
 export type { OfpSettingsDto } from './models/OfpSettingsDto';
 export type { OfpSettingsRequestDto } from './models/OfpSettingsRequestDto';
 export type { PassengerDto } from './models/PassengerDto';
@@ -67,3 +68,4 @@ export { OfpSettingsService } from './services/OfpSettingsService';
 export { PilotsService } from './services/PilotsService';
 export { ProfileService } from './services/ProfileService';
 export { TelemetryService } from './services/TelemetryService';
+export { WeatherService } from './services/WeatherService';
