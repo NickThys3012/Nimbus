@@ -40,8 +40,8 @@ warning (`Aviation weather {Kind} fetch failed for {Icao}: {Reason}`); only the 
 propagates. The METAR and TAF requests run side by side, and if either fails the whole fetch fails, so the
 pilot is told instead of getting half an answer. A reply over 256 K characters is refused.
 
-Not here yet, and tracked by #48 (resilient clients for every provider): retries with backoff and jitter and
-a circuit breaker. Today a failure is reported at once and the pilot can simply press the button again.
+Retries and a circuit breaker come from the shared provider policy (issue #48, below). The form waits on this fetch, so
+lower `AviationWeather:Resilience:MaxRetries` if a slow provider should be reported sooner.
 
 ### In the form (section 02 · Meteo)
 Built to the form mockup (`nimbus-prep-form.html`, in `../Nimbus mocups/`): a **Fetch** button with a refresh icon
@@ -178,3 +178,40 @@ the wind profile accepts (`WindProfileMapper.SupportedModels`) are allowed. Noth
 | Series (possibly clamped, with gaps) | `200` |
 | Provider failed | `200`, empty series, `providerAvailable: false` |
 | Unsupported model, `toUtc` before `fromUtc`, window over 7 days, bad coordinates | `422` |
+
+## Provider clients and failure policy (issue #48)
+
+Every external provider sits behind its own named HTTP client, registered in `ExternalProviderRegistration`
+(`Nimbus.Infrastructure/Http`): aviationweather.gov (`aviation-weather`), Open-Meteo (`open-meteo`, shared by the
+forecast, wind-profile and wind-series clients), Overpass (`overpass`) and the static map tiles (`static-map-tiles`).
+Overpass and the tiles have their client registered and configured but no caller yet; a later story uses
+`IHttpClientFactory.CreateClient(ProviderClients.Overpass)` and gets the same policy.
+
+Each provider's section (`AviationWeather`, `OpenMeteo`, `Overpass`, `StaticMapTiles`) has its own `BaseUrl` (https),
+`TimeoutSeconds` (1 to 60) and `UserAgent`, validated at startup, plus a `Resilience` subsection:
+
+| Key | Default | Meaning |
+|---|---|---|
+| `MaxRetries` | 2 | Extra attempts after the first, 0 to 5. 0 turns retrying off |
+| `RetryBaseDelayMs` | 300 | First backoff; doubles each retry, with jitter |
+| `BreakAfterFailures` | 5 | Failed calls within the window that (with a 50% failure ratio) open the circuit |
+| `BreakDurationSeconds` | 30 | How long the circuit stays open before one probe call |
+| `SamplingSeconds` | 30 | The breaker's failure window |
+
+- **What is retried:** network errors, a per-attempt timeout, 408, 429 and 5xx, for body-less (GET) requests only. A 4xx
+  other than 408/429 is our mistake and is returned at once. `TimeoutSeconds` is the timeout of **one attempt**, so the
+  worst case for a call is `(MaxRetries + 1) x TimeoutSeconds` plus the backoff.
+- **Circuit breaker:** one per *provider*, not per client, so the three Open-Meteo clients share it. While open, calls fail
+  immediately without reaching the provider.
+- **No exception crosses the layer boundary:** a call that still fails (circuit open, last attempt timed out) surfaces as an
+  `HttpRequestException`, which the clients already turn into a failed `ProviderResult` plus a logged warning. A final 5xx comes back as a response and is
+  handled the same way.
+- **Forecast model:** `OpenMeteo:ForecastModel` (default `icon_seamless`) is validated at startup against the models that offer every
+  wind level (`WindProfileMapper.SupportedModels`, which are all also forecast models), because the forecast, the wind profile and the
+  simulation series share it. The wind profile now takes its default from it too.
+- **API key:** `OpenMeteo:ApiKey` (set `OpenMeteo__ApiKey` in the API's environment, never in a committed file). Without a key the
+  free, non-commercial endpoint (`api.open-meteo.com`) is used. With one, requests go to `customer-api.open-meteo.com` and carry
+  `apikey=`. The Open-Meteo clients have HTTP-client logging switched off because the key is in the query string.
+
+The free tier is non-commercial only. Rate limits and attribution wording were not checked and should be reviewed before any
+commercial use.

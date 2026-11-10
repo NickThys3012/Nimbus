@@ -9,6 +9,7 @@ using Microsoft.Extensions.Options;
 using Nimbus.Application.Common.Interfaces;
 using Nimbus.Application.Features.Weather;
 using Nimbus.Domain.Interfaces;
+using Nimbus.Infrastructure.Http;
 using Nimbus.Infrastructure.Identity;
 using Nimbus.Infrastructure.Persistence;
 using Nimbus.Infrastructure.Persistence.Repositories;
@@ -94,8 +95,7 @@ public static class DependencyInjection
         services.AddHostedService<LoginEventWriterService>();
 
         AddObjectStorage(services, config);
-        AddAviationWeather(services, config);
-        AddOpenMeteo(services, config);
+        services.AddExternalProviders(config);
 
         // Tagged "ready" (issue #97): /health/ready runs only checks carrying this tag, so
         // SQL Server and MinIO gate readiness while /health/live — which runs no checks at
@@ -104,64 +104,6 @@ public static class DependencyInjection
             .AddSqlServer(connectionString, tags: ["ready"])
             .AddDbContextCheck<AppDbContext>(tags: ["ready"])
             .AddCheck<MinioHealthCheck>("minio", tags: ["ready"]);
-    }
-
-    private static void AddAviationWeather(IServiceCollection services, IConfiguration config)
-    {
-        services
-            .AddOptions<AviationWeatherOptions>()
-            .Bind(config.GetSection(AviationWeatherOptions.SectionName))
-            .Validate(o => Uri.TryCreate(o.BaseUrl, UriKind.Absolute, out var u) && u.Scheme == Uri.UriSchemeHttps, "AviationWeather:BaseUrl must be an absolute https URL.")
-            .Validate(o => o.TimeoutSeconds is >= 1 and <= 60, "AviationWeather:TimeoutSeconds must be between 1 and 60.")
-            .Validate(o => !string.IsNullOrWhiteSpace(o.UserAgent), "AviationWeather:UserAgent must be configured.");
-
-        // Its own named client: its own address, timeout and user agent, so a slow provider cannot affect another one.
-        services.AddHttpClient<IAviationWeatherClient, AviationWeatherClient>((sp, http) =>
-        {
-            var options = sp.GetRequiredService<IOptions<AviationWeatherOptions>>().Value;
-            http.BaseAddress = new Uri(options.BaseUrl.EndsWith('/') ? options.BaseUrl : options.BaseUrl + "/");
-            http.Timeout = TimeSpan.FromSeconds(options.TimeoutSeconds);
-            http.DefaultRequestHeaders.UserAgent.ParseAdd(options.UserAgent);
-        });
-    }
-
-    private static void AddOpenMeteo(IServiceCollection services, IConfiguration config)
-    {
-        services
-            .AddOptions<OpenMeteoOptions>()
-            .Bind(config.GetSection(OpenMeteoOptions.SectionName))
-            .Validate(o => Uri.TryCreate(o.BaseUrl, UriKind.Absolute, out var u) && u.Scheme == Uri.UriSchemeHttps, "OpenMeteo:BaseUrl must be an absolute https URL.")
-            .Validate(o => o.TimeoutSeconds is >= 1 and <= 60, "OpenMeteo:TimeoutSeconds must be between 1 and 60.")
-            .Validate(o => !string.IsNullOrWhiteSpace(o.UserAgent), "OpenMeteo:UserAgent must be configured.")
-            .Validate(o => HourlyForecastModels.Supported.Contains(o.ForecastModel), "OpenMeteo:ForecastModel must be a supported forecast model.")
-            .Validate(o => o.ForecastDays is >= 1 and <= 7, "OpenMeteo:ForecastDays must be between 1 and 7.")
-            .Validate(o => o.SeriesCacheMinutes is >= 1 and <= 180, "OpenMeteo:SeriesCacheMinutes must be between 1 and 180.");
-
-        services.AddMemoryCache();
-        services.AddHttpClient<IWindSeriesClient, OpenMeteoWindProfileClient>((sp, http) =>
-        {
-            var options = sp.GetRequiredService<IOptions<OpenMeteoOptions>>().Value;
-            http.BaseAddress = new Uri(options.BaseUrl.EndsWith('/') ? options.BaseUrl : options.BaseUrl + "/");
-            http.Timeout = TimeSpan.FromSeconds(options.TimeoutSeconds);
-            http.DefaultRequestHeaders.UserAgent.ParseAdd(options.UserAgent);
-        });
-
-        services.AddSingleton<IForecastSettings>(sp => sp.GetRequiredService<IOptions<OpenMeteoOptions>>().Value);
-        services.AddHttpClient<IHourlyForecastClient, OpenMeteoHourlyForecastClient>((sp, http) =>
-        {
-            var options = sp.GetRequiredService<IOptions<OpenMeteoOptions>>().Value;
-            http.BaseAddress = new Uri(options.BaseUrl.EndsWith('/') ? options.BaseUrl : options.BaseUrl + "/");
-            http.Timeout = TimeSpan.FromSeconds(options.TimeoutSeconds);
-            http.DefaultRequestHeaders.UserAgent.ParseAdd(options.UserAgent);
-        });
-
-        services.AddHttpClient<IWindProfileClient, OpenMeteoWindProfileClient>((sp, http) =>
-        {
-            var options = sp.GetRequiredService<IOptions<OpenMeteoOptions>>().Value;
-            http.BaseAddress = new Uri(options.BaseUrl.EndsWith('/') ? options.BaseUrl : options.BaseUrl + "/");
-            http.Timeout = TimeSpan.FromSeconds(options.TimeoutSeconds);
-            http.DefaultRequestHeaders.UserAgent.ParseAdd(options.UserAgent);
-        });
     }
 
     private static void AddObjectStorage(IServiceCollection services, IConfiguration config)
