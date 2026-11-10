@@ -4,3 +4,15 @@
 .fetch-note:empty { display: none; }
 .fetch-note .blocked { color: var(--a); }
 .fetch-note .problem { color: var(--r); }
+
+.wind-head { display: flex; align-items: center; gap: 8px; margin-top: 16px; }
+.wind-title, .wind-source { font: 10.5px var(--mono); color: var(--fnt); }
+.wind-rule { flex: 1; height: 0.5px; background: var(--ln); }
+.wind-fetch { display: flex; align-items: center; gap: 8px; margin: 8px 0; flex-wrap: wrap; }
+.wind-fetch select { font: 12px var(--mono); }
+.wind-fetch .btn[disabled] { opacity: .6; cursor: not-allowed; }
+.wind-fetch .spin { animation: wind-spin 1s linear infinite; }
+@keyframes wind-spin { to { transform: rotate(360deg); } }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.glyph { width: 44px; height: 44px; border-radius: 12px; display: grid; place-items: center; font-size: 22px; margin-bottom: 12px; }
+.glyph.warn { background: var(--ab); color: var(--a); }

@@ -57,7 +57,37 @@
   </div>
 
   <div class="rows" formArrayName="windLevels">
-    <span style="font: 10.5px var(--mono); color: var(--fnt);">WIND ON ALTITUDE</span>
+    <div class="wind-head">
+      <span class="wind-title">WIND ON ALTITUDE</span>
+      <span class="wind-rule"></span>
+      <span class="wind-source">open-meteo</span>
+    </div>
+    <div class="wind-fetch">
+      <label class="sr-only" for="fp-wind-model">Forecast model</label>
+      <select id="fp-wind-model" data-testid="wind-model" [value]="wind.model()" (change)="setModel($event)">
+        @for (m of models; track m) {
+          <option [value]="m" [selected]="m === wind.model()">{{ m }}{{ m === defaultModel ? ' (default)' : '' }}</option>
+        }
+      </select>
+      <button
+        class="btn"
+        data-testid="fetch-wind-profile"
+        type="button"
+        [disabled]="wind.fetching() || !!wind.blockedReason()"
+        [attr.title]="wind.blockedReason()"
+        (click)="fetchWind()"
+      >
+        <i aria-hidden="true" class="ti ti-refresh" [class.spin]="wind.fetching()"></i>
+        {{ wind.fetching() ? 'Fetching…' : 'Fetch wind' }}
+      </button>
+    </div>
+    <div class="fetch-note" aria-live="polite">
+      @if (wind.blockedReason(); as reason) {
+        <span class="blocked" data-testid="wind-blocked">{{ reason }}</span>
+      } @else if (wind.outcome(); as o) {
+        <span [class.problem]="o.kind === 'failed'" [attr.data-testid]="'wind-' + o.kind">{{ o.message }}</span>
+      }
+    </div>
     @for (level of windLevels.controls; track $index) {
       <div [formGroupName]="$index" class="row-card">
         <div class="row-card-head">
@@ -105,4 +135,19 @@
   <button (click)="addWindLevel()" class="btn" data-testid="add-wind-level" type="button">
     <i aria-hidden="true" class="ti ti-plus"></i> Level
   </button>
+
+  <Nimbus-modal
+    [isOpen]="!!wind.pending()"
+    [alert]="true"
+    title="Replace your wind levels?"
+    description="The table has levels you entered or edited. Replacing them with the fetched wind overwrites those values."
+    (closed)="wind.cancel()"
+    data-testid="wind-overwrite-dialog"
+  >
+    <div modal-icon class="glyph warn"><i class="ti ti-alert-triangle" aria-hidden="true"></i></div>
+    <div modal-actions>
+      <Nimbus-button id="wind-overwrite-cancel" data-testid="wind-overwrite-cancel" variant="ghost" [fullWidth]="false" (click)="wind.cancel()">Keep mine</Nimbus-button>
+      <Nimbus-button id="wind-overwrite-confirm" data-testid="wind-overwrite-confirm" [fullWidth]="false" (click)="confirmWind()">Replace</Nimbus-button>
+    </div>
+  </Nimbus-modal>
 </div>

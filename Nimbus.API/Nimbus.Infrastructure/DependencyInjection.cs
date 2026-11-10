@@ -94,6 +94,7 @@ public static class DependencyInjection
 
         AddObjectStorage(services, config);
         AddAviationWeather(services, config);
+        AddOpenMeteo(services, config);
 
         // Tagged "ready" (issue #97): /health/ready runs only checks carrying this tag, so
         // SQL Server and MinIO gate readiness while /health/live — which runs no checks at
@@ -117,6 +118,24 @@ public static class DependencyInjection
         services.AddHttpClient<IAviationWeatherClient, AviationWeatherClient>((sp, http) =>
         {
             var options = sp.GetRequiredService<IOptions<AviationWeatherOptions>>().Value;
+            http.BaseAddress = new Uri(options.BaseUrl.EndsWith('/') ? options.BaseUrl : options.BaseUrl + "/");
+            http.Timeout = TimeSpan.FromSeconds(options.TimeoutSeconds);
+            http.DefaultRequestHeaders.UserAgent.ParseAdd(options.UserAgent);
+        });
+    }
+
+    private static void AddOpenMeteo(IServiceCollection services, IConfiguration config)
+    {
+        services
+            .AddOptions<OpenMeteoOptions>()
+            .Bind(config.GetSection(OpenMeteoOptions.SectionName))
+            .Validate(o => Uri.TryCreate(o.BaseUrl, UriKind.Absolute, out var u) && u.Scheme == Uri.UriSchemeHttps, "OpenMeteo:BaseUrl must be an absolute https URL.")
+            .Validate(o => o.TimeoutSeconds is >= 1 and <= 60, "OpenMeteo:TimeoutSeconds must be between 1 and 60.")
+            .Validate(o => !string.IsNullOrWhiteSpace(o.UserAgent), "OpenMeteo:UserAgent must be configured.");
+
+        services.AddHttpClient<IWindProfileClient, OpenMeteoWindProfileClient>((sp, http) =>
+        {
+            var options = sp.GetRequiredService<IOptions<OpenMeteoOptions>>().Value;
             http.BaseAddress = new Uri(options.BaseUrl.EndsWith('/') ? options.BaseUrl : options.BaseUrl + "/");
             http.Timeout = TimeSpan.FromSeconds(options.TimeoutSeconds);
             http.DefaultRequestHeaders.UserAgent.ParseAdd(options.UserAgent);

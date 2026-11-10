@@ -2,6 +2,7 @@ using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Nimbus.Application.Features.Weather.Queries.GetMetarTaf;
+using Nimbus.Application.Features.Weather.Queries.GetWindProfile;
 using Nimbus.Contracts.DTOs.Features.Weather;
 namespace Nimbus.API.Controllers;
 
@@ -26,5 +27,16 @@ public class WeatherController : ControllerBase
     public async Task<ActionResult<MetarTafDto>> MetarTaf([FromQuery] string? icao, CancellationToken ct)
     {
         return Ok(await _mediator.Send(new GetMetarTafQuery(icao ?? ""), ct));
+    }
+
+    /// <summary>
+    ///     Wind by altitude (low levels plus 950/925/900/850 hPa) for a place and UTC hour, lowest first. 422 when the model is
+    ///     not supported or lacks a required level, 502 when the provider is down. Nothing is stored.
+    /// </summary>
+    [HttpGet("wind-profile")]
+    public async Task<ActionResult<WindProfileDto>> WindProfile(
+        [FromQuery] double latitude, [FromQuery] double longitude, [FromQuery] DateTime? hourUtc, [FromQuery] string? model, CancellationToken ct)
+    {
+        return Ok(await _mediator.Send(new GetWindProfileQuery(latitude, longitude, hourUtc, model), ct));
     }
 }

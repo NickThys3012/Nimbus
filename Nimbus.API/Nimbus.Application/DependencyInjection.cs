@@ -1,6 +1,7 @@
 using FluentValidation;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Nimbus.Application.Common;
 using Nimbus.Application.Common.Behaviours;
 using Nimbus.Application.Common.Interfaces;
@@ -21,6 +22,7 @@ public static class DependencyInjection
         // Register validators from Contracts assembly (shared with Web)
         services.AddValidatorsFromAssembly(typeof(DependencyInjection).Assembly);
 
+        services.TryAddSingleton(TimeProvider.System);
         services.AddScoped<EmailHelpers>();
         services.AddSingleton<IRichTextSanitizer, RichTextSanitizer>();
         services.AddScoped<IBalloonService, BalloonService>();

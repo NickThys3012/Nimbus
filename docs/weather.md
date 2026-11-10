@@ -72,3 +72,44 @@ the other sections.
 ### Storage
 Fetched reports are stored whole, so the columns were widened: `Metar` 500 → 1000 and `Taf` 1000 → 2000
 characters (a TAF with many change groups, or a METAR with long remarks, must fit).
+
+## Wind profile by altitude (issue #46)
+
+`GET /api/weather/wind-profile?latitude=&longitude=&hourUtc=&model=` returns
+`WindProfileDto { model, forecastHourUtc, levels[] }`, each level `{ altitudeM, directionDeg, speedKt, temperatureC,
+altitudeSource }`, lowest altitude first. The data comes from [Open-Meteo](https://open-meteo.com/) (knots, GMT, one
+hour). Nothing is stored by the endpoint: the form fills its wind-on-altitude table (`WindLevel` rows) from it.
+`hourUtc` defaults to the current hour, `model` to `icon_seamless`.
+
+| Outcome | Answer |
+|---|---|
+| All levels returned | `200` |
+| Model not in the supported list, or coordinates out of range | `422` |
+| Model returns no data for a required level at that place/hour | `422` naming the missing levels (never zero-filled) |
+| Provider unreachable, slow, error status, bad JSON | `502`, warning logged |
+
+### Levels
+- Low levels: 10, 20, 50, 100, 150, 200 m above ground (`altitudeSource: agl`). Open-Meteo has no temperature at
+  these heights, so °C is the 2 m temperature lowered at the standard lapse rate (6.5 K/km).
+- Pressure levels 950 / 925 / 900 / 850 hPa. The altitude is the model's `geopotential_height_{N}hPa`
+  (`geopotential`); if the model returns none, the standard-atmosphere fallback 500 / 800 / 1000 / 1500 m is used
+  (`standard`). Wind and temperature come from the same pressure level.
+- Direction is normalised to 0-359; speed and temperature are rounded to one decimal.
+
+### Models
+Only models verified to return every pressure level and the low-altitude winds are accepted (`icon_seamless` default,
+`icon_d2`, `icon_eu`, `icon_global`, `meteofrance_seamless`, `meteofrance_arome_france`, `meteofrance_arpege_europe`,
+`meteofrance_arpege_world`, `cma_grapes_global`, `ukmo_uk_deterministic_2km`, `best_match`). Models with gaps (no 950 hPa,
+no 200 m, no pressure levels) are rejected. The list lives in `WindProfileMapper.SupportedModels` and is mirrored in
+`wind-profile-fetcher.ts`. Client config: `OpenMeteo:BaseUrl` / `TimeoutSeconds` / `UserAgent`.
+
+### In the form (section 02 · Meteo)
+Above the wind-on-altitude table: a model select (supported models only), a **Fetch wind** button and a note with the
+last result or why a fetch is not possible (no launch location). It uses the launch location's coordinates and the
+flight's date and time (current hour when not filled in). `+ Level` keeps working on the fetched rows.
+
+- Fetched levels fill the table and mark it edited. A failed fetch (422 missing levels with the server's message, 502
+  provider down, anything else) changes nothing.
+- **Never overwrites the pilot's rows silently.** When the table has rows that are not blank and not exactly what the
+  last fetch wrote, a confirmation dialog ("Replace your wind levels?" / Keep mine / Replace) appears first; rows still
+  equal to the last fetch are replaced without asking.
