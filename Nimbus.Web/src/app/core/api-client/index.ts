@@ -60,6 +60,8 @@ export type { UserDto } from './models/UserDto';
 export type { WindLevelDto } from './models/WindLevelDto';
 export type { WindProfileDto } from './models/WindProfileDto';
 export type { WindProfileLevelDto } from './models/WindProfileLevelDto';
+export type { WindSeriesDto } from './models/WindSeriesDto';
+export type { WindSnapshotDto } from './models/WindSnapshotDto';
 
 export { AdminService } from './services/AdminService';
 export { AuthenticationService } from './services/AuthenticationService';

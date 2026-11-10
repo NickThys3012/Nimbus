@@ -134,7 +134,17 @@ public static class DependencyInjection
             .Validate(o => o.TimeoutSeconds is >= 1 and <= 60, "OpenMeteo:TimeoutSeconds must be between 1 and 60.")
             .Validate(o => !string.IsNullOrWhiteSpace(o.UserAgent), "OpenMeteo:UserAgent must be configured.")
             .Validate(o => HourlyForecastModels.Supported.Contains(o.ForecastModel), "OpenMeteo:ForecastModel must be a supported forecast model.")
-            .Validate(o => o.ForecastDays is >= 1 and <= 7, "OpenMeteo:ForecastDays must be between 1 and 7.");
+            .Validate(o => o.ForecastDays is >= 1 and <= 7, "OpenMeteo:ForecastDays must be between 1 and 7.")
+            .Validate(o => o.SeriesCacheMinutes is >= 1 and <= 180, "OpenMeteo:SeriesCacheMinutes must be between 1 and 180.");
+
+        services.AddMemoryCache();
+        services.AddHttpClient<IWindSeriesClient, OpenMeteoWindProfileClient>((sp, http) =>
+        {
+            var options = sp.GetRequiredService<IOptions<OpenMeteoOptions>>().Value;
+            http.BaseAddress = new Uri(options.BaseUrl.EndsWith('/') ? options.BaseUrl : options.BaseUrl + "/");
+            http.Timeout = TimeSpan.FromSeconds(options.TimeoutSeconds);
+            http.DefaultRequestHeaders.UserAgent.ParseAdd(options.UserAgent);
+        });
 
         services.AddSingleton<IForecastSettings>(sp => sp.GetRequiredService<IOptions<OpenMeteoOptions>>().Value);
         services.AddHttpClient<IHourlyForecastClient, OpenMeteoHourlyForecastClient>((sp, http) =>

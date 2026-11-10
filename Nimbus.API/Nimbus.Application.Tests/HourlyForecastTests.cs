@@ -22,6 +22,7 @@ public class HourlyForecastTests
     {
         public string DefaultModel => "icon_seamless";
         public int Days => 3;
+        public int SeriesCacheMinutes => 60;
     }
 
     private static readonly ForecastValues Empty = new(null, null, null, null, null, null, null);

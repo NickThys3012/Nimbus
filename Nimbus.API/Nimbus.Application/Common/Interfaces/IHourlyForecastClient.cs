@@ -6,6 +6,9 @@ public interface IForecastSettings
     string DefaultModel { get; }
 
     int Days { get; }
+
+    /// <summary>How long a fetched wind series is kept, in minutes. Shorter than the models' update cycles (3 to 6 h).</summary>
+    int SeriesCacheMinutes { get; }
 }
 
 /// <summary>The values of one model for one hour. Anything the model does not provide is null, never zero.</summary>
