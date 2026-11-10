@@ -215,7 +215,7 @@
                       type="button"
                       [attr.data-testid]="'forecast-use-' + row.hour.time"
                       [attr.aria-label]="'Use the forecast for ' + row.hour.time.slice(11)"
-                      (click)="useHour(row.hour, day)"
+                      (click)="useHour(row.hour)"
                     >
                       Use
                     </button>

@@ -76,6 +76,9 @@
     <label for="fp-sunset">SUNSET</label>
     <input id="fp-sunset" data-testid="sunset" formControlName="sunsetTime" type="time" />
   </div>
+  @if (sunNote(); as note) {
+    <div class="hint" data-testid="sun-note" style="grid-column: 1 / -1;">{{ note }}</div>
+  }
 </div>
 <label class="check-row">
   <input data-testid="field-owner-notified" formControlName="fieldOwnerNotified" type="checkbox" />

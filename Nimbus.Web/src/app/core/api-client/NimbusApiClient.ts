@@ -19,6 +19,7 @@ import { LiftCalculationService } from './services/LiftCalculationService';
 import { OfpSettingsService } from './services/OfpSettingsService';
 import { PilotsService } from './services/PilotsService';
 import { ProfileService } from './services/ProfileService';
+import { SolarService } from './services/SolarService';
 import { TelemetryService } from './services/TelemetryService';
 import { WeatherService } from './services/WeatherService';
 @NgModule({
@@ -53,6 +54,7 @@ import { WeatherService } from './services/WeatherService';
         OfpSettingsService,
         PilotsService,
         ProfileService,
+        SolarService,
         TelemetryService,
         WeatherService,
     ]

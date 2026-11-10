@@ -7,6 +7,7 @@ import {
   inject,
   OnDestroy,
   signal,
+  untracked,
 } from '@angular/core';
 import { NonNullableFormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -37,6 +38,7 @@ import { defaultPaxBriefing } from '../../core/flight-preparations/pax-briefing-
 import { metarMeta } from '../../core/flight-preparations/metar-meta';
 import { plannedLocalHour } from '../../core/flight-preparations/hourly-forecast-fetcher';
 import { MetarTafFetcher } from '../../core/flight-preparations/metar-taf-fetcher';
+import { SunTimesLoader } from '../../core/flight-preparations/sun-times-loader';
 import { FlightListStore } from '../../core/flight-preparations/flight-list.store';
 import { flightTitle, fromDto, toRequestDto } from '../../core/flight-preparations/flight-preparation.mapper';
 import { FlightPreparationDraftStore } from '../../core/flight-preparations/flight-preparation-draft.store';
@@ -88,7 +90,7 @@ interface SectionErrorSummary {
     OfpSection,
     PaxBriefingSection,
   ],
-  providers: [MetarTafFetcher],
+  providers: [MetarTafFetcher, SunTimesLoader],
   templateUrl: './flight-preparation-form.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrl: './flight-preparation-form.css',
@@ -101,6 +103,7 @@ export default class FlightPreparationFormPage implements CanComponentDeactivate
   private readonly api = inject(FlightPreparationsService);
   private readonly listStore = inject(FlightListStore);
   protected readonly fetcher = inject(MetarTafFetcher);
+  protected readonly sun = inject(SunTimesLoader);
   private readonly balloonsStore = inject(BalloonsStore);
   private readonly locationsStore = inject(LaunchLocationsStore);
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
@@ -224,22 +227,18 @@ export default class FlightPreparationFormPage implements CanComponentDeactivate
     return Number.isNaN(at.getTime()) ? null : at.toISOString();
   });
 
+  /** The flight's date as typed (`yyyy-MM-dd`), for the sunrise and sunset of that day. */
+  private readonly flightDateValue = computed(() => {
+    this.formVersion();
+    return this.form().controls.general.controls.flightDate.value;
+  });
+
   /** The planned take-off hour as typed (the launch site's local time), to highlight it in the hourly forecast. */
   protected readonly plannedHour = computed(() => {
     this.formVersion();
     const g = this.form().controls.general.controls;
     return plannedLocalHour(g.flightDate.value, g.flightTime.value);
   });
-
-  /** Picking a forecast hour also fills sunrise and sunset of its day in section 01. */
-  protected onForecastHourUsed(day: { sunrise: string | null; sunset: string | null }): void {
-    const g = this.form().controls.general.controls;
-    for (const [control, value] of [[g.sunriseTime, day.sunrise], [g.sunsetTime, day.sunset]] as const) {
-      if (!value) continue;
-      control.setValue(value);
-      control.markAsDirty();
-    }
-  }
 
   /** The selected launch location, for what depends on it: whether METAR/TAF can be fetched and for which station. */
   protected readonly launchStation = computed(() => {
@@ -276,6 +275,13 @@ export default class FlightPreparationFormPage implements CanComponentDeactivate
   constructor() {
     // The Fetch button needs to know which launch location the form has.
     effect(() => this.fetcher.station.set(this.launchStation()));
+    effect(() => this.sun.coordinates.set(this.launchCoordinates()));
+    effect(() => this.sun.date.set(this.flightDateValue()));
+    effect(() => {
+      const times = this.sun.times();
+      const g = this.form().controls.general.controls;
+      untracked(() => this.sun.fill(times, g.sunriseTime, g.sunsetTime));
+    });
     this.hydrate(this.initialRouteId);
     // Route param changes (including the id this component assigns to itself on first autosave,
     // guarded against by `lastKnownId`) rebuild the form for that flight's draft.

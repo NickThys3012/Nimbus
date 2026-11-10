@@ -14,6 +14,7 @@ import {
   LaunchLocationsService,
   LiftCalculationService,
   PilotsService,
+  SolarService,
   WeatherService,
 } from '../../core/api-client';
 import { PAX_BRIEFING_TEMPLATE_HTML, PAX_BRIEFING_TEMPLATE_VERSION } from '../../core/flight-preparations/pax-briefing-template';
@@ -36,6 +37,7 @@ describe('FlightPreparationFormPage', () => {
   let server: Record<string, FlightPreparationDto>;
   let flightsApi: Record<string, ReturnType<typeof vi.fn>>;
   let weatherApi: { getApiWeatherMetarTaf: ReturnType<typeof vi.fn> };
+  let solarApi: { getApiSolarSunTimes: ReturnType<typeof vi.fn> };
 
   const httpError = (status: number) =>
     new ApiError({ method: 'GET', url: '/api/flight-preparations' } as never, { url: '', ok: false, status, statusText: '', body: null }, `HTTP ${status}`);
@@ -54,6 +56,11 @@ describe('FlightPreparationFormPage', () => {
     server = {};
     weatherApi = {
       getApiWeatherMetarTaf: vi.fn().mockReturnValue(of({ station: 'EBDM', metar: 'EBDM 100850Z 08003KT 0400 FG Q1013', taf: 'TAF EBDM 100800Z 1009/1018 09006KT 0500 FG BKN001\n  BECMG 1009/1011 6000 NSW SCT010' })),
+    };
+    solarApi = {
+      getApiSolarSunTimes: vi.fn().mockReturnValue(
+        of({ date: '2026-08-08', condition: 'normal', sunriseUtc: '', solarNoonUtc: '', sunsetUtc: '', timeZone: 'Europe/Brussels', sunrise: '06:12', solarNoon: '13:38', sunset: '21:04' }),
+      ),
     };
     flightsApi = {
       getApiFlightPreparations: vi.fn().mockReturnValue(of({ items: [], totalCount: 0, page: 1, pageSize: 20 })),
@@ -92,6 +99,7 @@ describe('FlightPreparationFormPage', () => {
         },
         { provide: FlightPreparationsService, useValue: flightsApi },
         { provide: WeatherService, useValue: weatherApi },
+        { provide: SolarService, useValue: solarApi },
         { provide: LaunchLocationsService, useValue: { getApiLaunchLocations: () => of(locations) } },
         {
           provide: ActivatedRoute,
@@ -242,6 +250,57 @@ describe('FlightPreparationFormPage', () => {
 
     expect(fixture.componentInstance.launchCoordinates()).toEqual({ latitude: 51.4, longitude: 4.9 });
     expect(q('launch-coordinates')?.textContent).toContain('51.4');
+  });
+
+  describe('sunrise and sunset from the NOAA calculation (issue #49, form mockup)', () => {
+    async function pickLocation(withDate = '2026-08-08') {
+      const ctx = await createComponent(null, [], [location]);
+      const date = ctx.q<HTMLInputElement>('flight-date')!;
+      date.value = withDate;
+      date.dispatchEvent(new Event('input'));
+      const select = ctx.q<HTMLSelectElement>('launch-location')!;
+      select.value = 'l1';
+      select.dispatchEvent(new Event('change'));
+      ctx.fixture.detectChanges();
+      await ctx.fixture.whenStable();
+      ctx.fixture.detectChanges();
+      return ctx;
+    }
+
+    it('fills Sunrise and Sunset for the launch location and the flight date', async () => {
+      const { q } = await pickLocation();
+
+      expect(solarApi.getApiSolarSunTimes).toHaveBeenCalledWith(expect.objectContaining({ latitude: 51.4, longitude: 4.9, date: '2026-08-08' }));
+      expect(q<HTMLInputElement>('sunrise')!.value).toBe('06:12');
+      expect(q<HTMLInputElement>('sunset')!.value).toBe('21:04');
+      expect(q('sun-note')?.textContent).toContain('NOAA');
+    });
+
+    it('keeps a time the pilot typed', async () => {
+      const ctx = await createComponent(null, [], [location]);
+      const sunrise = ctx.q<HTMLInputElement>('sunrise')!;
+      sunrise.value = '05:50';
+      sunrise.dispatchEvent(new Event('input'));
+      const date = ctx.q<HTMLInputElement>('flight-date')!;
+      date.value = '2026-08-08';
+      date.dispatchEvent(new Event('input'));
+      const select = ctx.q<HTMLSelectElement>('launch-location')!;
+      select.value = 'l1';
+      select.dispatchEvent(new Event('change'));
+      ctx.fixture.detectChanges();
+      await ctx.fixture.whenStable();
+      ctx.fixture.detectChanges();
+
+      expect(ctx.q<HTMLInputElement>('sunrise')!.value).toBe('05:50');
+      expect(ctx.q<HTMLInputElement>('sunset')!.value).toBe('21:04');
+    });
+
+    it('calculates nothing until a launch location is picked', async () => {
+      const { q } = await createComponent(null, [], [location]);
+
+      expect(solarApi.getApiSolarSunTimes).not.toHaveBeenCalled();
+      expect(q('sun-note')).toBeNull();
+    });
   });
 
   describe('METAR/TAF fetch in the Meteo header (issue #44, form mockup)', () => {
@@ -423,6 +482,9 @@ describe('FlightPreparationFormPage', () => {
     it('creates a new flight on the server, titled by place and date, then moves to its real id and refreshes the list', async () => {
       const { fixture, q, click } = await createComponent(null, [balloon], [location]);
       fillValid(fixture);
+      // The sunrise/sunset calculation (issue #49) fills its fields once it answers; let it, so it is saved with the rest.
+      await fixture.whenStable();
+      fixture.detectChanges();
 
       await click('save-flight-prep');
 

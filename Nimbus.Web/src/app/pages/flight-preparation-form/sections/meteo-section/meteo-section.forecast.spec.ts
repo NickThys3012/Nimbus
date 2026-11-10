@@ -16,14 +16,12 @@ import { MetarTafFetcher } from '../../../../core/flight-preparations/metar-taf-
     [group]="form.controls.meteo"
     [coordinates]="coordinates"
     [plannedHour]="plannedHour"
-    (hourUsed)="used = $event"
   />`,
 })
 class Host {
   form = createFlightPreparationForm(TestBed.inject(NonNullableFormBuilder));
   coordinates: { latitude: number; longitude: number } | null = { latitude: 51.1568, longitude: 4.0439 };
   plannedHour: string | null = '2026-11-10T10';
-  used: { sunrise: string | null; sunset: string | null } | null = null;
   cdr = inject(ChangeDetectorRef);
 }
 
@@ -115,7 +113,7 @@ describe('MeteoSection hourly forecast (issue #45)', () => {
     expect(q('forecast-hour-2026-11-10T10:00')!.querySelectorAll('td')[5].textContent?.trim()).toBe('–');
   });
 
-  it('fills wind, direction, CAPE and temperature from the chosen hour, leaves a missing value alone, and reports the day for sunrise/sunset', async () => {
+  it('fills wind, direction, CAPE and temperature from the chosen hour, leaves a missing value alone', async () => {
     const { host, flush, q } = await setup(vi.fn().mockReturnValue(of(forecast)));
     host.form.controls.meteo.controls.capeJPerKg.setValue(123);
     q('fetch-forecast')!.click();
@@ -130,7 +128,6 @@ describe('MeteoSection hourly forecast (issue #45)', () => {
     expect(m.temperatureC.value).toBe(11.2);
     expect(m.capeJPerKg.value).toBe(123);
     expect(m.windSpeedKt.dirty).toBe(true);
-    expect(host.used).toEqual({ sunrise: '07:32', sunset: '16:51' });
   });
 
   it('renders an empty state, not an error, when the provider is unavailable, and changes nothing', async () => {
