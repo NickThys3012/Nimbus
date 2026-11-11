@@ -156,11 +156,14 @@ public class FlightPreparationRepository : IFlightPreparationRepository
             return null;
         }
 
-        var images = await _db.FlightPreparationImages.IgnoreQueryFilters().AsNoTracking()
+        var imageRows = await _db.FlightPreparationImages.IgnoreQueryFilters().AsNoTracking()
             .Where(i => i.FlightPreparationId == id)
             .OrderBy(i => i.Order)
-            .Select(i => i.ObjectKey)
+            .Select(i => new { i.ObjectKey, i.ThumbnailObjectKey })
             .ToListAsync(ct);
+        var images = imageRows
+            .SelectMany(i => i.ThumbnailObjectKey is { Length: > 0 } thumb ? new[] { i.ObjectKey, thumb } : [i.ObjectKey])
+            .ToList();
         var rows = await _db.FlightPreparations.IgnoreQueryFilters()
             .Where(f => f.Id == id && f.OwnerId == ownerId)
             .ExecuteDeleteAsync(ct);

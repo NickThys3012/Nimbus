@@ -52,6 +52,9 @@ public class ExceptionHandlingMiddleware
         {
             ValidationException ve => (HttpStatusCode.UnprocessableEntity,
                 "Validation failed", ve.Errors),
+            // Before DomainException, which it derives from: an object-store outage is not the caller's mistake.
+            ObjectStorageException => (HttpStatusCode.BadGateway,
+                "The file store is unavailable, please try again.", null),
             DomainException => (HttpStatusCode.BadRequest,
                 ex.Message, null),
             NotFoundException => (HttpStatusCode.NotFound,

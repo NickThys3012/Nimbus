@@ -7,5 +7,9 @@ export type FlightImageDto = {
     section: string;
     contentType: string;
     url: string;
+    thumbnailUrl: string;
+    sizeBytes: number;
+    order: number;
+    uploadedAt?: string | null;
 };
 

@@ -7,7 +7,10 @@ namespace Nimbus.Domain.Interfaces;
 ///     missing one. See docs/flight-preparation.md ("Saving") for the transaction, detach/restore
 ///     and child-collection strategy.
 /// </summary>
-/// <summary>The object-storage references of a flight that has just been deleted, so the caller can remove the files too.</summary>
+/// <summary>
+///     The object-storage references of a flight that has just been deleted, so the caller can remove the files too.
+///     <paramref name="ImageObjectKeys" /> holds every image object, originals and thumbnails alike.
+/// </summary>
 public sealed record FlightDeletion(IReadOnlyList<string> ImageObjectKeys, string? KmlTrackObjectKey);
 
 public interface IFlightPreparationRepository

@@ -4,6 +4,9 @@ using Microsoft.AspNetCore.Mvc;
 using Nimbus.Application.Features.FlightPreparations.Commands.CreateFlightPreparation;
 using Nimbus.Application.Features.FlightPreparations.Commands.DeleteFlightPreparation;
 using Nimbus.Application.Features.FlightPreparations.Commands.UpdateFlightPreparation;
+using Nimbus.Application.Features.FlightPreparations.Images.Delete;
+using Nimbus.Application.Features.FlightPreparations.Images.Get;
+using Nimbus.Application.Features.FlightPreparations.Images.Upload;
 using Nimbus.Application.Features.FlightPreparations.Queries.GetFlightDetail;
 using Nimbus.Application.Features.FlightPreparations.Queries.GetFlightPreparation;
 using Nimbus.Application.Features.FlightPreparations.Queries.ListFlights;
@@ -70,4 +73,46 @@ public class FlightPreparationsController : ControllerBase
         await _mediator.Send(new DeleteFlightPreparationCommand(id), ct);
         return NoContent();
     }
+
+    /// <summary>
+    ///     Attaches an image (multipart: <c>file</c> and <c>section</c>) to the flight. Owner or admin only. The type and size are
+    ///     checked and the bytes must decode as a real image; 422 otherwise. The body ceiling here only stops a runaway upload, the
+    ///     configured per-file limit is enforced by the handler.
+    /// </summary>
+    [HttpPost("{id:guid}/images")]
+    [RequestSizeLimit(32 * 1024 * 1024)]
+    public async Task<ActionResult<FlightImageDto>> UploadImage(Guid id, [FromForm] UploadFlightImageForm form, CancellationToken ct)
+    {
+        if (form.File is null)
+            return UnprocessableEntity(new { title = "Validation failed", status = 422, errors = new Dictionary<string, string[]> { ["file"] = ["A file is required."] } });
+
+        await using var content = form.File.OpenReadStream();
+        var created = await _mediator.Send(new UploadFlightImageCommand(id, form.Section, content, form.File.ContentType), ct);
+        return Created($"api/flight-preparations/{id}/images/{created.Id}", created);
+    }
+
+    /// <summary>The image's bytes (or its thumbnail with <c>?thumbnail=true</c>), checked against the viewer's access to the flight on every request.</summary>
+    [HttpGet("{id:guid}/images/{imageId:guid}")]
+    public async Task<IActionResult> GetImage(Guid id, Guid imageId, [FromQuery] bool thumbnail = false, CancellationToken ct = default)
+    {
+        var download = await _mediator.Send(new GetFlightImageQuery(id, imageId, thumbnail), ct);
+        Response.Headers.CacheControl = "private, max-age=300";
+        Response.Headers.XContentTypeOptions = "nosniff";
+        return File(download.Content, download.ContentType);
+    }
+
+    /// <summary>Removes the image's metadata row and its files. Owner or admin only. A storage failure is a 502 and leaves the image in place to retry.</summary>
+    [HttpDelete("{id:guid}/images/{imageId:guid}")]
+    public async Task<ActionResult> DeleteImage(Guid id, Guid imageId, CancellationToken ct)
+    {
+        await _mediator.Send(new DeleteFlightImageCommand(id, imageId), ct);
+        return NoContent();
+    }
+}
+
+/// <summary>Multipart form of an image upload.</summary>
+public sealed class UploadFlightImageForm
+{
+    public IFormFile? File { get; init; }
+    public FlightPreparationSection Section { get; init; }
 }

@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using Nimbus.Application.Common.Exceptions;
 using Nimbus.Application.Common.Interfaces;
 using Nimbus.Application.Features.FlightAssessment;
+using Nimbus.Application.Features.FlightPreparations.Images;
 using Nimbus.Contracts.DTOs.Features.FlightPreparations;
 using Nimbus.Contracts.Mappers;
 using Nimbus.Domain.Entities;
@@ -59,16 +60,9 @@ public sealed class GetFlightDetailQueryHandler : IRequestHandler<GetFlightDetai
         var images = new List<FlightImageDto>();
         foreach (var image in flight.Images.OrderBy(i => i.Order))
         {
-            try
-            {
-                var url = await _storage.GetPresignedDownloadUrlAsync(StorageBucket.FlightImages, ObjectKey.ForSharedAsset(image.ObjectKey));
-                images.Add(new FlightImageDto(image.Id, image.Section.ToString(), image.ContentType, url.ToString()));
-            }
-            catch (Exception ex) when (ex is ObjectStorageException or DomainException)
-            {
-                // A storage hiccup or a malformed key must not take the whole view down; the image is simply omitted.
-                _logger.LogWarning(ex, "Could not link image {ImageId} of flight {FlightId}; omitting it", image.Id, flight.Id);
-            }
+            // A storage hiccup or a malformed key must not take the whole view down; the image is simply omitted.
+            if (await FlightImageLinks.TryCreateAsync(_storage, image, _logger) is { } dto)
+                images.Add(dto);
         }
 
         return images;

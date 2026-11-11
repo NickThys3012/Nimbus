@@ -86,7 +86,7 @@
           @if (g.images.length) {
             <div class="images" [attr.data-testid]="'images-' + g.id">
               @for (img of g.images; track img.id) {
-                <a [href]="img.url" target="_blank" rel="noopener noreferrer"><img [src]="img.url" [alt]="g.heading + ' image'" loading="lazy" data-testid="inline-image" /></a>
+                <a [href]="img.url" target="_blank" rel="noopener noreferrer"><img [src]="img.thumbnailUrl" [alt]="g.heading + ' image'" loading="lazy" data-testid="inline-image" /></a>
               }
             </div>
           }

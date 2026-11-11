@@ -94,8 +94,12 @@ public record FlightPreparationDto(Guid Id, string Status, DateTime? UpdatedDate
 /// <summary>What the signed-in viewer may do with a flight. Computed by the API; the UI only reflects it.</summary>
 public record FlightPermissionsDto(bool CanEdit, bool CanDelete, bool CanShare, bool CanMarkFlown, bool CanExport);
 
-/// <summary>An uploaded image with a short-lived download link.</summary>
-public record FlightImageDto(Guid Id, string Section, string ContentType, string Url);
+/// <summary>
+///     An uploaded image: its metadata plus short-lived download links. <c>ThumbnailUrl</c> is the small variant for lists
+///     (falls back to the original for images that predate thumbnails); both links expire, so none grants permanent access.
+/// </summary>
+public record FlightImageDto(
+    Guid Id, string Section, string ContentType, string Url, string ThumbnailUrl, long SizeBytes, int Order, DateTime? UploadedAt);
 
 /// <summary>
 ///     Everything the read-only flight view shows. <c>ViewerRole</c> is "Owner", "Admin" or "Shared"; <c>OwnerName</c> is set
