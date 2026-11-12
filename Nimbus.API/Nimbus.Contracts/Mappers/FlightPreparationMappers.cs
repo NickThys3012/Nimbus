@@ -31,6 +31,7 @@ public static class FlightPreparationMappers
         f.TemperatureC = r.TemperatureC;
         f.DewPointC = r.DewPointC;
         f.QnhHpa = r.QnhHpa;
+        f.Precipitation = Text(r.Precipitation);
         f.Metar = Text(r.Metar);
         f.Taf = Text(r.Taf);
 
@@ -104,6 +105,7 @@ public static class FlightPreparationMappers
         TemperatureC = f.TemperatureC,
         DewPointC = f.DewPointC,
         QnhHpa = f.QnhHpa,
+        Precipitation = f.Precipitation,
         Metar = f.Metar,
         Taf = f.Taf,
         WindLevels = f.WindLevels.OrderBy(w => w.Order).Select(w => new WindLevelDto(w.AltitudeM, w.DirectionDeg, w.SpeedKt, w.TemperatureC)).ToList(),

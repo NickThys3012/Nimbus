@@ -40,6 +40,7 @@ export function createFlightPreparationForm(fb: NonNullableFormBuilder) {
       temperatureC: [0],
       dewPointC: [0],
       qnhHpa: [0],
+      precipitation: [''],
       metar: [''],
       taf: [''],
       windLevels: fb.array([createWindLevelGroup(fb)]),

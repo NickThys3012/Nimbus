@@ -1,6 +1,9 @@
+import { FlightImagesApi } from '../../../../core/flight-preparations/flight-images.api';
+import { WindProfileFetcher } from '../../../../core/flight-preparations/wind-profile-fetcher';
 import { ChangeDetectorRef, Component, inject } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { NonNullableFormBuilder } from '@angular/forms';
+import { HttpErrorResponse } from '@angular/common/http';
 import { of, throwError } from 'rxjs';
 import { vi } from 'vitest';
 
@@ -28,7 +31,7 @@ class WindHost {
 describe('MeteoSection fetch result (issue #44)', () => {
   async function setup(response = { station: 'EBAW', metar: 'EBAW 100850Z 08003KT 9999 Q1013', taf: null as string | null }) {
     await TestBed.configureTestingModule({
-      providers: [MetarTafFetcher, { provide: WeatherService, useValue: { getApiWeatherMetarTaf: vi.fn().mockReturnValue(of(response)) } }],
+      providers: [MetarTafFetcher, WindProfileFetcher, { provide: FlightImagesApi, useValue: { list: () => of([]) } }, { provide: WeatherService, useValue: { getApiWeatherMetarTaf: vi.fn().mockReturnValue(of(response)) } }],
     }).compileComponents();
     const fetcher = TestBed.inject(MetarTafFetcher);
     const fixture = TestBed.createComponent(Host);
@@ -96,7 +99,7 @@ describe('MeteoSection wind by altitude (issue #46)', () => {
 
   async function setup(result: unknown = of(profile)) {
     const api = { getApiWeatherMetarTaf: vi.fn(), getApiWeatherWindProfile: vi.fn().mockReturnValue(result) };
-    await TestBed.configureTestingModule({ providers: [MetarTafFetcher, { provide: WeatherService, useValue: api }] }).compileComponents();
+    await TestBed.configureTestingModule({ providers: [MetarTafFetcher, WindProfileFetcher, { provide: FlightImagesApi, useValue: { list: () => of([]) } }, { provide: WeatherService, useValue: api }] }).compileComponents();
     const fixture = TestBed.createComponent(WindHost);
     fixture.componentInstance.coordinates = { latitude: 51.1568, longitude: 4.0439 };
     const flush = async () => {
@@ -221,5 +224,56 @@ describe('MeteoSection wind by altitude (issue #46)', () => {
     await flush();
     expect(q('wind-blocked')?.textContent).toContain('launch location');
     expect((q('fetch-wind-profile') as HTMLButtonElement).disabled).toBe(true);
+  });
+});
+
+@Component({ imports: [MeteoSection], template: `<Nimbus-meteo-section [group]="form.controls.meteo" flightId="f1" />` })
+class ImagesHost {
+  form = createFlightPreparationForm(TestBed.inject(NonNullableFormBuilder));
+}
+
+describe('MeteoSection images and precipitation (issue #50)', () => {
+  it('has a precipitation field in the form', async () => {
+    await TestBed.configureTestingModule({
+      providers: [MetarTafFetcher, WindProfileFetcher, { provide: FlightImagesApi, useValue: { list: () => of([]) } }, { provide: WeatherService, useValue: {} }],
+    }).compileComponents();
+    const fixture = TestBed.createComponent(Host);
+    fixture.detectChanges();
+    const input = (fixture.nativeElement as HTMLElement).querySelector('[data-testid="precipitation"]') as HTMLInputElement;
+    input.value = 'light rain after 19:00';
+    input.dispatchEvent(new Event('input'));
+    expect(fixture.componentInstance.form.controls.meteo.controls.precipitation.value).toBe('light rain after 19:00');
+  });
+
+  it('a failed image upload shows its error and leaves everything typed in the form exactly as it was', async () => {
+    const upload = vi.fn().mockReturnValue(throwError(() => new HttpErrorResponse({ status: 502 })));
+    await TestBed.configureTestingModule({
+      providers: [
+        MetarTafFetcher,
+        WindProfileFetcher,
+        { provide: FlightImagesApi, useValue: { list: () => of([]), upload } },
+        { provide: WeatherService, useValue: {} },
+      ],
+    }).compileComponents();
+    const fixture = TestBed.createComponent(ImagesHost);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    const meteo = fixture.componentInstance.form.controls.meteo;
+    meteo.patchValue({ windSpeedKt: 14, metar: 'EBAW 081750Z 24006KT', precipitation: 'none' });
+    meteo.markAsDirty();
+    const before = JSON.stringify(meteo.getRawValue());
+
+    const el = fixture.nativeElement as HTMLElement;
+    const input = el.querySelector('[data-testid="image-file"]') as HTMLInputElement;
+    Object.defineProperty(input, 'files', { value: [new File([new Uint8Array(10)], 'stuve.png', { type: 'image/png' })], configurable: true });
+    input.dispatchEvent(new Event('change'));
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(upload).toHaveBeenCalled();
+    expect(el.querySelector('[data-testid="upload-error"]')?.textContent).toContain('file store is unavailable');
+    expect(JSON.stringify(meteo.getRawValue())).toBe(before);
+    expect(meteo.dirty).toBe(true);
   });
 });

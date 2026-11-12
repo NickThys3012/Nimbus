@@ -1,0 +1,30 @@
+.images { margin-top: 16px; }
+.head { display: flex; align-items: center; gap: 8px; }
+.title, .source { font: 10.5px var(--mono); color: var(--fnt); }
+.rule { flex: 1; height: 0.5px; background: var(--ln); }
+.actions { display: flex; align-items: center; gap: 10px; margin: 8px 0; flex-wrap: wrap; }
+.hint { font: 11px var(--mono); color: var(--fnt); }
+.note { font: 11px var(--mono); color: var(--dim); margin: 6px 0; }
+.note:empty { display: none; }
+.problem { font: 11px var(--mono); color: var(--r); }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+.upload { border: 0.5px solid var(--ln); border-radius: 8px; padding: 8px 10px; margin: 6px 0; }
+.upload.failed { border-color: var(--r); }
+.upload-line { display: flex; align-items: center; gap: 10px; font: 12px var(--mono); }
+.name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pct { color: var(--dim); }
+.bar { height: 4px; border-radius: 2px; background: var(--ln); margin-top: 6px; overflow: hidden; }
+.bar span { display: block; height: 100%; background: var(--ac); transition: width .15s linear; }
+.link { background: none; border: 0; color: var(--ac); font: 12px var(--mono); cursor: pointer; padding: 4px; min-height: 32px; }
+
+.item { display: flex; align-items: center; gap: 12px; padding: 8px 0; border-top: 0.5px solid var(--ln); }
+.item.busy { opacity: .6; }
+.thumb { flex: none; display: block; width: 96px; height: 64px; border-radius: 6px; overflow: hidden; background: var(--ln); }
+.thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.meta { flex: 1; display: flex; gap: 10px; font: 12px var(--mono); }
+.dim { color: var(--dim); }
+.tools { display: flex; gap: 4px; }
+.icon { min-width: 40px; min-height: 40px; border-radius: 8px; border: 0.5px solid var(--ln2, var(--ln)); background: none; color: var(--tx); cursor: pointer; }
+.icon[disabled] { opacity: .35; cursor: not-allowed; }
+.icon.danger { color: var(--r); }

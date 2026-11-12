@@ -6,6 +6,8 @@ using Nimbus.Application.Features.FlightPreparations.Commands.DeleteFlightPrepar
 using Nimbus.Application.Features.FlightPreparations.Commands.UpdateFlightPreparation;
 using Nimbus.Application.Features.FlightPreparations.Images.Delete;
 using Nimbus.Application.Features.FlightPreparations.Images.Get;
+using Nimbus.Application.Features.FlightPreparations.Images.List;
+using Nimbus.Application.Features.FlightPreparations.Images.Reorder;
 using Nimbus.Application.Features.FlightPreparations.Images.Upload;
 using Nimbus.Application.Features.FlightPreparations.Queries.GetFlightDetail;
 using Nimbus.Application.Features.FlightPreparations.Queries.GetFlightPreparation;
@@ -89,6 +91,24 @@ public class FlightPreparationsController : ControllerBase
         await using var content = form.File.OpenReadStream();
         var created = await _mediator.Send(new UploadFlightImageCommand(id, form.Section, content, form.File.ContentType), ct);
         return Created($"api/flight-preparations/{id}/images/{created.Id}", created);
+    }
+
+    /// <summary>The flight's images with short-lived links, for the editor. Anyone who may see the flight may list them.</summary>
+    [HttpGet("{id:guid}/images")]
+    public async Task<ActionResult<IReadOnlyList<FlightImageDto>>> ListImages(Guid id, CancellationToken ct)
+    {
+        return Ok(await _mediator.Send(new ListFlightImagesQuery(id), ct));
+    }
+
+    /// <summary>Sets the order of one section's images: the body names every image of that section, first to last. Owner or admin only.</summary>
+    [HttpPut("{id:guid}/images/order")]
+    public async Task<ActionResult> ReorderImages(Guid id, ReorderFlightImagesRequest request, CancellationToken ct)
+    {
+        if (!Enum.TryParse<FlightPreparationSection>(request.Section, ignoreCase: true, out var section) || !Enum.IsDefined(section))
+            return UnprocessableEntity(new { title = "Validation failed", status = 422, errors = new Dictionary<string, string[]> { ["section"] = ["Unknown section."] } });
+
+        await _mediator.Send(new ReorderFlightImagesCommand(id, section, request.ImageIds), ct);
+        return NoContent();
     }
 
     /// <summary>The image's bytes (or its thumbnail with <c>?thumbnail=true</c>), checked against the viewer's access to the flight on every request.</summary>

@@ -50,6 +50,8 @@ export function toRequestDto(value: FlightPreparationFormValue, title: string): 
     temperatureC: meteo.temperatureC,
     dewPointC: meteo.dewPointC,
     qnhHpa: meteo.qnhHpa,
+    // Autosaved drafts from before the field existed have no value for it.
+    precipitation: orNull(meteo.precipitation ?? ''),
     metar: meteo.metar,
     taf: meteo.taf,
     windLevels: meteo.windLevels.map((w) => ({ ...w })),
@@ -113,6 +115,7 @@ export function fromDto(dto: FlightPreparationDto): FlightPreparationFormValue {
       temperatureC: num(d.temperatureC),
       dewPointC: num(d.dewPointC),
       qnhHpa: num(d.qnhHpa),
+      precipitation: d.precipitation ?? '',
       metar: d.metar ?? '',
       taf: d.taf ?? '',
       windLevels: (d.windLevels ?? []).map((w) => ({

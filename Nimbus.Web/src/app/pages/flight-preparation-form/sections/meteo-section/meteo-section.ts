@@ -13,6 +13,7 @@ import { MetarTafFetcher } from '../../../../core/flight-preparations/metar-taf-
 import { DEFAULT_WIND_PROFILE_MODEL, WIND_PROFILE_MODELS, WindProfileFetcher } from '../../../../core/flight-preparations/wind-profile-fetcher';
 import { Button } from '../../../../components/button/button';
 import { Modal } from '../../../../components/modal/modal';
+import { SectionImages } from '../../../../components/section-images/section-images';
 import { FieldErrorPipe } from '../field-error.pipe';
 
 /**
@@ -21,8 +22,8 @@ import { FieldErrorPipe } from '../field-error.pipe';
  */
 @Component({
   selector: 'Nimbus-meteo-section',
-  imports: [ReactiveFormsModule, FieldErrorPipe, Button, Modal],
-  providers: [WindProfileFetcher, HourlyForecastFetcher],
+  imports: [ReactiveFormsModule, FieldErrorPipe, Button, Modal, SectionImages],
+  providers: [HourlyForecastFetcher],
   templateUrl: './meteo-section.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrls: ['./meteo-section.css', '../section-fields.css'],
@@ -35,6 +36,8 @@ export class MeteoSection {
   hourUtc = input<string | null>(null);
   /** The planned flight's local hour (`yyyy-MM-ddTHH`) so the forecast can highlight it; null until date and time are filled in. */
   plannedHour = input<string | null>(null);
+  /** The saved flight's id, which the section's images attach to; null until the flight has been saved. */
+  flightId = input<string | null>(null);
   private readonly fb = inject(NonNullableFormBuilder);
   protected readonly fetcher = inject(MetarTafFetcher);
   protected readonly wind = inject(WindProfileFetcher);

@@ -1,3 +1,4 @@
+import { FlightImagesApi } from '../../core/flight-preparations/flight-images.api';
 import { TestBed } from '@angular/core/testing';
 import { ActivatedRoute, convertToParamMap, provideRouter, Router } from '@angular/router';
 import { of, throwError } from 'rxjs';
@@ -36,7 +37,8 @@ describe('FlightPreparationFormPage', () => {
   /** The flights "stored on the server" for this test, by id. */
   let server: Record<string, FlightPreparationDto>;
   let flightsApi: Record<string, ReturnType<typeof vi.fn>>;
-  let weatherApi: { getApiWeatherMetarTaf: ReturnType<typeof vi.fn> };
+  let assessmentApi: ReturnType<typeof vi.fn<(request: unknown) => unknown>>;
+  let weatherApi: { getApiWeatherMetarTaf: ReturnType<typeof vi.fn>; getApiWeatherWindProfile: ReturnType<typeof vi.fn> };
   let solarApi: { getApiSolarSunTimes: ReturnType<typeof vi.fn> };
 
   const httpError = (status: number) =>
@@ -54,7 +56,13 @@ describe('FlightPreparationFormPage', () => {
     } as Storage;
     email = 'pilot.a@example.com';
     server = {};
+    assessmentApi = vi.fn().mockReturnValue(
+      of({ totalWeightKg: 0, passengersWeightKg: 0, marginKg: 0, liftSufficient: null, goNoGoVerdict: 'unknown' }),
+    );
     weatherApi = {
+      getApiWeatherWindProfile: vi.fn().mockReturnValue(
+        of({ model: 'icon_seamless', levels: [{ altitudeM: 300, directionDeg: 245, speedKt: 9, temperatureC: 17 }] }),
+      ),
       getApiWeatherMetarTaf: vi.fn().mockReturnValue(of({ station: 'EBDM', metar: 'EBDM 100850Z 08003KT 0400 FG Q1013', taf: 'TAF EBDM 100800Z 1009/1018 09006KT 0500 FG BKN001\n  BECMG 1009/1011 6000 NSW SCT010' })),
     };
     solarApi = {
@@ -85,6 +93,7 @@ describe('FlightPreparationFormPage', () => {
       imports: [FlightPreparationFormPage],
       providers: [
         provideRouter([]),
+        { provide: FlightImagesApi, useValue: { list: () => of([]) } },
         { provide: AuthStore, useValue: { email: () => email } },
         { provide: LOCAL_STORAGE, useValue: mockStorage },
         { provide: BalloonsService, useValue: { getApiBalloons: () => of(balloons) } },
@@ -92,10 +101,7 @@ describe('FlightPreparationFormPage', () => {
         { provide: LiftCalculationService, useValue: { getApiLiftCalculationTotalLift: () => of({ totalLiftKg: 0 }) } },
         {
           provide: FlightAssessmentService,
-          useValue: {
-            postApiFlightAssessment: () =>
-              of({ totalWeightKg: 0, passengersWeightKg: 0, marginKg: 0, liftSufficient: null, goNoGoVerdict: 'unknown' }),
-          },
+          useValue: { postApiFlightAssessment: (a: unknown) => assessmentApi(a) },
         },
         { provide: FlightPreparationsService, useValue: flightsApi },
         { provide: WeatherService, useValue: weatherApi },
@@ -303,6 +309,46 @@ describe('FlightPreparationFormPage', () => {
     });
   });
 
+  describe('status strip with the live Go/No-Go badge (issue #50, form mockup)', () => {
+    const settle = async (ctx: { fixture: { detectChanges(): void; whenStable(): Promise<unknown> } }) => {
+      await new Promise((r) => setTimeout(r, 250)); // the assessment request is debounced
+      ctx.fixture.detectChanges();
+      await ctx.fixture.whenStable();
+      ctx.fixture.detectChanges();
+    };
+
+    it('shows the verdict the API returns, and asks the API again with the new wind, visibility and CAPE as they change', async () => {
+      const ctx = await createComponent(null, [], [location]);
+      await ctx.expandSection('Meteo');
+      await settle(ctx);
+      expect(ctx.q('status-gonogo-value')?.textContent?.trim()).toBe('N/A');
+
+      assessmentApi.mockReturnValue(of({ totalWeightKg: 412, passengersWeightKg: 200, marginKg: 56, liftSufficient: true, goNoGoVerdict: 'red' }));
+      const set = (id: string, value: string) => {
+        const input = ctx.q<HTMLInputElement>(id)!;
+        input.value = value;
+        input.dispatchEvent(new Event('input'));
+      };
+      set('wind-speed', '22');
+      set('visibility', '3');
+      set('cape', '900');
+      await settle(ctx);
+
+      expect(assessmentApi).toHaveBeenLastCalledWith({ requestBody: expect.objectContaining({ windSpeedKt: 22, visibilityKm: 3, capeJPerKg: 900 }) });
+      expect(ctx.q('status-gonogo-value')?.textContent?.trim()).toBe('NO-GO');
+      expect(ctx.q('status-gonogo')?.className).toContain('nogo');
+      expect(ctx.q('status-total')?.textContent).toContain('412');
+      expect(ctx.q('status-margin')?.textContent).toContain('+56');
+    });
+
+    it('never computes the verdict itself: when the API fails the badge says N/A', async () => {
+      assessmentApi.mockReturnValue(throwError(() => new Error('down')));
+      const ctx = await createComponent(null, [], [location]);
+      await settle(ctx);
+      expect(ctx.q('status-gonogo-value')?.textContent?.trim()).toBe('N/A');
+    });
+  });
+
   describe('METAR/TAF fetch in the Meteo header (issue #44, form mockup)', () => {
     const withIcao = { ...location, id: 'l2', name: 'Dendermonde', icaoCode: 'EBDM' };
 
@@ -349,19 +395,39 @@ describe('FlightPreparationFormPage', () => {
       expect(button().getAttribute('aria-disabled')).toBe('true');
       expect(button().getAttribute('title')).toContain('Pick a launch location');
 
+      // A location without an ICAO code still has coordinates, so the wind part of the action is possible: not blocked.
       await pick('l1');
-      expect(button().getAttribute('aria-disabled')).toBe('true');
-      expect(button().getAttribute('title')).toContain('no ICAO code');
+      expect(button().getAttribute('aria-disabled')).toBeNull();
 
-      button().click(); // blocked, but still answers: the section opens to show the reason
+      button().click(); // METAR/TAF is impossible and says why; the wind profile is fetched regardless
       await flush();
       expect(el.querySelector('[data-section="Meteo"] .card-body')).not.toBeNull();
       expect(q('fetch-blocked')?.textContent).toContain('no ICAO code');
       expect(weatherApi.getApiWeatherMetarTaf).not.toHaveBeenCalled();
+      expect(weatherApi.getApiWeatherWindProfile).toHaveBeenCalledTimes(1);
 
       await pick('l2');
       expect(button().getAttribute('aria-disabled')).toBeNull();
       expect(q('fetch-blocked')).toBeNull();
+    });
+
+    it('is one action: METAR, TAF and the wind by altitude are filled together, and a failing wind fetch leaves the METAR and TAF in place', async () => {
+      const { button, pick, flush, q } = await open();
+      await pick('l2');
+
+      button().click();
+      await flush();
+      expect(weatherApi.getApiWeatherMetarTaf).toHaveBeenCalledTimes(1);
+      expect(weatherApi.getApiWeatherWindProfile).toHaveBeenCalledTimes(1);
+      expect((q('metar') as HTMLTextAreaElement).value).toContain('EBDM 100850Z');
+      expect((q('wind-level-altitude-0') as HTMLInputElement).value).toBe('300');
+
+      weatherApi.getApiWeatherWindProfile.mockReturnValue(throwError(() => new Error('down')));
+      weatherApi.getApiWeatherMetarTaf.mockReturnValue(of({ station: 'EBDM', metar: 'EBDM 100950Z 09004KT 9999 Q1012', taf: null }));
+      button().click();
+      await flush();
+      expect((q('metar') as HTMLTextAreaElement).value).toContain('EBDM 100950Z');
+      expect(q('wind-failed')).not.toBeNull();
     });
 
     it('fetches for the picked location, opens the section and shows the result there', async () => {

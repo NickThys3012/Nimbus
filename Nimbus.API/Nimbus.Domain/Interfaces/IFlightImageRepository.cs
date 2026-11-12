@@ -13,6 +13,12 @@ public interface IFlightImageRepository
     /// <summary>The image of this flight, or null when there is none (a soft-deleted row counts as none).</summary>
     Task<FlightPreparationImage?> GetAsync(Guid flightId, Guid imageId, CancellationToken ct = default);
 
+    /// <summary>Every image of the flight, soft-deleted rows excluded, ordered by section then order.</summary>
+    Task<IReadOnlyList<FlightPreparationImage>> ListAsync(Guid flightId, CancellationToken ct = default);
+
+    /// <summary>Sets <c>Order</c> to the position in <paramref name="orderedImageIds" /> for those images of the flight, in one save.</summary>
+    Task SetOrderAsync(Guid flightId, IReadOnlyList<Guid> orderedImageIds, CancellationToken ct = default);
+
     /// <summary>Removes the row. False when it was already gone.</summary>
     Task<bool> DeleteAsync(Guid flightId, Guid imageId, CancellationToken ct = default);
 }

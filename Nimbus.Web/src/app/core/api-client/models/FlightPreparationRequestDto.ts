@@ -22,6 +22,10 @@ export type FlightPreparationRequestDto = {
     temperatureC?: number | string | null;
     dewPointC?: number | string | null;
     qnhHpa?: number | string | null;
+    /**
+     * Free text, e.g. "none" or "light rain after 19:00".
+     */
+    precipitation?: string | null;
     metar?: string | null;
     taf?: string | null;
     windLevels?: Array<WindLevelDto>;

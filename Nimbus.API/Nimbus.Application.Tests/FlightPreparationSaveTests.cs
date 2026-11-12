@@ -72,17 +72,28 @@ public class FlightPreparationSaveTests
         var flownAt = new DateTime(2026, 8, 8, 20, 0, 0, DateTimeKind.Utc);
         var stored = new FlightPreparation
         {
-            Status = FlightPreparationStatus.Flown, FlownAt = flownAt, OutcomeRemarks = "smooth", Precipitation = "none",
+            Status = FlightPreparationStatus.Flown, FlownAt = flownAt, OutcomeRemarks = "smooth",
             SimulationDurationMinutes = 90, TrajectoryJson = "{}", KmlTrackObjectKey = "k"
         };
         Req().ApplyTo(stored);
         Assert.That(stored.Status, Is.EqualTo(FlightPreparationStatus.Flown));
         Assert.That(stored.FlownAt, Is.EqualTo(flownAt));
         Assert.That(stored.OutcomeRemarks, Is.EqualTo("smooth"));
-        Assert.That(stored.Precipitation, Is.EqualTo("none"));
         Assert.That(stored.SimulationDurationMinutes, Is.EqualTo(90));
         Assert.That(stored.TrajectoryJson, Is.EqualTo("{}"));
         Assert.That(stored.KmlTrackObjectKey, Is.EqualTo("k"));
+    }
+
+    [Test]
+    public void Mapper_CarriesPrecipitationBothWays_TrimmedAndBlankAsNull()
+    {
+        var stored = new FlightPreparation();
+        (Req() with { Precipitation = "  light rain after 19:00 " }).ApplyTo(stored);
+        Assert.That(stored.Precipitation, Is.EqualTo("light rain after 19:00"));
+        Assert.That(stored.MapToRequestDto().Precipitation, Is.EqualTo("light rain after 19:00"));
+
+        (Req() with { Precipitation = "   " }).ApplyTo(stored);
+        Assert.That(stored.Precipitation, Is.Null);
     }
 
     [Test]
