@@ -10,6 +10,7 @@ import {
   type LoadCalculationFormGroup,
   movePassenger,
 } from '../../../../core/flight-preparations/flight-preparation-form';
+import { buildAssessmentRequest, type WeatherContext } from '../../../../core/flight-preparations/assessment-request';
 import { PilotsStore } from '../../../../core/pilots/pilots.store';
 import { FieldErrorPipe } from '../field-error.pipe';
 
@@ -23,12 +24,7 @@ export interface LiftContext {
   ambientTemperatureC: number;
 }
 
-/** The meteo values that feed the Go/No-Go verdict; `null` means "not entered". */
-export interface WeatherContext {
-  windSpeedKt: number | null;
-  visibilityKm: number | null;
-  capeJPerKg: number | null;
-}
+export type { WeatherContext } from '../../../../core/flight-preparations/assessment-request';
 
 const FEET_TO_METERS = 0.3048;
 
@@ -75,20 +71,7 @@ export class LoadCalculationSection {
   /** The raw values sent to the server; this component never computes weight, lift sufficiency or the verdict itself. */
   private readonly assessmentRequest = computed<FlightAssessmentRequestDto>(() => {
     this.values();
-    const v = this.group().getRawValue();
-    const w = this.weather();
-    return {
-      envelopeWeightKg: Number(v.envelopeWeightKg) || 0,
-      basketWeightKg: Number(v.basketWeightKg) || 0,
-      burnerWeightKg: Number(v.burnerWeightKg) || 0,
-      cylindersWeightKg: Number(v.cylindersWeightKg) || 0,
-      pilotWeightKg: this.pilotWeightKg(),
-      passengerWeightsKg: v.passengers.map((p) => Number(p.weightKg) || 0),
-      totalLiftKg: Number(v.totalLiftKg) || 0,
-      windSpeedKt: w.windSpeedKt,
-      visibilityKm: w.visibilityKm,
-      capeJPerKg: w.capeJPerKg,
-    };
+    return buildAssessmentRequest(this.group().getRawValue(), this.pilotWeightKg(), this.weather());
   });
 
   /** The single server-side assessment (total weight, lift sufficiency, Go/No-Go verdict); `null` until it arrives or when it fails. */

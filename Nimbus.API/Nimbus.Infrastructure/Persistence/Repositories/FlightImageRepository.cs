@@ -30,6 +30,24 @@ public sealed class FlightImageRepository(AppDbContext db) : IFlightImageReposit
             .FirstOrDefaultAsync(i => i.Id == imageId && i.FlightPreparationId == flightId, ct);
     }
 
+    public async Task<IReadOnlyList<FlightPreparationImage>> ListAsync(Guid flightId, CancellationToken ct = default)
+    {
+        return await db.FlightPreparationImages.AsNoTracking()
+            .Where(i => i.FlightPreparationId == flightId)
+            .OrderBy(i => i.Section).ThenBy(i => i.Order).ThenBy(i => i.CreatedDate)
+            .ToListAsync(ct);
+    }
+
+    public async Task SetOrderAsync(Guid flightId, IReadOnlyList<Guid> orderedImageIds, CancellationToken ct = default)
+    {
+        var rows = await db.FlightPreparationImages
+            .Where(i => i.FlightPreparationId == flightId && orderedImageIds.Contains(i.Id))
+            .ToListAsync(ct);
+        foreach (var row in rows)
+            row.Order = orderedImageIds.ToList().IndexOf(row.Id);
+        await db.SaveChangesAsync(ct);
+    }
+
     public async Task<bool> DeleteAsync(Guid flightId, Guid imageId, CancellationToken ct = default)
     {
         var rows = await db.FlightPreparationImages.IgnoreQueryFilters()

@@ -198,6 +198,7 @@ export function buildDetailGroups(flight: FlightDetailDto): DetailGroup[] {
         row('wind', 'Wind', present(d.windSpeedKt) ? `${n(d.windSpeedKt)} kt / ${n(d.windDirectionDeg)}°` : NONE),
         row('visibility-cape', 'Visibility / CAPE', `${present(d.visibilityKm) ? `${n(d.visibilityKm)} km` : NONE} / ${present(d.capeJPerKg) ? `${n(d.capeJPerKg)} J/kg` : NONE}`),
         row('temp-dew-qnh', 'Temp / dew point / QNH', `${present(d.temperatureC) ? `${n(d.temperatureC)}°C` : NONE} / ${present(d.dewPointC) ? `${n(d.dewPointC)}°C` : NONE} / ${present(d.qnhHpa) ? `${n(d.qnhHpa)} hPa` : NONE}`),
+        row('precipitation', 'Precipitation', text(d.precipitation) || NONE),
         row('metar', 'METAR', text(d.metar) || NONE, { tone: 'dim', multiline: true }),
         row('taf', 'TAF', text(d.taf) || NONE, { tone: 'dim', multiline: true }),
       ],

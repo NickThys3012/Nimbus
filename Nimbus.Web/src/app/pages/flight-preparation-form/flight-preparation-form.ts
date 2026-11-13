@@ -10,9 +10,9 @@ import {
   untracked,
 } from '@angular/core';
 import { NonNullableFormBuilder, ReactiveFormsModule } from '@angular/forms';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
-import { catchError, debounceTime, EMPTY, finalize, map, Observable, of, Subject, Subscription, take, tap } from 'rxjs';
+import { catchError, debounceTime, EMPTY, finalize, map, Observable, of, Subject, Subscription, switchMap, take, tap } from 'rxjs';
 
 import { Banner } from '../../components/banner/banner';
 import { Button } from '../../components/button/button';
@@ -20,13 +20,17 @@ import { Modal } from '../../components/modal/modal';
 import { SectionCard } from '../../components/section-card/section-card';
 import { formatDayMonthTime } from '../../core/format/dates';
 import { type CanComponentDeactivate } from '../../guards/unsaved-changes-guard';
-import { ApiError, FlightPreparationsService } from '../../core/api-client';
+import { ApiError, type FlightAssessmentDto, FlightAssessmentService, FlightPreparationsService } from '../../core/api-client';
 import { BalloonsStore } from '../../core/balloons/balloons.store';
+import { PilotsStore } from '../../core/pilots/pilots.store';
+import { buildAssessmentRequest } from '../../core/flight-preparations/assessment-request';
+import { verdictClass, verdictLabel } from '../../core/flight-preparations/verdict';
 import { LaunchLocationsStore } from '../../core/launch-locations/launch-locations.store';
 import {
   countInvalidLeaves,
   checklistProgress,
   createFlightPreparationForm,
+  createWindLevelGroup,
   diffingSectionIds,
   type FlightPreparationForm,
   type FlightPreparationFormValue,
@@ -38,6 +42,7 @@ import { defaultPaxBriefing } from '../../core/flight-preparations/pax-briefing-
 import { metarMeta } from '../../core/flight-preparations/metar-meta';
 import { plannedLocalHour } from '../../core/flight-preparations/hourly-forecast-fetcher';
 import { MetarTafFetcher } from '../../core/flight-preparations/metar-taf-fetcher';
+import { WindProfileFetcher } from '../../core/flight-preparations/wind-profile-fetcher';
 import { SunTimesLoader } from '../../core/flight-preparations/sun-times-loader';
 import { FlightListStore } from '../../core/flight-preparations/flight-list.store';
 import { flightTitle, fromDto, toRequestDto } from '../../core/flight-preparations/flight-preparation.mapper';
@@ -90,7 +95,7 @@ interface SectionErrorSummary {
     OfpSection,
     PaxBriefingSection,
   ],
-  providers: [MetarTafFetcher, SunTimesLoader],
+  providers: [MetarTafFetcher, WindProfileFetcher, SunTimesLoader],
   templateUrl: './flight-preparation-form.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrl: './flight-preparation-form.css',
@@ -103,6 +108,8 @@ export default class FlightPreparationFormPage implements CanComponentDeactivate
   private readonly api = inject(FlightPreparationsService);
   private readonly listStore = inject(FlightListStore);
   protected readonly fetcher = inject(MetarTafFetcher);
+  /** Shared with the Meteo section, which shows its result and the overwrite question; the header action fills it too. */
+  protected readonly wind = inject(WindProfileFetcher);
   protected readonly sun = inject(SunTimesLoader);
   private readonly balloonsStore = inject(BalloonsStore);
   private readonly locationsStore = inject(LaunchLocationsStore);
@@ -208,13 +215,20 @@ export default class FlightPreparationFormPage implements CanComponentDeactivate
     return balloon ? `${location.name} · ${balloon.registration}` : location.name;
   });
 
-  /** The selected launch location's coordinates, for the weather and sunrise features. */
-  readonly launchCoordinates = computed(() => {
-    this.formVersion();
-    const id = this.form().controls.general.controls.launchLocationId.value;
-    const location = this.locationsStore.list().find((l) => l.id === id);
-    return location ? { latitude: Number(location.latitude), longitude: Number(location.longitude) } : null;
-  });
+  /**
+   * The selected launch location's coordinates, for the weather and sunrise features. Compared by value: every form change
+   * recomputes this, and a fresh object each time would make the fetchers treat an unchanged place as "the pilot moved the
+   * launch location" and silently drop an answer that is still on its way.
+   */
+  readonly launchCoordinates = computed(
+    () => {
+      this.formVersion();
+      const id = this.form().controls.general.controls.launchLocationId.value;
+      const location = this.locationsStore.list().find((l) => l.id === id);
+      return location ? { latitude: Number(location.latitude), longitude: Number(location.longitude) } : null;
+    },
+    { equal: (a, b) => a?.latitude === b?.latitude && a?.longitude === b?.longitude },
+  );
 
   /** The planned take-off hour as a UTC ISO string, so the wind profile is for that hour; null (current hour) until date and time are filled in. */
   protected readonly flightHourUtc = computed(() => {
@@ -272,9 +286,34 @@ export default class FlightPreparationFormPage implements CanComponentDeactivate
     return { windSpeedKt: entered(c.windSpeedKt), visibilityKm: entered(c.visibilityKm), capeJPerKg: entered(c.capeJPerKg) };
   });
 
+  private readonly pilotsStore = inject(PilotsStore);
+  private readonly assessmentApi = inject(FlightAssessmentService);
+
+  /**
+   * The one server-side assessment, shown in the status strip so changing wind, visibility or CAPE moves the Go/No-Go badge
+   * right where the pilot is editing. Section 05 shows the same numbers; both come from the API, never from the client.
+   */
+  protected readonly assessment = toSignal(
+    toObservable(
+      computed(() => {
+        this.formVersion();
+        const pilot = this.pilotsStore.list().find((p) => p.id === this.pilotId());
+        return buildAssessmentRequest(this.form().controls.loadCalculation.getRawValue(), Number(pilot?.weightKg ?? 0), this.weatherContext());
+      }),
+    ).pipe(
+      debounceTime(150),
+      switchMap((requestBody) => this.assessmentApi.postApiFlightAssessment({ requestBody }).pipe(catchError(() => of(null)))),
+    ),
+    { initialValue: null as FlightAssessmentDto | null },
+  );
+  protected readonly verdictLabel = verdictLabel;
+  protected readonly verdictClass = verdictClass;
+
   constructor() {
     // The Fetch button needs to know which launch location the form has.
     effect(() => this.fetcher.station.set(this.launchStation()));
+    effect(() => this.wind.coordinates.set(this.launchCoordinates()));
+    effect(() => this.wind.hourUtc.set(this.flightHourUtc()));
     effect(() => this.sun.coordinates.set(this.launchCoordinates()));
     effect(() => this.sun.date.set(this.flightDateValue()));
     effect(() => {
@@ -388,10 +427,16 @@ export default class FlightPreparationFormPage implements CanComponentDeactivate
     return null;
   }
 
-  /** The Fetch button in the Meteo header: opens the section so the result, or the reason nothing was fetched, is in view. */
+  /**
+   * The single Fetch action in the Meteo header (issue #50): METAR, TAF and the wind profile in one go. Each part is its own
+   * request and reports for itself, so one failing (or being impossible, e.g. no ICAO code) never blocks the others. The
+   * section opens so the results, or the reasons nothing was fetched, are in view.
+   */
   protected fetchMeteo(): void {
     this.setExpanded('Meteo', true);
-    void this.fetcher.fetch(this.form().controls.meteo);
+    const meteo = this.form().controls.meteo;
+    void this.fetcher.fetch(meteo);
+    void this.wind.fetch(meteo.controls.windLevels, () => createWindLevelGroup(this.fb));
   }
 
   protected goBack(): void {

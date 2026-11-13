@@ -30,6 +30,7 @@ public sealed class FlightPreparationRequestValidator : AbstractValidator<Flight
         RuleFor(r => r.TemperatureC).InclusiveBetween(-99m, 99m);
         RuleFor(r => r.DewPointC).InclusiveBetween(-99m, 99m);
         RuleFor(r => r.QnhHpa).InclusiveBetween(800m, 1100m).When(r => r.QnhHpa is > 0m);
+        RuleFor(r => r.Precipitation).MaximumLength(200);
         RuleFor(r => r.Metar).MaximumLength(1000);
         RuleFor(r => r.Taf).MaximumLength(2000);
 

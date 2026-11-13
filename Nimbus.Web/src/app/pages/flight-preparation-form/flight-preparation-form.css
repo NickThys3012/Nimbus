@@ -15,6 +15,24 @@
 .saved-tag { font: 11px var(--mono); color: var(--fnt); display: flex; align-items: center; gap: 5px; white-space: nowrap; }
 .saved-tag i { color: var(--g); font-size: 13px; }
 
+/* Weight, lift and Go/No-Go at a glance (mockup status strip). */
+.status-strip { display: flex; background: var(--pan); border: 0.5px solid var(--ln2); border-radius: 10px; overflow: hidden; }
+.status-cell { flex: 1; padding: 10px 14px; min-width: 0; }
+.status-cell .lbl, .status-gonogo .lbl { font: 10px var(--mono); color: var(--fnt); letter-spacing: .04em; }
+.status-cell .val { font: 18px var(--mono); color: var(--tx); margin-top: 2px; white-space: nowrap; }
+.status-cell .val small { font-size: 11px; color: var(--fnt); }
+.status-cell .val.ok { color: var(--g); }
+.status-cell .val.bad { color: var(--r); }
+.status-div { width: 0.5px; background: var(--ln); }
+.status-gonogo { flex: 0 0 auto; padding: 10px 18px; background: var(--pan); display: flex; flex-direction: column; justify-content: center; }
+.status-gonogo .val { font: 18px var(--mono); margin-top: 2px; color: var(--fnt); }
+.status-gonogo.go { background: var(--gb); }
+.status-gonogo.go .val { color: var(--g); }
+.status-gonogo.caution { background: var(--ab); }
+.status-gonogo.caution .val { color: var(--a); }
+.status-gonogo.nogo { background: var(--rb); }
+.status-gonogo.nogo .val { color: var(--r); }
+
 .sections { display: flex; flex-direction: column; gap: 10px; }
 
 .progress-row { display: flex; align-items: center; gap: 10px; }
@@ -57,6 +75,9 @@
 .discard-leave:hover { text-decoration: underline; }
 
 @media (max-width: 600px) {
+  .status-cell { padding: 8px 10px; }
+  .status-cell .val, .status-gonogo .val { font-size: 14px; }
+  .status-gonogo { padding: 8px 12px; }
   .wrap { padding: 12px; padding-bottom: calc(var(--mobile-bottom-nav-height, 68px) + 96px + env(safe-area-inset-bottom)); }
   .discard-draft-row { padding: 0 12px; }
   .action-bar {

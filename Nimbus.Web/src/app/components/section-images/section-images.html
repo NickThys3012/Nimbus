@@ -1,0 +1,76 @@
+<div class="images" data-testid="section-images">
+  <div class="head">
+    <span class="title">IMAGES</span>
+    <span class="rule"></span>
+    <span class="source">stored as files</span>
+  </div>
+
+  @if (!flightId()) {
+    <p class="note" data-testid="images-unsaved">Save the flight first, then you can attach {{ noun() }}s such as a Stüve diagram or a sounding.</p>
+  } @else {
+    <div class="actions">
+      <button class="btn" data-testid="add-image" type="button" (click)="file.click()">
+        <i aria-hidden="true" class="ti ti-photo"></i> Add {{ noun() }}
+      </button>
+      <input #file class="sr-only" data-testid="image-file" type="file" multiple tabindex="-1" aria-label="Choose images to attach" [accept]="accept" (change)="picked($event)" />
+      <span class="hint">JPEG, PNG or WebP, up to 10 MB each</span>
+    </div>
+
+    <div class="note" aria-live="polite">
+      @if (editor.problem(); as problem) {
+        <span class="problem" data-testid="images-problem">{{ problem }}</span>
+      }
+    </div>
+
+    @for (u of editor.uploads(); track u.id) {
+      <div class="upload" [class.failed]="u.state === 'failed'" [attr.data-testid]="'upload-' + u.id">
+        <div class="upload-line">
+          <span class="name">{{ u.fileName }}</span>
+          @if (u.state === 'uploading') {
+            <span class="pct" data-testid="upload-percent">{{ u.percent }}%</span>
+            <button class="link" type="button" data-testid="upload-cancel" [attr.aria-label]="'Cancel upload of ' + u.fileName" (click)="editor.cancel(u.id)">Cancel</button>
+          } @else {
+            <button class="link" type="button" data-testid="upload-retry" [attr.aria-label]="'Retry ' + u.fileName" (click)="editor.retry(u.id)">Retry</button>
+            <button class="link" type="button" data-testid="upload-dismiss" [attr.aria-label]="'Dismiss ' + u.fileName" (click)="editor.dismiss(u.id)">Dismiss</button>
+          }
+        </div>
+        @if (u.state === 'uploading') {
+          <div class="bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" [attr.aria-label]="'Uploading ' + u.fileName" [attr.aria-valuenow]="u.percent">
+            <span [style.width.%]="u.percent"></span>
+          </div>
+        } @else {
+          <div class="problem" role="alert" data-testid="upload-error">{{ u.error }}</div>
+        }
+      </div>
+    }
+
+    @if (editor.loading()) {
+      <p class="note">Loading…</p>
+    } @else if (!editor.images().length && !editor.uploads().length) {
+      <p class="note" data-testid="images-empty">No {{ noun() }}s attached yet.</p>
+    }
+
+    @for (img of editor.images(); track img.id; let i = $index; let first = $first; let last = $last) {
+      <div class="item" [attr.data-testid]="'image-' + img.id" [class.busy]="editor.busyId() === img.id">
+        <a [href]="img.url" target="_blank" rel="noopener noreferrer" class="thumb">
+          <img [src]="img.thumbnailUrl" [alt]="'Attached ' + noun() + ' ' + (i + 1)" loading="lazy" />
+        </a>
+        <div class="meta">
+          <span class="pos">#{{ i + 1 }}</span>
+          <span class="dim">{{ size(img.sizeBytes) }}</span>
+        </div>
+        <div class="tools">
+          <button class="icon" type="button" data-testid="image-up" aria-label="Move earlier" [disabled]="first || !!editor.busyId()" (click)="editor.move(img.id, -1)">
+            <i aria-hidden="true" class="ti ti-arrow-up"></i>
+          </button>
+          <button class="icon" type="button" data-testid="image-down" aria-label="Move later" [disabled]="last || !!editor.busyId()" (click)="editor.move(img.id, 1)">
+            <i aria-hidden="true" class="ti ti-arrow-down"></i>
+          </button>
+          <button class="icon danger" type="button" data-testid="image-remove" aria-label="Remove image" [disabled]="!!editor.busyId()" (click)="editor.remove(img.id)">
+            <i aria-hidden="true" class="ti ti-trash"></i>
+          </button>
+        </div>
+      </div>
+    }
+  }
+</div>

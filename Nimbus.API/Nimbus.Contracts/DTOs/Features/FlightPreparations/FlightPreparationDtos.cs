@@ -31,6 +31,8 @@ public record FlightPreparationRequestDto
     public decimal? TemperatureC { get; init; }
     public decimal? DewPointC { get; init; }
     public decimal? QnhHpa { get; init; }
+    /// <summary>Free text, e.g. "none" or "light rain after 19:00".</summary>
+    public string? Precipitation { get; init; }
     public string? Metar { get; init; }
     public string? Taf { get; init; }
     public IReadOnlyList<WindLevelDto> WindLevels { get; init; } = [];
@@ -121,3 +123,6 @@ public record FlightDetailDto(
     FlightAssessmentDto Assessment,
     FlightPreparationRequestDto Details,
     IReadOnlyList<FlightImageDto> Images);
+
+/// <summary>The complete new order of one section's images: every image id of that section, first to last.</summary>
+public record ReorderFlightImagesRequest(string Section, IReadOnlyList<Guid> ImageIds);

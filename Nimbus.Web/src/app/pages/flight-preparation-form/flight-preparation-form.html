@@ -44,6 +44,26 @@
     <span class="progress-count" data-testid="progress-count">{{ completedCount() }}/{{ sections.length }} complete</span>
   </div>
 
+  <div class="status-strip" data-testid="status-strip" role="status" aria-label="Weight, lift and Go/No-Go">
+    <div class="status-cell"><div class="lbl">TOTAL</div><div class="val" data-testid="status-total">{{ assessment()?.totalWeightKg ?? '—' }} <small>kg</small></div></div>
+    <div class="status-div"></div>
+    <div class="status-cell"><div class="lbl">LIFT</div><div class="val" data-testid="status-lift">{{ form().controls.loadCalculation.controls.totalLiftKg.value }} <small>kg</small></div></div>
+    <div class="status-div"></div>
+    <div class="status-cell">
+      <div class="lbl">MARGIN</div>
+      <div class="val" data-testid="status-margin" [class.ok]="assessment()?.liftSufficient === true" [class.bad]="assessment()?.liftSufficient === false">
+        @if (assessment(); as a) {
+          @if (a.liftSufficient === null) { — } @else { {{ +a.marginKg > 0 ? '+' : '' }}{{ a.marginKg }} <small>kg</small> }
+        } @else { — }
+      </div>
+    </div>
+    <div class="status-div"></div>
+    <div [class]="'status-gonogo ' + verdictClass(assessment()?.goNoGoVerdict ?? '')" data-testid="status-gonogo">
+      <div class="lbl">GO/NO-GO</div>
+      <div class="val" data-testid="status-gonogo-value">{{ verdictLabel(assessment()?.goNoGoVerdict ?? '') }}</div>
+    </div>
+  </div>
+
   <form (ngSubmit)="save()" [formGroup]="form()" class="sections" data-testid="flight-preparation-form" novalidate>
     @for (section of sections; track section.id) {
       <Nimbus-section-card
@@ -59,18 +79,18 @@
         @if (section.id === 'Meteo') {
           <button
             card-action
-            aria-label="Fetch METAR and TAF"
+            aria-label="Fetch METAR, TAF and wind by altitude"
             class="card-action"
             data-testid="fetch-metar-taf"
             type="button"
-            [attr.aria-disabled]="fetcher.blockedReason() ? 'true' : null"
-            [attr.title]="fetcher.blockedReason()"
-            [class.blocked]="!!fetcher.blockedReason()"
-            [disabled]="fetcher.fetching()"
+            [attr.aria-disabled]="fetcher.blockedReason() && wind.blockedReason() ? 'true' : null"
+            [attr.title]="fetcher.blockedReason() && wind.blockedReason() ? fetcher.blockedReason() : 'Fills METAR, TAF and the wind by altitude'"
+            [class.blocked]="!!fetcher.blockedReason() && !!wind.blockedReason()"
+            [disabled]="fetcher.fetching() || wind.fetching()"
             (click)="fetchMeteo()"
           >
-            <i aria-hidden="true" class="ti ti-refresh" [class.spin]="fetcher.fetching()"></i>
-            {{ fetcher.fetching() ? 'Fetching…' : 'Fetch' }}
+            <i aria-hidden="true" class="ti ti-refresh" [class.spin]="fetcher.fetching() || wind.fetching()"></i>
+            {{ fetcher.fetching() || wind.fetching() ? 'Fetching…' : 'Fetch' }}
           </button>
         }
         @switch (section.id) {
@@ -78,7 +98,7 @@
             <Nimbus-general-section [coordinates]="launchCoordinates()" [group]="form().controls.general" [sunNote]="sun.note()" />
           }
           @case ('Meteo') {
-            <Nimbus-meteo-section [group]="form().controls.meteo" [coordinates]="launchCoordinates()" [hourUtc]="flightHourUtc()" [plannedHour]="plannedHour()" />
+            <Nimbus-meteo-section [group]="form().controls.meteo" [coordinates]="launchCoordinates()" [hourUtc]="flightHourUtc()" [plannedHour]="plannedHour()" [flightId]="isExistingFlight() ? flightId() : null" />
           }
           @case ('Airspace') {
             <Nimbus-airspace-section [group]="form().controls.airspace" />

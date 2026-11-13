@@ -5,6 +5,8 @@ using Nimbus.Application.Common.Interfaces;
 using Nimbus.Application.Features.FlightPreparations.Images;
 using Nimbus.Application.Features.FlightPreparations.Images.Delete;
 using Nimbus.Application.Features.FlightPreparations.Images.Get;
+using Nimbus.Application.Features.FlightPreparations.Images.List;
+using Nimbus.Application.Features.FlightPreparations.Images.Reorder;
 using Nimbus.Application.Features.FlightPreparations.Images.Upload;
 using Nimbus.Domain.Entities;
 using Nimbus.Domain.Enums;
@@ -232,6 +234,57 @@ public class FlightImageHandlerTests
         Assert.That(r.Storage.Downloaded.Single(), Is.EqualTo(image.ObjectKey));
     }
 
+    [Test]
+    public async Task List_ReturnsTheFlightsImagesWithLinks_ToASharedViewerToo()
+    {
+        var r = NewRig(FlightViewerRole.Shared);
+        var a = r.Images.Seed(_flight);
+        r.Images.Seed(Guid.NewGuid());
+
+        var list = await r.List().Handle(new ListFlightImagesQuery(_flight), default);
+
+        Assert.That(list.Select(i => i.Id), Is.EqualTo(new[] { a.Id }));
+        Assert.That(list[0].ThumbnailUrl, Does.Contain("thumb"));
+    }
+
+    [Test]
+    public void List_WithoutAccess_IsForbidden()
+    {
+        Assert.ThrowsAsync<ForbiddenException>(() => NewRig(role: null).List().Handle(new ListFlightImagesQuery(_flight), default));
+    }
+
+    [Test]
+    public async Task Reorder_SetsTheNewOrder_WhenTheListNamesEveryImageOfTheSectionOnce()
+    {
+        var r = NewRig();
+        var (a, b, c) = (r.Images.Seed(_flight), r.Images.Seed(_flight), r.Images.Seed(_flight));
+        var other = r.Images.Seed(_flight);
+        other.Section = FlightPreparationSection.Route;
+
+        await r.Reorder().Handle(new ReorderFlightImagesCommand(_flight, FlightPreparationSection.Meteo, [c.Id, a.Id, b.Id]), default);
+
+        Assert.That(r.Images.NewOrder, Is.EqualTo(new[] { c.Id, a.Id, b.Id }));
+    }
+
+    [Test]
+    public void Reorder_ARequestThatMissesDuplicatesOrAddsAnImage_IsRejected_NothingChanges()
+    {
+        var r = NewRig();
+        var (a, b) = (r.Images.Seed(_flight), r.Images.Seed(_flight));
+
+        Assert.ThrowsAsync<ValidationException>(() => r.Reorder().Handle(new ReorderFlightImagesCommand(_flight, FlightPreparationSection.Meteo, [a.Id]), default));
+        Assert.ThrowsAsync<ValidationException>(() => r.Reorder().Handle(new ReorderFlightImagesCommand(_flight, FlightPreparationSection.Meteo, [a.Id, a.Id]), default));
+        Assert.ThrowsAsync<ValidationException>(() => r.Reorder().Handle(new ReorderFlightImagesCommand(_flight, FlightPreparationSection.Meteo, [a.Id, b.Id, Guid.NewGuid()]), default));
+        Assert.That(r.Images.NewOrder, Is.Empty);
+    }
+
+    [Test]
+    public void Reorder_ByASharedViewer_IsForbidden()
+    {
+        var r = NewRig(FlightViewerRole.Shared);
+        Assert.ThrowsAsync<ForbiddenException>(() => r.Reorder().Handle(new ReorderFlightImagesCommand(_flight, FlightPreparationSection.Meteo, []), default));
+    }
+
     private sealed class Rig(Guid owner, FlightViewerRole? role, bool exists)
     {
         public ImageUploadOptions Options { get; set; } = new();
@@ -245,6 +298,10 @@ public class FlightImageHandlerTests
             new(AccessFake, Images, Storage, Inspector, User, Microsoft.Extensions.Options.Options.Create(Options), NullLogger<UploadFlightImageCommandHandler>.Instance);
 
         public DeleteFlightImageCommandHandler Delete() => new(AccessFake, Images, Storage, User, NullLogger<DeleteFlightImageCommandHandler>.Instance);
+
+        public ListFlightImagesQueryHandler List() => new(AccessFake, Images, Storage, User, NullLogger<ListFlightImagesQueryHandler>.Instance);
+
+        public ReorderFlightImagesCommandHandler Reorder() => new(AccessFake, Images, User, NullLogger<ReorderFlightImagesCommandHandler>.Instance);
 
         public GetFlightImageQueryHandler Get() => new(AccessFake, Images, Storage, User);
     }
@@ -287,7 +344,7 @@ public class FlightImageHandlerTests
             var id = Guid.NewGuid();
             var image = new FlightPreparationImage
             {
-                Id = id, FlightPreparationId = flight, ObjectKey = $"o/f/{id}.png", ThumbnailObjectKey = $"o/f/{id}.thumb.png", ContentType = "image/png"
+                Id = id, FlightPreparationId = flight, Section = FlightPreparationSection.Meteo, ObjectKey = $"o/f/{id}.png", ThumbnailObjectKey = $"o/f/{id}.thumb.png", ContentType = "image/png"
             };
             _rows.Add(image);
             return image;
@@ -302,6 +359,17 @@ public class FlightImageHandlerTests
 
         public Task<FlightPreparationImage?> GetAsync(Guid flightId, Guid imageId, CancellationToken ct = default) =>
             Task.FromResult(_rows.FirstOrDefault(i => i.Id == imageId && i.FlightPreparationId == flightId));
+
+        public List<Guid> NewOrder { get; private set; } = [];
+
+        public Task<IReadOnlyList<FlightPreparationImage>> ListAsync(Guid flightId, CancellationToken ct = default) =>
+            Task.FromResult<IReadOnlyList<FlightPreparationImage>>(_rows.Where(i => i.FlightPreparationId == flightId).ToList());
+
+        public Task SetOrderAsync(Guid flightId, IReadOnlyList<Guid> orderedImageIds, CancellationToken ct = default)
+        {
+            NewOrder = [.. orderedImageIds];
+            return Task.CompletedTask;
+        }
 
         public Task<bool> DeleteAsync(Guid flightId, Guid imageId, CancellationToken ct = default)
         {

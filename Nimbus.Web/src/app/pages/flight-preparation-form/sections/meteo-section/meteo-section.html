@@ -39,6 +39,10 @@
       <label for="fp-qnh">QNH HPA</label>
       <input id="fp-qnh" data-testid="qnh" formControlName="qnhHpa" type="number" />
     </div>
+    <div class="field">
+      <label for="fp-precipitation">PRECIPITATION</label>
+      <input id="fp-precipitation" data-testid="precipitation" formControlName="precipitation" maxlength="200" placeholder="none" type="text" />
+    </div>
   </div>
   <div class="fetch-note" aria-live="polite">
     @if (fetcher.blockedReason(); as reason) {
@@ -228,6 +232,8 @@
       </div>
     }
   </div>
+
+  <Nimbus-section-images section="Meteo" [flightId]="flightId()" />
 
   <Nimbus-modal
     [isOpen]="!!wind.pending()"

@@ -1,3 +1,5 @@
+import { FlightImagesApi } from '../../../../core/flight-preparations/flight-images.api';
+import { WindProfileFetcher } from '../../../../core/flight-preparations/wind-profile-fetcher';
 import { ChangeDetectorRef, Component, inject } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { NonNullableFormBuilder } from '@angular/forms';
@@ -56,7 +58,7 @@ const forecast: HourlyForecastDto = {
 describe('MeteoSection hourly forecast (issue #45)', () => {
   async function setup(api: ReturnType<typeof vi.fn>) {
     await TestBed.configureTestingModule({
-      providers: [MetarTafFetcher, { provide: WeatherService, useValue: { getApiWeatherHourlyForecast: api } }],
+      providers: [MetarTafFetcher, WindProfileFetcher, { provide: FlightImagesApi, useValue: { list: () => of([]) } }, { provide: WeatherService, useValue: { getApiWeatherHourlyForecast: api } }],
     }).compileComponents();
     const fixture = TestBed.createComponent(Host);
     const flush = async () => {
